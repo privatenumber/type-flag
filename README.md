@@ -24,12 +24,13 @@ import typeFlag from 'type-flag'
 
 const parsed = typeFlag(process.argv.slice(2), {
 
-    // Define flags here
+    // Define flags here...
+
     someString: String,
 
     someNumber: {
         type: Number,
-        alias: 'n' // Set an alias (eg. -n 45)
+        alias: 'n' // Set an alias (eg. -n <number>)
     },
 
     someBoolean: {
@@ -39,9 +40,9 @@ const parsed = typeFlag(process.argv.slice(2), {
 })
 ```
 
-This outputs the type:
+`parsed` resolves to the following type:
 ```ts
-const parsed: {
+{
     flags: {
         someString: string[];
         someNumber: boolean[];
@@ -56,13 +57,15 @@ const parsed: {
 
 When passing in the flags, they can be in kebab-case and will automatically map to the camelCase equivalent.
 ```sh
-node ./cli --some-string hello --number=3 --someBoolean
+$ node ./cli --some-string hello --number=3 --someBoolean
 ```
 
-### Examples
+## 👨🏻‍🏫 Examples
 
-#### Custom type
-Simply create a function that accepts a string argument, validates and returns the parsed value with the expected type.
+### Using a custom type
+Basic types can be set using [built-in functions in JavaScript](https://www.w3schools.com/js/js_object_constructors.asp#:~:text=Built-in%20JavaScript%20Constructors), but sometimes you want to a new type, narrow the type, or even add validation.
+
+To create a new type, simply declare a function that accepts a string argument and returns the parsed value with the expected type.
 
 In this example, the `format` flag is enforced to be either `cjs` or `esm`.
 ```ts
@@ -93,7 +96,7 @@ const parsed: {
 }
 ```
 
-## ⚙️ Options
+## ⚙️ API
 
 ### typeFlag(argv, flagSchema)
 
@@ -102,10 +105,10 @@ Returns an object with the shape:
 {
     flags: {
         [flagName: string]: InferredType[];
-    },
+    };
     unknownFlags: {
         [flagName: string]: (string | boolean)[];
-    },
+    };
     '--': string[];
 }
 ```
@@ -130,18 +133,19 @@ type FlagSchema = {
 ```
 
 
-An object of flag schema definitions.
+An object containing flag schema definitions. Where the key is the flag name, and the value is either the type function or an object containing the type function and/or alias.
 
 ## 🙋‍♀️ FAQ
 
-### Why do I have to pass in process.argv?
-- Designed to be utility tool that can be used in other CLI tools
-- Easier to test and intercept
+### Why do I have to manually pass in `process.argv`?
+Few reasons:
+- Type-flag designed to be an utility tool that can be extended in other CLI tools
 - To mock the simplicity & clarity of [minimist](https://github.com/substack/minimist)
+- Explicitly passing it in makes it easier to intercept for pre-processing and also testing
 
 ### Why are all flags in an array?
 To minimize the scope of the library to parsing & types.
 
-This way, the user can choose whether to accept an array of multiple values, or to pop the last element.
+This way, the user can choose whether to accept an array of multiple values, or to pop the last element as a single value.
 
-Support for validation, required flags, default values, etc. should be added on the usage end.
+Support for validation, required flags, default values, etc. should be added in user-land.
