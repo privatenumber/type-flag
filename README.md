@@ -188,7 +188,7 @@ An object containing flag schema definitions. Where the key is the flag name, an
 
 ### Why do I have to manually pass in `process.argv`?
 Few reasons:
-- Type-flag designed to be an utility tool that can be extended in other CLI tools
+- Type-flag is designed to be an utility tool that can be extended by other CLI tools
 - To mock the simplicity & clarity of [minimist](https://github.com/substack/minimist)
 - Explicitly passing it in makes it easier to intercept for pre-processing and also testing
 
