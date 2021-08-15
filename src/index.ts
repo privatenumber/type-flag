@@ -6,7 +6,7 @@ import type {
 } from './types';
 import { isFlagSchemaWithType } from './types';
 import {
-	camelize,
+	toCamelCase,
 	createFlagsObject,
 	mapAliases,
 	parseFlag,
@@ -115,7 +115,7 @@ function typeFlag<Schemas extends Flags>(
 			let flagSchema = schemas[flagName];
 
 			if (!flagSchema) {
-				const camelized = camelize(flagName);
+				const camelized = toCamelCase(flagName);
 				flagSchema = schemas[camelized];
 
 				if (flagSchema) {

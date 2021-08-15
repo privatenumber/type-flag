@@ -1,48 +1,82 @@
 import typeFlag from '../src';
 
 describe('Validation', () => {
-	describe('Invalid flag', () => {
-		test('Empty', () => {
-			expect(() => {
-				typeFlag([], {
-					'': String,
-				});
-			}).toThrow(/* 'Invalid flag name: empty' */);
-		});
+	test('Empty flag name', () => {
+		expect(() => {
+			typeFlag([], {
+				'': String,
+			});
+		}).toThrow(/* 'Invalid flag name: empty' */);
+	});
 
-		test('Single character flags', () => {
-			expect(() => {
-				typeFlag([], {
-					i: String,
-				});
-			}).toThrow(/* 'Invalid flag name: single characters are reserved for aliases' */);
-		});
+	test('Single character flag name', () => {
+		expect(() => {
+			typeFlag([], {
+				i: String,
+			});
+		}).toThrow(/* 'Invalid flag name: single characters are reserved for aliases' */);
+	});
 
-		test('Multi-character aliases', () => {
-			expect(() => {
-				typeFlag([], {
-					flagA: {
-						type: String,
-						alias: 'flag-a',
-					},
-				});
-			}).toThrow(/* 'Multi character' */);
-		});
+	test('Multi-character alias', () => {
+		expect(() => {
+			typeFlag([], {
+				flagA: {
+					type: String,
+					alias: 'flag-a',
+				},
+			});
+		}).toThrow(/* 'Multi character' */);
+	});
 
-		test('Collision - alias to alias', () => {
-			expect(() => {
-				typeFlag([], {
-					flagA: {
-						type: String,
-						alias: 'a',
-					},
-					flagB: {
-						type: String,
-						alias: 'a',
-					},
-				});
-			}).toThrow(/* 'Flag collision: Alias "a" is already used' */);
-		});
+	test('Reserved characters', () => {
+		expect(() => {
+			typeFlag([], { 'flag a': String });
+		}).toThrow(/* Flag name cannot contain the character " " */);
+
+		expect(() => {
+			typeFlag([], { 'flag=b': String });
+		}).toThrow(/* Flag name cannot contain the character "=" */);
+
+		expect(() => {
+			typeFlag([], { 'flag:c': String });
+		}).toThrow(/* Flag name cannot contain the character ":" */);
+
+		expect(() => {
+			typeFlag([], { 'flag.d': String });
+		}).toThrow(/* Flag name cannot contain the character "." */);
+	});
+
+	test('Collision - camelCase to kebab-case', () => {
+		expect(() => {
+			typeFlag([], {
+				flagA: String,
+				'flag-a': String,
+			});
+		}).toThrow(/* 'kebab-case version of this name already exists' */);
+	});
+
+	test('Collision - kebab-case to camelCase', () => {
+		expect(() => {
+			typeFlag([], {
+				'flag-a': String,
+				flagA: String,
+			});
+		}).toThrow(/* 'camelCase version of this name already exists' */);
+	});
+
+	test('Collision - alias to alias', () => {
+		expect(() => {
+			typeFlag([], {
+				flagA: {
+					type: String,
+					alias: 'a',
+				},
+				flagB: {
+					type: String,
+					alias: 'a',
+				},
+			});
+		}).toThrow(/* 'Flag collision: Alias "a" is already used' */);
 	});
 });
 

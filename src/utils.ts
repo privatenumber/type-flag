@@ -7,16 +7,65 @@ import type {
 	InferFlagType,
 } from './types';
 
-const camelizePattern = /-(\w)/g;
-export const camelize = (string: string) => string.replace(
-	camelizePattern,
-	(_, c) => (c ? c.toUpperCase() : ''),
+const kebabCasePattern = /-(\w)/g;
+export const toCamelCase = (string: string) => string.replace(
+	kebabCasePattern,
+	(_, afterHyphenCharacter) => afterHyphenCharacter.toUpperCase(),
 );
+
+const camelCasePattern = /\B([A-Z])/g;
+const toKebabCase = (string: string) => string.replace(camelCasePattern, '-$1').toLowerCase();
 
 const { stringify } = JSON;
 
 const { hasOwnProperty } = Object.prototype;
 const hasOwn = (object: any, property: string | symbol) => hasOwnProperty.call(object, property);
+
+const flagPrefixPattern = /^--?/;
+const valueDelimiterPattern = /[.:=]/;
+
+export const parseFlag = (flagArgv: string) => {
+	let flagName = flagArgv.replace(flagPrefixPattern, '');
+	let flagValue;
+	const hasValueDalimiter = flagName.match(valueDelimiterPattern);
+
+	if (hasValueDalimiter?.index) {
+		const equalIndex = hasValueDalimiter.index;
+		flagValue = flagName.slice(equalIndex + 1);
+		flagName = flagName.slice(0, equalIndex);
+	}
+
+	return {
+		flagName,
+		flagValue,
+	};
+};
+
+const reservedCharactersPattern = /[\s.:=]/;
+
+const validateFlagName = <Schemas extends Flags>(
+	schemas: Schemas,
+	flagName: string,
+) => {
+	const errorPrefix = `Invalid flag name ${stringify(flagName)}:`;
+	assert(flagName.length > 0, `${errorPrefix} flag name cannot be empty}`);
+	assert(flagName.length !== 1, `${errorPrefix} single characters are reserved for aliases`);
+
+	const hasReservedCharacter = flagName.match(reservedCharactersPattern);
+	assert(!hasReservedCharacter, `${errorPrefix} flag name cannot contain the character ${stringify(hasReservedCharacter?.[0])}`);
+
+	if (kebabCasePattern.test(flagName)) {
+		assert(
+			!hasOwn(schemas, toCamelCase(flagName)),
+			`${errorPrefix} camelCase version of this name already exists`,
+		);
+	} else if (camelCasePattern.test(flagName)) {
+		assert(
+			!hasOwn(schemas, toKebabCase(flagName)),
+			`${errorPrefix} kebab-case version of this name already exists`,
+		);
+	}
+};
 
 export function mapAliases<Schemas extends Flags>(
 	schemas: Schemas,
@@ -31,8 +80,7 @@ export function mapAliases<Schemas extends Flags>(
 			continue;
 		}
 
-		assert(name.length > 0, `Invalid flag name ${stringify(name)}: flag name cannot be empty}`);
-		assert(name.length !== 1, `Invalid flag name ${stringify(name)}: single characters are reserved for aliases`);
+		validateFlagName(schemas, name);
 
 		const schema = schemas[name];
 		if (schema && typeof schema === 'object') {
@@ -68,26 +116,6 @@ export const createFlagsObject = <Schemas extends Flags>(schema: Flags) => {
 
 	return flags as {
 		[flag in keyof Schemas]: InferFlagType<Schemas[flag]>[];
-	};
-};
-
-const flagPrefixPattern = /^--?/;
-const valueDelimiterPattern = /[.:=]/;
-
-export const parseFlag = (flagArgv: string) => {
-	let flagName = flagArgv.replace(flagPrefixPattern, '');
-	let flagValue;
-	const hasValueDalimiter = flagName.match(valueDelimiterPattern);
-
-	if (hasValueDalimiter?.index) {
-		const equalIndex = hasValueDalimiter.index;
-		flagValue = flagName.slice(equalIndex + 1);
-		flagName = flagName.slice(0, equalIndex);
-	}
-
-	return {
-		flagName,
-		flagValue,
 	};
 };
 
