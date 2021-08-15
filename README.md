@@ -202,7 +202,7 @@ Support for validation, required flags, default values, etc. should be added in 
 
 ### How is it different from minimist?
 
-- Parsing accuracy
+- Typed schema
 
 	minimist assumes usage is correct and infers flag types based on how the flags are used.
 
