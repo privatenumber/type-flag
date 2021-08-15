@@ -282,7 +282,7 @@ Support for validation, required flags, default values, etc. should be added in 
 
 	minimist unconfigured would interpret `--string` as a boolean, and `--boolean` as a string. The `string` and `boolean` options would need to specify the appropriate flags, but they would not be automatically typed.
 	
-	type-flag would interpret `--string` with an empty string passed in, `--boolean` to be `true`, and `value` to be passed in as an argument (in `--`).
+	type-flag would interpret `--string` with an empty string passed in, `--boolean` to be `true`, and `value` to be passed in as an argument (in `_`).
 
 - Combined aliases
 
