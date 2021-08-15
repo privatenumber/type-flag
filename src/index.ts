@@ -16,7 +16,7 @@ import {
 const isAliasPattern = /^-[\da-z]+/i;
 const isFlagPattern = /^--[\w-]{2,}/;
 
-export default function typeFlag<Schemas extends Flags>(
+function typeFlag<Schemas extends Flags>(
 	argv: string[],
 	schemas: Schemas,
 ) {
@@ -146,3 +146,5 @@ export default function typeFlag<Schemas extends Flags>(
 		_: remainingArguments,
 	};
 }
+
+export = typeFlag;
