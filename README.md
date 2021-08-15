@@ -110,22 +110,22 @@ Basic types can be set using [built-in functions in JavaScript](https://www.w3sc
 
 To create a new type, simply declare a function that accepts a string argument and returns the parsed value with the expected type.
 
-In this example, the `format` flag is enforced to be either `cjs` or `esm`.
+In this example, the `size` flag is enforced to be either `small`, `medium` or `large`.
 ```ts
-const possibleJsFormats = ['cjs', 'esm'] as const;
+const possibleSizes = ['small', 'medium', 'large'] as const;
 
-type JsFormats = typeof possibleJsFormats[number];
+type Sizes = typeof possibleSizes[number];
 
-function JsFormat(format: JsFormats) {
-    if (!possibleJsFormats.includes(format)) {
-        throw new Error(`Invalid format: "${format}"`);
+function Size(size: Sizes) {
+    if (!possibleSizes.includes(size)) {
+        throw new Error(`Invalid size: "${size}"`);
     }
 
-    return format;
+    return size;
 };
 
 const parsed = typeFlag(process.argv.slice(2), {
-    format: JsFormat
+    size: Size
 })
 ```
 
@@ -133,7 +133,7 @@ const parsed = typeFlag(process.argv.slice(2), {
 ```ts
 const parsed: {
     flags: {
-        format: JsFormats[];
+        size: Sizes[];
     };
     ...
 }
