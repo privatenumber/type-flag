@@ -84,7 +84,7 @@ This outputs the following:
 }
 ```
 
-### Arguments
+#### Arguments
 All argument values are passed into the `_` property.
 
 Notice how the "`value"` is parsed as an argument because the boolean flag doesn't accept a value.
