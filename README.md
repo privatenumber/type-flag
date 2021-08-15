@@ -203,7 +203,7 @@ Support for validation, required flags, default values, etc. should be added in 
 
 - Typed schema
 
-	minimist assumes usage is correct and infers flag types based on how the flags are used.
+	By default, minimist assumes usage is correct and infers flag types based on how the flags are used.
 
 	type-flag takes in flag schemas to determine how to parse flags.
 
