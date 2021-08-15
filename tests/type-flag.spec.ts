@@ -135,6 +135,17 @@ describe('Parsing', () => {
 		expect<string[]>(parsed.flags.string).toEqual(['A=hello', 'B=bye']);
 	});
 
+	test('flag: . to allow dot-notation', () => {
+		const parsed = typeFlag(['--string.A=hello', '-s.B=bye'], {
+			string: {
+				type: String,
+				alias: 's',
+			},
+		});
+
+		expect<string[]>(parsed.flags.string).toEqual(['A=hello', 'B=bye']);
+	});
+
 	test('aliases', () => {
 		const parsed = typeFlag(['-s', 'hello', '-b', 'world', '-s'], {
 			string: {

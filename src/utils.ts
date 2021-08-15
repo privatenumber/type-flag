@@ -72,7 +72,7 @@ export const createFlagsObject = <Schemas extends Flags>(schema: Flags) => {
 };
 
 const flagPrefixPattern = /^--?/;
-const valueDelimiterPattern = /[:=]/;
+const valueDelimiterPattern = /[.:=]/;
 
 export const parseFlag = (flagArgv: string) => {
 	let flagName = flagArgv.replace(flagPrefixPattern, '');

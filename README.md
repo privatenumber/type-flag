@@ -18,7 +18,7 @@ npm i type-flag
 
 ## 🚦 Quick start
 
-Here's an example of how type-flag can be used:
+Here's a simple usage example:
 ```ts
 import typeFlag from 'type-flag'
 
@@ -39,6 +39,8 @@ const parsed = typeFlag(process.argv.slice(2), {
         alias: 'b'
     }
 })
+
+console.log(parsed.flags.someString[0])
 ```
 
 `parsed` resolves to the following type:
@@ -102,6 +104,15 @@ This outputs the following:
 }
 ```
 
+#### Flag value delimiters
+The characters `=`, `:` and `.` are reserved for delimiting the value from the flag.
+
+```sh
+$ node ./cli --flag=value --flag:value --flag.value
+```
+
+This allows for usage like `--flag:key=value` or `--flag.property=value` to be possible.
+
 ## 👨🏻‍🏫 Examples
 
 ### Using a custom type
@@ -136,6 +147,48 @@ const parsed: {
     };
     ...
 }
+```
+
+### Accepting flag values with `=` in it
+In use-cases where flag values contain `=`, you can use `:` instead. This allows flags like `--define:K=V`.
+
+```sh
+$ node ./cli --define:key=value
+```
+
+```ts
+const parsed = typeFlag(process.argv.slice(2), {
+    define: String
+})
+
+console.log(parsed.flags.define) // ['key=value']
+```
+
+### Dot-nested flags
+```sh
+$ node ./cli --env.TOKEN=123 --env.CI
+```
+
+```ts
+type Env = {
+	TOKEN?: string;
+	CI?: boolean;
+};
+
+function EnvObject(value: string): Env {
+	const [propertyName, propertyValue] = value.split('=');
+	return {
+		[propertyName]: propertyValue || true,
+	};
+}
+
+const parsed = typeFlag(process.argv.slice(2), {
+	env: EnvObject,
+});
+
+const env = parsed.flags.env.reduce((agg, next) => Object.assign(agg, next), {});
+
+console.log(env); // { TOKEN: 123, CI: true }
 ```
 
 ### Inverting a boolean
