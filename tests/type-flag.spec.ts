@@ -51,7 +51,7 @@ describe('Parsing', () => {
 		const parsed = typeFlag(['-invalidAlias'], {});
 
 		expect(parsed).toEqual({
-			'--': [],
+			_: [],
 			flags: {},
 			unknownFlags: {
 				i: [true, true, true],
@@ -74,7 +74,7 @@ describe('Parsing', () => {
 
 		expect<string[]>(parsed.flags.flagA).toEqual(['']);
 		expect<string[]>(parsed.flags.flagB).toEqual([]);
-		expect<string[]>(parsed['--']).toEqual(['--flagB']);
+		expect<string[]>(parsed._).toEqual(['--flagB']);
 	});
 
 	test('flag defaults to string', () => {
@@ -97,7 +97,7 @@ describe('Parsing', () => {
 		expect<string[]>(parsed.flags.string).toEqual(['hello', '']);
 		expect<boolean[]>(parsed.flags.boolean).toEqual([true]);
 		expect<number[]>(parsed.flags.number).toEqual([2, Number.NaN]);
-		expect<string[]>(parsed['--']).toEqual(['world']);
+		expect<string[]>(parsed._).toEqual(['world']);
 	});
 
 	test('convert kebab-case to camelCase', () => {
@@ -121,7 +121,7 @@ describe('Parsing', () => {
 		expect<string[]>(parsed.flags.string).toEqual(['hello', 'bye', '']);
 		expect<boolean[]>(parsed.flags.boolean).toEqual([true, false, true]);
 		expect<number[]>(parsed.flags.number).toEqual([3.14, Number.NaN]);
-		expect<string[]>(parsed['--']).toEqual(['world']);
+		expect<string[]>(parsed._).toEqual(['world']);
 	});
 
 	test('flag: - to allow the use of = in values (or vice versa)', () => {
@@ -150,7 +150,7 @@ describe('Parsing', () => {
 		expect<string[]>(parsed.flags.string).toEqual(['hello', '']);
 		expect<boolean[]>(parsed.flags.boolean).toEqual([true]);
 		expect<string[]>(Object.keys(parsed.flags)).toEqual(['string', 'boolean']);
-		expect<string[]>(parsed['--']).toEqual(['world']);
+		expect<string[]>(parsed._).toEqual(['world']);
 	});
 
 	test('unknown flags', () => {
@@ -170,6 +170,7 @@ describe('Parsing', () => {
 				'-sdf',
 				'4',
 				'-ff=a',
+				'--kebab-case',
 			],
 			{},
 		);
@@ -190,8 +191,9 @@ describe('Parsing', () => {
 			d: [true],
 			f: ['4', true, 'a'],
 			unknownString: ['hello', true],
+			'kebab-case': [true],
 		});
-		expect<string[]>(parsed['--']).toEqual(['a']);
+		expect<string[]>(parsed._).toEqual(['a']);
 	});
 
 	test('custom type', () => {

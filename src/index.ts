@@ -143,6 +143,6 @@ export default function typeFlag<Schemas extends Flags>(
 	return {
 		flags,
 		unknownFlags,
-		'--': remainingArguments,
+		_: remainingArguments,
 	};
 }

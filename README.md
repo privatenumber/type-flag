@@ -18,6 +18,8 @@ npm i type-flag
 
 ## 🚦 Quick usage
 
+### Setup
+
 _cli.ts_
 ```ts
 import typeFlag from 'type-flag'
@@ -51,13 +53,54 @@ const parsed = typeFlag(process.argv.slice(2), {
     unknownFlags: {
         [flagName: string]: (string | boolean)[];
     };
-    '--': string[];
+    _: string[];
 }
 ```
 
+### Usage
+
+#### kebab-case flags mapped to camelCase
 When passing in the flags, they can be in kebab-case and will automatically map to the camelCase equivalent.
 ```sh
-$ node ./cli --some-string hello --number=3 --someBoolean
+$ node ./cli --someString hello --some-string world
+```
+
+#### Unknown flags
+When unrecognized flags are passed in, they are either interpreted as a string or boolean depending on usage.
+
+Note, unknown flags are not converted to camelCase.
+
+```sh
+$ node ./cli --unknown-flag --unknown-flag 2
+```
+
+This outputs the following:
+```ts
+{
+	unknownFlags: {
+		'unknown-flag': [true, '2']
+	},
+	...
+}
+```
+
+### Arguments
+All argument values are passed into the `_` property.
+
+Notice how the "`value"` is parsed as an argument because the boolean flag doesn't accept a value.
+
+Arguments after `--` will not be parsed.
+
+```sh
+$ node ./cli --boolean value --string "hello world" "another value" -- --string "goodbye world"
+```
+
+This outputs the following:
+```ts
+{
+	_: ['value', 'another value', '--string', 'goodbye world']
+	...
+}
 ```
 
 ## 👨🏻‍🏫 Examples
@@ -96,6 +139,13 @@ const parsed: {
 }
 ```
 
+### Inverting a boolean
+To invert a boolean flag, `false` must be passed in with the `=` operator.
+
+```sh
+$ node ./cli --boolean-flag=false
+```
+
 ## ⚙️ API
 
 ### typeFlag(argv, flagSchema)
@@ -109,7 +159,7 @@ Returns an object with the shape:
     unknownFlags: {
         [flagName: string]: (string | boolean)[];
     };
-    '--': string[];
+    _: string[];
 }
 ```
 
@@ -149,3 +199,28 @@ To minimize the scope of the library to parsing & types.
 This way, the user can choose whether to accept an array of multiple values, or to pop the last element as a single value.
 
 Support for validation, required flags, default values, etc. should be added in user-land.
+
+### How is it different from minimist?
+
+- Parsing accuracy
+
+	minimist assumes usage is correct and infers flag types based on how the flags are used.
+
+	type-flag takes in flag schemas to determine how to parse flags.
+
+	For example, given a string and boolean flag with no values passed in:
+	```
+	$ cli --string --boolean value
+	```
+
+	minimist unconfigured would interpret `--string` as a boolean, and `--boolean` as a string. The `string` and `boolean` options would need to specify the appropriate flags, but they would not be automatically typed.
+	
+	type-flag would interpret `--string` with an empty string passed in, `--boolean` to be `true`, and `value` to be passed in as an argument (in `--`).
+
+- Combined aliases
+
+	It's pretty common in CLIs to to combine aliases into one flag (eg. `-a -v -z` → `-avz`).
+	
+	This is supported in both minimist and type-flag, however, type-flag interprets the following differently: `-n9`
+
+	minimist interprets that as `-n 9` or `-n=9`. But type-flag considers that `-9` may refer to a flag and interprets it as `-n -9`. A real example of this flag is in [`gzip`](https://linux.die.net/man/1/gzip#:~:text=-9), where `-9` is an alias for "best compression".
