@@ -16,11 +16,13 @@ Parse CLI argv flags with first-class type support. Think [minimist](https://git
 npm i type-flag
 ```
 
-## 🚦 Quick usage
+## 🚦 Quick start
 
+Here's an example of how type-flag can be used:
 ```ts
 import typeFlag from 'type-flag'
 
+// Pass in argvs, flag schemas, and parse! 
 const parsed = typeFlag(process.argv.slice(2), {
 
     // Define flags here...
