@@ -63,7 +63,7 @@ $ node ./cli --some-string hello --number=3 --someBoolean
 ## 👨🏻‍🏫 Examples
 
 ### Using a custom type
-Basic types can be set using [built-in functions in JavaScript](https://www.w3schools.com/js/js_object_constructors.asp#:~:text=Built-in%20JavaScript%20Constructors), but sometimes you want to a new type, narrow the type, or even add validation.
+Basic types can be set using [built-in functions in JavaScript](https://www.w3schools.com/js/js_object_constructors.asp#:~:text=Built-in%20JavaScript%20Constructors), but sometimes you want to a new type, narrow the type, or add validation.
 
 To create a new type, simply declare a function that accepts a string argument and returns the parsed value with the expected type.
 
@@ -73,7 +73,7 @@ const possibleJsFormats = ['cjs', 'esm'] as const;
 
 type JsFormats = typeof possibleJsFormats[number];
 
-const JsFormat = (format: JsFormats) => {
+function JsFormat(format: JsFormats) {
     if (!possibleJsFormats.includes(format)) {
         throw new Error(`Invalid format: "${format}"`);
     }
@@ -82,11 +82,11 @@ const JsFormat = (format: JsFormats) => {
 };
 
 const parsed = typeFlag(process.argv.slice(2), {
-    format: JsFormat,
+    format: JsFormat
 })
 ```
 
-This outputs the type:
+`parsed` resolves to the following type:
 ```ts
 const parsed: {
     flags: {
@@ -143,7 +143,7 @@ Few reasons:
 - To mock the simplicity & clarity of [minimist](https://github.com/substack/minimist)
 - Explicitly passing it in makes it easier to intercept for pre-processing and also testing
 
-### Why are all flags in an array?
+### Why are the parsed flags in an array?
 To minimize the scope of the library to parsing & types.
 
 This way, the user can choose whether to accept an array of multiple values, or to pop the last element as a single value.
