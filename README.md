@@ -192,10 +192,25 @@ console.log(env); // { TOKEN: 123, CI: true }
 ```
 
 ### Inverting a boolean
-To invert a boolean flag, `false` must be passed in with the `=` operator.
+To invert a boolean flag, `false` must be passed in with the `=` operator (or any other value delimiters).
 
 ```sh
 $ node ./cli --boolean-flag=false
+```
+
+Note, without the `=`, the `false` will be parsed as a separate argument.
+
+```sh
+$ node ./cli --boolean-flag false
+```
+
+```ts
+{
+    flags: {
+        booleanFlag: [true]
+    },
+    _: ['false']
+}
 ```
 
 ## ⚙️ API
