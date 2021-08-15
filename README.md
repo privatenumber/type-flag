@@ -18,9 +18,6 @@ npm i type-flag
 
 ## 🚦 Quick usage
 
-### Setup
-
-_cli.ts_
 ```ts
 import typeFlag from 'type-flag'
 
