@@ -4,13 +4,13 @@ import type {
 	Flags,
 	ParsedFlags,
 } from './types';
-import { isFlagSchemaWithType } from './types';
 import {
 	toCamelCase,
 	createFlagsObject,
 	mapAliases,
 	parseFlag,
 	getDefaultFromTypeWithValue,
+	isFlagSchemaWithType,
 } from './utils';
 
 const isAliasPattern = /^-[\da-z]+/i;

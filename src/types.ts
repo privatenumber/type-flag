@@ -22,10 +22,3 @@ export type InferFlagType<Flag extends (TypeFunction | FlagSchema)> = ReturnType
 				: StringConstructor
 		)
 >;
-
-export const isFlagSchemaWithType = (
-	schema: FlagSchema,
-): schema is { type: TypeFunction } => (
-	('type' in schema)
-	&& (typeof schema.type === 'function')
-);

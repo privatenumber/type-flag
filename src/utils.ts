@@ -54,15 +54,18 @@ const validateFlagName = <Schemas extends Flags>(
 	const hasReservedCharacter = flagName.match(reservedCharactersPattern);
 	assert(!hasReservedCharacter, `${errorPrefix} flag name cannot contain the character ${stringify(hasReservedCharacter?.[0])}`);
 
+	let checkDifferentCase;
+
 	if (kebabCasePattern.test(flagName)) {
-		assert(
-			!hasOwn(schemas, toCamelCase(flagName)),
-			`${errorPrefix} camelCase version of this name already exists`,
-		);
+		checkDifferentCase = toCamelCase(flagName);
 	} else if (camelCasePattern.test(flagName)) {
+		checkDifferentCase = toKebabCase(flagName);
+	}
+
+	if (checkDifferentCase) {
 		assert(
-			!hasOwn(schemas, toKebabCase(flagName)),
-			`${errorPrefix} kebab-case version of this name already exists`,
+			!hasOwn(schemas, checkDifferentCase),
+			`${errorPrefix} collides with flag ${stringify(checkDifferentCase)}`,
 		);
 	}
 };
@@ -88,7 +91,6 @@ export function mapAliases<Schemas extends Flags>(
 			if (alias) {
 				assert(alias.length > 0, `Invalid flag alias ${stringify(name)}: flag alias cannot be empty`);
 				assert(alias.length === 1, `Invalid flag alias ${stringify(name)}: flag aliases can only be a single-character`);
-
 				assert(
 					!aliases.has(alias),
 					`Flag collision: Alias "${alias}" is already used`,
@@ -133,3 +135,10 @@ export const getDefaultFromTypeWithValue = (
 
 	return value;
 };
+
+export const isFlagSchemaWithType = (
+	schema: FlagSchema,
+): schema is { type: TypeFunction } => (
+	('type' in schema)
+	&& (typeof schema.type === 'function')
+);
