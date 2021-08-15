@@ -5,6 +5,7 @@
 	"keywords": [
 		"cli",
 		"flag",
+		"argv",
 		"parser",
 		"typed",
 		"typescript"
