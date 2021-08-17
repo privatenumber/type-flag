@@ -3,7 +3,7 @@
 Parse CLI argv flags with first-class type support. Think [minimist](https://github.com/substack/minimist), but typed!
 
 ### Features
-- **Typed flags** Forget asserting types on parsed argvs!
+- **Typed flags** Automatically infer types on parsed argvs!
 - **Custom types & validation** Pass in any function and the type will be inferred!
 - **Tiny** 2.7 kB minified!
 
