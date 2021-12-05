@@ -1,10 +1,11 @@
 import assert from 'assert';
 import type {
 	TypeFunction,
+	FlagTypeOrSchema,
 	FlagSchema,
 	Flags,
 	ParsedFlags,
-	InferFlagType,
+	InferFlagReturnType,
 } from './types';
 
 const kebabCasePattern = /-(\w)/g;
@@ -107,7 +108,7 @@ export function mapAliases<Schemas extends Flags>(
 	return aliases;
 }
 
-export const createFlagsObject = <Schemas extends Flags>(schema: Flags) => {
+export const createFlagsObject = <Schemas extends Flags>(schema: Schemas) => {
 	const flags: ParsedFlags = {};
 
 	for (const flag in schema) {
@@ -117,8 +118,20 @@ export const createFlagsObject = <Schemas extends Flags>(schema: Flags) => {
 	}
 
 	return flags as {
-		[flag in keyof Schemas]: InferFlagType<Schemas[flag]>[];
+		[flag in keyof Schemas]: InferFlagReturnType<Schemas[flag]>[];
 	};
+};
+
+export const getFlagTypeFunction = (typeOrSchema: FlagTypeOrSchema): TypeFunction => {
+	if (typeof typeOrSchema === 'function') {
+		return typeOrSchema;
+	}
+
+	if (typeof typeOrSchema.type === 'function') {
+		return typeOrSchema.type;
+	}
+
+	return String;
 };
 
 export const getDefaultFromTypeWithValue = (
@@ -135,10 +148,3 @@ export const getDefaultFromTypeWithValue = (
 
 	return value;
 };
-
-export const isFlagSchemaWithType = (
-	schema: FlagSchema,
-): schema is { type: TypeFunction } => (
-	('type' in schema)
-	&& (typeof schema.type === 'function')
-);

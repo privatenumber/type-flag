@@ -5,15 +5,17 @@ export type FlagSchema = {
 	alias?: string;
 };
 
+export type FlagTypeOrSchema = TypeFunction | FlagSchema;
+
 export type Flags = {
-	[flagName: string]: TypeFunction | FlagSchema;
+	[flagName: string]: FlagTypeOrSchema;
 };
 
 export type ParsedFlags = {
 	[flag: string]: (string | boolean)[];
 };
 
-export type InferFlagType<Flag extends (TypeFunction | FlagSchema)> = ReturnType<
+export type GetFlagType<Flag extends FlagTypeOrSchema> = (
 	Flag extends TypeFunction
 		? Flag
 		: (
@@ -21,4 +23,8 @@ export type InferFlagType<Flag extends (TypeFunction | FlagSchema)> = ReturnType
 				? Flag['type']
 				: StringConstructor
 		)
+);
+
+export type InferFlagReturnType<Flag extends FlagTypeOrSchema> = ReturnType<
+	GetFlagType<Flag>
 >;

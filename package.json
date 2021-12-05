@@ -24,7 +24,7 @@
 	"scripts": {
 		"build": "tsc",
 		"lint": "eslint .",
-		"test": "jest"
+		"test": "tsc -p tests && jest"
 	},
 	"husky": {
 		"hooks": {
@@ -34,6 +34,7 @@
 	"lint-staged": {
 		"*.ts": [
 			"eslint",
+			"tsc -p tests",
 			"jest --bail --findRelatedTests"
 		]
 	},

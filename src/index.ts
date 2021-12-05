@@ -1,6 +1,5 @@
 import type {
-	TypeFunction,
-	FlagSchema,
+	FlagTypeOrSchema,
 	Flags,
 	ParsedFlags,
 } from './types';
@@ -10,7 +9,7 @@ import {
 	mapAliases,
 	parseFlag,
 	getDefaultFromTypeWithValue,
-	isFlagSchemaWithType,
+	getFlagTypeFunction,
 } from './utils';
 
 const isAliasPattern = /^-[\da-z]+/i;
@@ -29,18 +28,10 @@ function typeFlag<Schemas extends Flags>(
 
 	const setKnown = (
 		flagName: string,
-		flagSchema: TypeFunction | FlagSchema,
+		flagSchema: FlagTypeOrSchema,
 		flagValue: any,
 	) => {
-		const flagType = (
-			typeof flagSchema === 'function'
-				? flagSchema
-				: (
-					isFlagSchemaWithType(flagSchema)
-						? flagSchema.type
-						: String
-				)
-		);
+		const flagType = getFlagTypeFunction(flagSchema);
 
 		flagValue = getDefaultFromTypeWithValue(flagType, flagValue);
 
