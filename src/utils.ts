@@ -87,7 +87,7 @@ export function mapAliases<Schemas extends Flags>(
 
 		const schema = schemas[name];
 		if (schema && typeof schema === 'object') {
-			const { alias } = schema;
+			const { alias } = schema as FlagSchema;
 			if (alias) {
 				assert(alias.length > 0, `Invalid flag alias ${stringify(name)}: flag alias cannot be empty`);
 				assert(alias.length === 1, `Invalid flag alias ${stringify(name)}: flag aliases can only be a single-character`);
