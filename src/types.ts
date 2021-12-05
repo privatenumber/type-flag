@@ -15,10 +15,16 @@ export type ParsedFlags = {
 
 export type InferFlagType<Flag extends (TypeFunction | FlagSchema)> = ReturnType<
 	Flag extends TypeFunction
+		// Constructor function
 		? Flag
+
+		// Schema object
 		: (
 			Flag extends { type: TypeFunction }
+				// Constructor function
 				? Flag['type']
+
+				// Fallback to string
 				: StringConstructor
 		)
 >;
