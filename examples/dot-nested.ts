@@ -23,7 +23,7 @@ const parsed = typeFlag(process.argv.slice(2), {
 	env: EnvironmentObject,
 });
 
-// eslint-disable-next-line unicorn/no-array-reduce
+// eslint-disable-next-line unicorn/no-array-reduce,unicorn/prefer-object-from-entries
 const environment = parsed.flags.env.reduce((agg, next) => Object.assign(agg, next), {});
 
 console.log(environment);
