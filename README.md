@@ -191,7 +191,7 @@ function EnvObject(value: string): Env {
 }
 
 const parsed = typeFlag(process.argv.slice(2), {
-	env: EnvObject,
+	env: [EnvObject],
 });
 
 const env = parsed.flags.env.reduce((agg, next) => Object.assign(agg, next), {});
