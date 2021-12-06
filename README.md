@@ -36,6 +36,13 @@ const parsed = typeFlag(process.argv.slice(2), {
     someBoolean: {
         type: Boolean,
         alias: 'b'
+    },
+
+    // Wrap with an array to indicate an array type
+    stringArray: [String],
+
+    numberArray: {
+        type: [Number]
     }
 })
 
@@ -46,9 +53,11 @@ console.log(parsed.flags.someString[0])
 ```ts
 {
     flags: {
-        someString: string[];
-        someNumber: boolean[];
-        someBoolean: number[];
+        someString: string | undefined;
+        someNumber: boolean | undefined;
+        someBoolean: number | undefined;
+        stringArray: string[];
+        numberArray: number[];
     };
     unknownFlags: {
         [flagName: string]: (string | boolean)[];
@@ -142,7 +151,7 @@ const parsed = typeFlag(process.argv.slice(2), {
 ```ts
 const parsed: {
     flags: {
-        size: Sizes[];
+        size: Sizes | undefined;
     };
     ...
 }
@@ -182,7 +191,7 @@ function EnvObject(value: string): Env {
 }
 
 const parsed = typeFlag(process.argv.slice(2), {
-	env: EnvObject,
+	env: [EnvObject],
 });
 
 const env = parsed.flags.env.reduce((agg, next) => Object.assign(agg, next), {});
@@ -206,7 +215,7 @@ $ node ./cli --boolean-flag false
 ```ts
 {
     flags: {
-        booleanFlag: [true]
+        booleanFlag: true
     },
     _: ['false']
 }
@@ -220,7 +229,7 @@ Returns an object with the shape:
 ```ts
 {
     flags: {
-        [flagName: string]: InferredType[];
+        [flagName: string]: InferredType;
     };
     unknownFlags: {
         [flagName: string]: (string | boolean)[];
@@ -241,8 +250,8 @@ Type:
 type TypeFunction = (argvValue: any) => any;
 
 type FlagSchema = {
-    [flagName: string]: TypeFunction | {
-        type?: TypeFunction; // defaults to String
+    [flagName: string]: TypeFunction | [TypeFunction] | {
+        type: TypeFunction | [TypeFunction];
         alias?: string;
     };
 };

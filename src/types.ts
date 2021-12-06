@@ -1,30 +1,31 @@
-export type TypeFunction = (argvValue: any) => any;
+export type TypeFunction<T = any> = (argvValue: any) => T;
+
+export type TypeFunctionArray<T = any> = [TypeFunction<T>];
 
 export type FlagSchema = {
-	type?: TypeFunction;
+	type: TypeFunction | TypeFunctionArray;
 	alias?: string;
 };
 
+export type FlagTypeOrSchema = TypeFunction | TypeFunctionArray | FlagSchema;
+
 export type Flags = {
-	[flagName: string]: TypeFunction | FlagSchema;
+	[flagName: string]: FlagTypeOrSchema;
 };
 
 export type ParsedFlags = {
 	[flag: string]: (string | boolean)[];
 };
 
-export type InferFlagType<Flag extends (TypeFunction | FlagSchema)> = ReturnType<
-	Flag extends TypeFunction
-		// Constructor function
-		? Flag
+export type InferFlagType<
+	Flag extends FlagTypeOrSchema
+> = Flag extends (TypeFunction<infer T> | { type: TypeFunction<infer T> })
+	// Type function return-type
+	? (T | undefined)
 
-		// Schema object
-		: (
-			Flag extends { type: TypeFunction }
-				// Constructor function
-				? Flag['type']
-
-				// Fallback to string
-				: StringConstructor
-		)
->;
+	// Type function return-type in array
+	: (
+		Flag extends (TypeFunctionArray<infer T> | { type: TypeFunctionArray<infer T> })
+			? T[]
+			: never
+	);

@@ -1,8 +1,7 @@
 import type {
 	TypeFunction,
-	FlagSchema,
 	Flags,
-	ParsedFlags,
+	FlagTypeOrSchema,
 } from './types';
 import {
 	toCamelCase,
@@ -10,11 +9,24 @@ import {
 	mapAliases,
 	parseFlag,
 	getDefaultFromTypeWithValue,
-	isFlagSchemaWithType,
 } from './utils';
 
 const isAliasPattern = /^-[\da-z]+/i;
 const isFlagPattern = /^--[\w-]{2,}/;
+
+const getFlagType = (
+	flagSchema: FlagTypeOrSchema,
+): TypeFunction => {
+	if (typeof flagSchema === 'function') {
+		return flagSchema;
+	}
+
+	if (Array.isArray(flagSchema)) {
+		return flagSchema[0];
+	}
+
+	return getFlagType(flagSchema.type);
+};
 
 function typeFlag<Schemas extends Flags>(
 	argv: string[],
@@ -22,33 +34,36 @@ function typeFlag<Schemas extends Flags>(
 ) {
 	const aliasesMap = mapAliases(schemas);
 	const flags = createFlagsObject<Schemas>(schemas);
-	const unknownFlags: ParsedFlags = {};
+	const unknownFlags: {
+		[flag: string]: (string | boolean)[];
+	} = {};
 	const remainingArguments: string[] = [];
 
 	let expectingValue: undefined | ((value?: string | boolean) => void);
 
 	const setKnown = (
-		flagName: string,
-		flagSchema: TypeFunction | FlagSchema,
+		flagName: keyof Schemas,
+		flagSchema: FlagTypeOrSchema,
 		flagValue: any,
 	) => {
-		const flagType = (
-			typeof flagSchema === 'function'
-				? flagSchema
-				: (
-					isFlagSchemaWithType(flagSchema)
-						? flagSchema.type
-						: String
-				)
-		);
+		const flagType = getFlagType(flagSchema);
 
 		flagValue = getDefaultFromTypeWithValue(flagType, flagValue);
 
 		if (flagValue !== undefined && !Number.isNaN(flagValue)) {
-			flags[flagName].push(flagType(flagValue));
+			if (Array.isArray(flags[flagName])) {
+				flags[flagName].push(flagType(flagValue));
+			} else {
+				flags[flagName] = flagType(flagValue);
+			}
 		} else {
 			expectingValue = (value) => {
-				flags[flagName].push(flagType(getDefaultFromTypeWithValue(flagType, value || '')));
+				if (Array.isArray(flags[flagName])) {
+					flags[flagName].push(flagType(getDefaultFromTypeWithValue(flagType, value || '')));
+				} else {
+					flags[flagName] = flagType(getDefaultFromTypeWithValue(flagType, value || ''));
+				}
+
 				expectingValue = undefined;
 			};
 		}
@@ -93,7 +108,7 @@ function typeFlag<Schemas extends Flags>(
 			let { flagName } = parsedFlag;
 
 			if (isAlias) {
-				const aliases = flagName.split('');
+				const aliases = flagName.split(''); // TODO: no need to splitt
 				for (let j = 0; j < aliases.length; j += 1) {
 					const alias = aliases[j];
 					const hasAlias = aliasesMap.get(alias);

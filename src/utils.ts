@@ -3,8 +3,8 @@ import type {
 	TypeFunction,
 	FlagSchema,
 	Flags,
-	ParsedFlags,
 	InferFlagType,
+	FlagTypeOrSchema,
 } from './types';
 
 const kebabCasePattern = /-(\w)/g;
@@ -85,9 +85,9 @@ export function mapAliases<Schemas extends Flags>(
 
 		validateFlagName(schemas, name);
 
-		const schema = schemas[name];
+		const schema = schemas[name] as FlagSchema;
 		if (schema && typeof schema === 'object') {
-			const { alias } = schema as FlagSchema;
+			const { alias } = schema;
 			if (alias) {
 				assert(alias.length > 0, `Invalid flag alias ${stringify(name)}: flag alias cannot be empty`);
 				assert(alias.length === 1, `Invalid flag alias ${stringify(name)}: flag aliases can only be a single-character`);
@@ -107,17 +107,25 @@ export function mapAliases<Schemas extends Flags>(
 	return aliases;
 }
 
+const isArrayType = (schema: FlagTypeOrSchema) => {
+	if (typeof schema === 'function') {
+		return false;
+	}
+
+	return (Array.isArray(schema) || Array.isArray(schema.type));
+};
+
 export const createFlagsObject = <Schemas extends Flags>(schema: Flags) => {
-	const flags: ParsedFlags = {};
+	const flags: Record<string, any> = {};
 
 	for (const flag in schema) {
 		if (hasOwn(schema, flag)) {
-			flags[flag] = [];
+			flags[flag] = isArrayType(schema[flag]) ? [] : undefined;
 		}
 	}
 
 	return flags as {
-		[flag in keyof Schemas]: InferFlagType<Schemas[flag]>[];
+		[flag in keyof Schemas]: InferFlagType<Schemas[flag]>;
 	};
 };
 
@@ -135,10 +143,3 @@ export const getDefaultFromTypeWithValue = (
 
 	return value;
 };
-
-export const isFlagSchemaWithType = (
-	schema: FlagSchema,
-): schema is { type: TypeFunction } => (
-	('type' in schema)
-	&& (typeof schema.type === 'function')
-);

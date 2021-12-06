@@ -1,6 +1,6 @@
 import typeFlag from '../src';
 
-describe('Validation', () => {
+describe('Error handling', () => {
 	test('Empty flag name', () => {
 		expect(() => {
 			typeFlag([], {
@@ -52,7 +52,7 @@ describe('Validation', () => {
 				flagA: String,
 				'flag-a': String,
 			});
-		}).toThrow(/* 'kebab-case version of this name already exists' */);
+		}).toThrow(/* 'Invalid flag name "flagA": collides with flag "flag-a"' */);
 	});
 
 	test('Collision - kebab-case to camelCase', () => {
@@ -61,7 +61,7 @@ describe('Validation', () => {
 				'flag-a': String,
 				flagA: String,
 			});
-		}).toThrow(/* 'camelCase version of this name already exists' */);
+		}).toThrow(/* 'Invalid flag name "flag-a": collides with flag "flagA"' */);
 	});
 
 	test('Collision - alias to alias', () => {
@@ -77,6 +77,22 @@ describe('Validation', () => {
 				},
 			});
 		}).toThrow(/* 'Flag collision: Alias "a" is already used' */);
+	});
+
+	test('Flag type', () => {
+		typeFlag([], {
+			// @ts-expect-error must be a function
+			flagA: false,
+
+			// @ts-expect-error only one element allowed
+			flagB: [String, String],
+
+			// @ts-expect-error only one element allowed
+			flagC: {
+				type: [String, String],
+				alias: 'a',
+			},
+		});
 	});
 });
 
@@ -106,19 +122,9 @@ describe('Parsing', () => {
 			flagB: String,
 		});
 
-		expect<string[]>(parsed.flags.flagA).toEqual(['']);
-		expect<string[]>(parsed.flags.flagB).toEqual([]);
+		expect<string | undefined>(parsed.flags.flagA).toEqual('');
+		expect<string | undefined>(parsed.flags.flagB).toEqual(undefined);
 		expect<string[]>(parsed._).toEqual(['--flagB']);
-	});
-
-	test('flag defaults to string', () => {
-		const parsed = typeFlag(['--string', 'hello'], {
-			string: {
-				alias: 's',
-			},
-		});
-
-		expect<string[]>(parsed.flags.string).toEqual(['hello']);
 	});
 
 	test('strings, booleans, numbers', () => {
@@ -128,9 +134,9 @@ describe('Parsing', () => {
 			number: Number,
 		});
 
-		expect<string[]>(parsed.flags.string).toEqual(['hello', '']);
-		expect<boolean[]>(parsed.flags.boolean).toEqual([true]);
-		expect<number[]>(parsed.flags.number).toEqual([2, Number.NaN]);
+		expect<string | undefined>(parsed.flags.string).toEqual('');
+		expect<boolean | undefined>(parsed.flags.boolean).toEqual(true);
+		expect<number | undefined>(parsed.flags.number).toEqual(Number.NaN);
 		expect<string[]>(parsed._).toEqual(['world']);
 	});
 
@@ -139,7 +145,7 @@ describe('Parsing', () => {
 			someString: String,
 		});
 
-		expect<string[]>(parsed.flags.someString).toEqual(['2', '3', '4']);
+		expect<string | undefined>(parsed.flags.someString).toEqual('4');
 	});
 
 	test('flag=', () => {
@@ -152,9 +158,9 @@ describe('Parsing', () => {
 			number: Number,
 		});
 
-		expect<string[]>(parsed.flags.string).toEqual(['hello', 'bye', '']);
-		expect<boolean[]>(parsed.flags.boolean).toEqual([true, false, true]);
-		expect<number[]>(parsed.flags.number).toEqual([3.14, Number.NaN]);
+		expect<string | undefined>(parsed.flags.string).toEqual('');
+		expect<boolean | undefined>(parsed.flags.boolean).toEqual(true);
+		expect<number | undefined>(parsed.flags.number).toEqual(Number.NaN);
 		expect<string[]>(parsed._).toEqual(['world']);
 	});
 
@@ -166,7 +172,7 @@ describe('Parsing', () => {
 			},
 		});
 
-		expect<string[]>(parsed.flags.string).toEqual(['A=hello', 'B=bye']);
+		expect<string | undefined>(parsed.flags.string).toEqual('B=bye');
 	});
 
 	test('flag: . to allow dot-notation', () => {
@@ -177,7 +183,7 @@ describe('Parsing', () => {
 			},
 		});
 
-		expect<string[]>(parsed.flags.string).toEqual(['A=hello', 'B=bye']);
+		expect<string | undefined>(parsed.flags.string).toEqual('B=bye');
 	});
 
 	test('aliases', () => {
@@ -192,8 +198,8 @@ describe('Parsing', () => {
 			},
 		});
 
-		expect<string[]>(parsed.flags.string).toEqual(['hello', '']);
-		expect<boolean[]>(parsed.flags.boolean).toEqual([true]);
+		expect<string | undefined>(parsed.flags.string).toEqual('');
+		expect<boolean | undefined>(parsed.flags.boolean).toEqual(true);
 		expect<string[]>(Object.keys(parsed.flags)).toEqual(['string', 'boolean']);
 		expect<string[]>(parsed._).toEqual(['world']);
 	});
@@ -265,9 +271,26 @@ describe('Parsing', () => {
 			},
 		);
 
-		expect<Date[]>(parsed.flags.date).toEqual([
-			ParseDate('2011-05-03'),
-		]);
-		expect<JsFormats[]>(parsed.flags.format).toEqual(['esm']);
+		expect<Date | undefined>(parsed.flags.date).toEqual(ParseDate('2011-05-03'));
+		expect<JsFormats | undefined>(parsed.flags.format).toEqual('esm');
+	});
+
+	test('strings, booleans, numbers, array', () => {
+		const parsed = typeFlag(['--boolean', 'world', '--number', '2', '--number', '--number-array', '1', '--number-array', '2', '--string-array', 'a', '--string-array', 'b'], {
+			string: String,
+			boolean: Boolean,
+			number: Number,
+			stringArray: [String],
+			numberArray: {
+				type: [Number],
+			},
+		});
+
+		expect<string | undefined>(parsed.flags.string).toEqual(undefined);
+		expect<boolean | undefined>(parsed.flags.boolean).toEqual(true);
+		expect<number | undefined>(parsed.flags.number).toEqual(Number.NaN);
+		expect<string[]>(parsed.flags.stringArray).toEqual(['a', 'b']);
+		expect<number[]>(parsed.flags.numberArray).toEqual([1, 2]);
+		expect<string[]>(parsed._).toEqual(['world']);
 	});
 });

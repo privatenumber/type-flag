@@ -20,7 +20,7 @@ function EnvironmentObject(value: string): Environment {
 }
 
 const parsed = typeFlag(process.argv.slice(2), {
-	env: EnvironmentObject,
+	env: [EnvironmentObject],
 });
 
 // eslint-disable-next-line unicorn/no-array-reduce,unicorn/prefer-object-from-entries
