@@ -1,6 +1,6 @@
 import typeFlag from '../src';
 
-describe('Validation', () => {
+describe('Error handling', () => {
 	test('Empty flag name', () => {
 		expect(() => {
 			typeFlag([], {
@@ -52,7 +52,7 @@ describe('Validation', () => {
 				flagA: String,
 				'flag-a': String,
 			});
-		}).toThrow(/* 'kebab-case version of this name already exists' */);
+		}).toThrow(/* 'Invalid flag name "flagA": collides with flag "flag-a"' */);
 	});
 
 	test('Collision - kebab-case to camelCase', () => {
@@ -61,7 +61,7 @@ describe('Validation', () => {
 				'flag-a': String,
 				flagA: String,
 			});
-		}).toThrow(/* 'camelCase version of this name already exists' */);
+		}).toThrow(/* 'Invalid flag name "flag-a": collides with flag "flagA"' */);
 	});
 
 	test('Collision - alias to alias', () => {
@@ -77,6 +77,22 @@ describe('Validation', () => {
 				},
 			});
 		}).toThrow(/* 'Flag collision: Alias "a" is already used' */);
+	});
+
+	test('Flag type', () => {
+		typeFlag([], {
+			// @ts-expect-error must be a function
+			flagA: false,
+
+			// @ts-expect-error only one element allowed
+			flagB: [String, String],
+
+			// @ts-expect-error only one element allowed
+			flagC: {
+				type: [String, String],
+				alias: 'a',
+			},
+		});
 	});
 });
 
