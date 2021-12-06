@@ -108,11 +108,10 @@ function typeFlag<Schemas extends Flags>(
 			let { flagName } = parsedFlag;
 
 			if (isAlias) {
-				const aliases = flagName.split(''); // TODO: no need to splitt
-				for (let j = 0; j < aliases.length; j += 1) {
-					const alias = aliases[j];
+				for (let j = 0; j < flagName.length; j += 1) {
+					const alias = flagName[j];
 					const hasAlias = aliasesMap.get(alias);
-					const isLast = j === aliases.length - 1;
+					const isLast = j === flagName.length - 1;
 
 					if (hasAlias) {
 						setKnown(
