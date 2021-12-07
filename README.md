@@ -47,11 +47,9 @@ const parsed = typeFlag({
         type: [Number]
     }
 })
-
-console.log(parsed.flags.someString)
 ```
 
-`parsed` resolves to the following type:
+`parsed` has the following type:
 ```ts
 {
     flags: {
