@@ -300,7 +300,9 @@ An object containing flag schema definitions. Where the key is the flag name, an
 #### argv
 Type: `string[]`
 
-The argv array to parse. Defaults to `process.argv.slice(2)`.
+Default: `process.argv.slice(2)`
+
+The argv array to parse.
 
 ## 🙋‍♀️ FAQ
 
