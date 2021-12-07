@@ -16,8 +16,8 @@ const isAliasPattern = /^-[\da-z]+/i;
 const isFlagPattern = /^--[\w-]{2,}/;
 
 function typeFlag<Schemas extends Flags>(
-	argv: string[],
 	schemas: Schemas,
+	argv: string[] = process.argv.slice(2),
 ) {
 	const aliasesMap = mapAliases(schemas);
 	const flags = createFlagsObject<Schemas>(schemas);

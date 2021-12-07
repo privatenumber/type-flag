@@ -3,70 +3,70 @@ import typeFlag from '../src';
 describe('Error handling', () => {
 	test('Empty flag name', () => {
 		expect(() => {
-			typeFlag([], {
+			typeFlag({
 				'': String,
-			});
+			}, []);
 		}).toThrow(/* 'Invalid flag name: empty' */);
 	});
 
 	test('Single character flag name', () => {
 		expect(() => {
-			typeFlag([], {
+			typeFlag({
 				i: String,
-			});
+			}, []);
 		}).toThrow(/* 'Invalid flag name: single characters are reserved for aliases' */);
 	});
 
 	test('Multi-character alias', () => {
 		expect(() => {
-			typeFlag([], {
+			typeFlag({
 				flagA: {
 					type: String,
 					alias: 'flag-a',
 				},
-			});
+			}, []);
 		}).toThrow(/* 'Multi character' */);
 	});
 
 	test('Reserved characters', () => {
 		expect(() => {
-			typeFlag([], { 'flag a': String });
+			typeFlag({ 'flag a': String }, []);
 		}).toThrow(/* Flag name cannot contain the character " " */);
 
 		expect(() => {
-			typeFlag([], { 'flag=b': String });
+			typeFlag({ 'flag=b': String }, []);
 		}).toThrow(/* Flag name cannot contain the character "=" */);
 
 		expect(() => {
-			typeFlag([], { 'flag:c': String });
+			typeFlag({ 'flag:c': String }, []);
 		}).toThrow(/* Flag name cannot contain the character ":" */);
 
 		expect(() => {
-			typeFlag([], { 'flag.d': String });
+			typeFlag({ 'flag.d': String }, []);
 		}).toThrow(/* Flag name cannot contain the character "." */);
 	});
 
 	test('Collision - camelCase to kebab-case', () => {
 		expect(() => {
-			typeFlag([], {
+			typeFlag({
 				flagA: String,
 				'flag-a': String,
-			});
+			}, []);
 		}).toThrow(/* 'Invalid flag name "flagA": collides with flag "flag-a"' */);
 	});
 
 	test('Collision - kebab-case to camelCase', () => {
 		expect(() => {
-			typeFlag([], {
+			typeFlag({
 				'flag-a': String,
 				flagA: String,
-			});
+			}, []);
 		}).toThrow(/* 'Invalid flag name "flag-a": collides with flag "flagA"' */);
 	});
 
 	test('Collision - alias to alias', () => {
 		expect(() => {
-			typeFlag([], {
+			typeFlag({
 				flagA: {
 					type: String,
 					alias: 'a',
@@ -75,12 +75,12 @@ describe('Error handling', () => {
 					type: String,
 					alias: 'a',
 				},
-			});
+			}, []);
 		}).toThrow(/* 'Flag collision: Alias "a" is already used' */);
 	});
 
 	test('Flag type', () => {
-		typeFlag([], {
+		typeFlag({
 			// @ts-expect-error must be a function
 			flagA: false,
 
@@ -106,13 +106,13 @@ describe('Error handling', () => {
 				// @ts-expect-error required & default are mutually exclusive
 				default: '',
 			},
-		});
+		}, []);
 	});
 });
 
 describe('Parsing', () => {
 	test('invalid consolidated aliases', () => {
-		const parsed = typeFlag(['-invalidAlias'], {});
+		const parsed = typeFlag({}, ['-invalidAlias']);
 
 		expect(parsed).toStrictEqual({
 			_: [],
@@ -131,10 +131,10 @@ describe('Parsing', () => {
 	});
 
 	test('don\'t parse after --', () => {
-		const parsed = typeFlag(['--flagA', '--', '--flagB'], {
+		const parsed = typeFlag({
 			flagA: String,
 			flagB: String,
-		});
+		}, ['--flagA', '--', '--flagB']);
 
 		expect<string | undefined>(parsed.flags.flagA).toBe('');
 		expect<string | undefined>(parsed.flags.flagB).toBe(undefined);
@@ -142,11 +142,11 @@ describe('Parsing', () => {
 	});
 
 	test('strings, booleans, numbers', () => {
-		const parsed = typeFlag(['--string', 'hello', '--boolean', 'world', '--string', '--number', '2', '--number'], {
+		const parsed = typeFlag({
 			string: String,
 			boolean: Boolean,
 			number: Number,
-		});
+		}, ['--string', 'hello', '--boolean', 'world', '--string', '--number', '2', '--number']);
 
 		expect<string | undefined>(parsed.flags.string).toBe('');
 		expect<boolean | undefined>(parsed.flags.boolean).toBe(true);
@@ -155,31 +155,31 @@ describe('Parsing', () => {
 	});
 
 	test('convert kebab-case to camelCase', () => {
-		const parsed = typeFlag(['--some-string=2', '--someString=3', '--some-string=4'], {
+		const parsed = typeFlag({
 			someString: String,
-		});
+		}, ['--some-string=2', '--someString=3', '--some-string=4']);
 
 		expect<string | undefined>(parsed.flags.someString).toBe('4');
 	});
 
 	test('kebab-case flags', () => {
-		const parsed = typeFlag(['--some-string=2', '--someString=3', '--some-string=4'], {
+		const parsed = typeFlag({
 			'some-string': String,
-		});
+		}, ['--some-string=2', '--someString=3', '--some-string=4']);
 
 		expect<string | undefined>(parsed.flags['some-string']).toBe('4');
 		expect(!('someString' in parsed.flags)).toBe(true);
 	});
 
 	test('flag=', () => {
-		const parsed = typeFlag(['--string=hello', '-s=bye', '--string=', '--boolean=true', '--boolean=false', '--boolean=', 'world', '--number=3.14', '--number='], {
+		const parsed = typeFlag({
 			string: {
 				type: String,
 				alias: 's',
 			},
 			boolean: Boolean,
 			number: Number,
-		});
+		}, ['--string=hello', '-s=bye', '--string=', '--boolean=true', '--boolean=false', '--boolean=', 'world', '--number=3.14', '--number=']);
 
 		expect<string | undefined>(parsed.flags.string).toBe('');
 		expect<boolean | undefined>(parsed.flags.boolean).toBe(true);
@@ -188,29 +188,29 @@ describe('Parsing', () => {
 	});
 
 	test('flag: - to allow the use of = in values (or vice versa)', () => {
-		const parsed = typeFlag(['--string:A=hello', '-s:B=bye'], {
+		const parsed = typeFlag({
 			string: {
 				type: String,
 				alias: 's',
 			},
-		});
+		}, ['--string:A=hello', '-s:B=bye']);
 
 		expect<string | undefined>(parsed.flags.string).toBe('B=bye');
 	});
 
 	test('flag: . to allow dot-notation', () => {
-		const parsed = typeFlag(['--string.A=hello', '-s.B=bye'], {
+		const parsed = typeFlag({
 			string: {
 				type: String,
 				alias: 's',
 			},
-		});
+		}, ['--string.A=hello', '-s.B=bye']);
 
 		expect<string | undefined>(parsed.flags.string).toBe('B=bye');
 	});
 
 	test('aliases', () => {
-		const parsed = typeFlag(['-s', 'hello', '-b', 'world', '-s'], {
+		const parsed = typeFlag({
 			string: {
 				type: String,
 				alias: 's',
@@ -219,7 +219,7 @@ describe('Parsing', () => {
 				type: Boolean,
 				alias: 'b',
 			},
-		});
+		}, ['-s', 'hello', '-b', 'world', '-s']);
 
 		expect<string | undefined>(parsed.flags.string).toBe('');
 		expect<boolean | undefined>(parsed.flags.boolean).toBe(true);
@@ -229,6 +229,7 @@ describe('Parsing', () => {
 
 	test('unknown flags', () => {
 		const parsed = typeFlag(
+			{},
 			[
 				'--unknownFlag=false',
 				'--unknownFlag=',
@@ -246,7 +247,6 @@ describe('Parsing', () => {
 				'-ff=a',
 				'--kebab-case',
 			],
-			{},
 		);
 
 		expect<{
@@ -284,14 +284,14 @@ describe('Parsing', () => {
 		};
 
 		const parsed = typeFlag(
-			[
-				'--date=2011-05-03',
-				'--format=esm',
-			],
 			{
 				date: ParseDate,
 				format: JsFormat,
 			},
+			[
+				'--date=2011-05-03',
+				'--format=esm',
+			],
 		);
 
 		expect<Date | undefined>(parsed.flags.date).toStrictEqual(ParseDate('2011-05-03'));
@@ -299,7 +299,7 @@ describe('Parsing', () => {
 	});
 
 	test('strings, booleans, numbers, array', () => {
-		const parsed = typeFlag(['--boolean', 'world', '--number', '2', '--number', '--number-array', '1', '--number-array', '2', '--string-array', 'a', '--string-array', 'b'], {
+		const parsed = typeFlag({
 			string: String,
 			boolean: Boolean,
 			number: Number,
@@ -307,7 +307,7 @@ describe('Parsing', () => {
 			numberArray: {
 				type: [Number],
 			},
-		});
+		}, ['--boolean', 'world', '--number', '2', '--number', '--number-array', '1', '--number-array', '2', '--string-array', 'a', '--string-array', 'b']);
 
 		expect<string | undefined>(parsed.flags.string).toBe(undefined);
 		expect<boolean | undefined>(parsed.flags.boolean).toBe(true);
@@ -319,7 +319,7 @@ describe('Parsing', () => {
 
 	describe('Required flag', () => {
 		test('Types and parsing', () => {
-			const parsed = typeFlag(['--string', 'hello', '--boolean', '--number', '1'], {
+			const parsed = typeFlag({
 				string: {
 					type: String,
 					required: true,
@@ -329,7 +329,7 @@ describe('Parsing', () => {
 					required: true,
 				},
 				number: Number,
-			});
+			}, ['--string', 'hello', '--boolean', '--number', '1']);
 
 			expect<string>(parsed.flags.string).toBe('hello');
 			expect<boolean>(parsed.flags.boolean).toBe(true);
@@ -338,28 +338,28 @@ describe('Parsing', () => {
 
 		test('Throw on missing', () => {
 			expect(() => {
-				typeFlag([], {
+				typeFlag({
 					flagA: {
 						type: String,
 						required: true,
 					},
-				});
+				}, []);
 			}).toThrow(/* 'Missing required option "--flagA"' */);
 
 			expect(() => {
-				typeFlag([], {
+				typeFlag({
 					flagA: {
 						type: [String],
 						required: true,
 					},
-				});
+				}, []);
 			}).toThrow(/* 'Missing required option "--flagA"' */);
 		});
 	});
 
 	describe('Default flag value', () => {
 		test('Types and parsing', () => {
-			const parsed = typeFlag([], {
+			const parsed = typeFlag({
 				string: {
 					type: String,
 					default: 'hello world',
@@ -381,7 +381,7 @@ describe('Parsing', () => {
 					type: [String],
 					default: () => ['hello'],
 				},
-			});
+			}, []);
 
 			expect<string>(parsed.flags.string).toBe('hello world');
 			expect<boolean | number>(parsed.flags.inconsistentTypes).toBe(1);
