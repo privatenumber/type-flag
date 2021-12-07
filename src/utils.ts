@@ -157,18 +157,31 @@ export const validateFlags = <Schemas extends Flags>(
 
 		const schema = schemas[flagName];
 
+		if (!schema) {
+			continue;
+		}
+
+		const value = flags[flagName];
 		if (
-			schema
-			&& ('required' in schema)
+			value !== undefined
+			&& !(Array.isArray(value) && value.length === 0)
+		) {
+			continue;
+		}
+
+		if ('default' in schema) {
+			let defaultValue = schema.default;
+
+			if (typeof defaultValue === 'function') {
+				defaultValue = defaultValue();
+			}
+
+			flags[flagName] = defaultValue;
+		} else if (
+			('required' in schema)
 			&& schema.required
 		) {
-			const value = flags[flagName];
-			if (
-				value === undefined
-				|| (Array.isArray(value) && value.length === 0)
-			) {
-				throw new Error(`Missing required option "--${flagName}"`);
-			}
+			throw new Error(`Missing required option "--${flagName}"`);
 		}
 	}
 };

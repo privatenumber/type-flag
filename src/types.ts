@@ -1,12 +1,21 @@
-export type TypeFunction<T = any> = (argvValue: any) => T;
+export type TypeFunction<T = any> = (value: any) => T;
 
 export type TypeFunctionArray<T = any> = [TypeFunction<T>];
 
-export type FlagSchema = {
-	type: TypeFunction | TypeFunctionArray;
+type FlagSchemaBase<T> = {
+	type: TypeFunction<T> | TypeFunctionArray<T>;
 	alias?: string;
-	required?: true;
 };
+
+export type FlagSchema<T = any> = (
+	FlagSchemaBase<T>
+	| (FlagSchemaBase<T> & { required: true })
+	| (FlagSchemaBase<T> & {
+		default: T | (() => T);
+		// Mutually exclusive with default
+		required?: undefined;
+	})
+);
 
 export type FlagTypeOrSchema = TypeFunction | TypeFunctionArray | FlagSchema;
 
@@ -23,7 +32,7 @@ export type InferFlagType<
 > = Flag extends (TypeFunction<infer T> | { type: TypeFunction<infer T> })
 	// Type function return-type
 	? (
-		Flag extends { required: true }
+		Flag extends { required?: true; default?: any }
 			? T
 			: T | undefined
 	)
