@@ -1,4 +1,3 @@
-import assert from 'assert';
 import type {
 	TypeFunction,
 	FlagSchema,
@@ -48,11 +47,19 @@ const validateFlagName = <Schemas extends Flags>(
 	flagName: string,
 ) => {
 	const errorPrefix = `Invalid flag name ${stringify(flagName)}:`;
-	assert(flagName.length > 0, `${errorPrefix} flag name cannot be empty}`);
-	assert(flagName.length !== 1, `${errorPrefix} single characters are reserved for aliases`);
+
+	if (flagName.length === 0) {
+		throw new Error(`${errorPrefix} flag name cannot be empty}`);
+	}
+
+	if (flagName.length === 1) {
+		throw new Error(`${errorPrefix} single characters are reserved for aliases`);
+	}
 
 	const hasReservedCharacter = flagName.match(reservedCharactersPattern);
-	assert(!hasReservedCharacter, `${errorPrefix} flag name cannot contain the character ${stringify(hasReservedCharacter?.[0])}`);
+	if (hasReservedCharacter) {
+		throw new Error(`${errorPrefix} flag name cannot contain the character ${stringify(hasReservedCharacter?.[0])}`);
+	}
 
 	let checkDifferentCase;
 
@@ -62,11 +69,8 @@ const validateFlagName = <Schemas extends Flags>(
 		checkDifferentCase = toKebabCase(flagName);
 	}
 
-	if (checkDifferentCase) {
-		assert(
-			!hasOwn(schemas, checkDifferentCase),
-			`${errorPrefix} collides with flag ${stringify(checkDifferentCase)}`,
-		);
+	if (checkDifferentCase && hasOwn(schemas, checkDifferentCase)) {
+		throw new Error(`${errorPrefix} collides with flag ${stringify(checkDifferentCase)}`);
 	}
 };
 
@@ -89,12 +93,17 @@ export function mapAliases<Schemas extends Flags>(
 		if (schema && typeof schema === 'object') {
 			const { alias } = schema;
 			if (alias) {
-				assert(alias.length > 0, `Invalid flag alias ${stringify(flagName)}: flag alias cannot be empty`);
-				assert(alias.length === 1, `Invalid flag alias ${stringify(flagName)}: flag aliases can only be a single-character`);
-				assert(
-					!aliases.has(alias),
-					`Flag collision: Alias "${alias}" is already used`,
-				);
+				if (alias.length === 0) {
+					throw new Error(`Invalid flag alias ${stringify(flagName)}: flag alias cannot be empty`);
+				}
+
+				if (alias.length > 1) {
+					throw new Error(`Invalid flag alias ${stringify(flagName)}: flag aliases can only be a single-character`);
+				}
+
+				if (aliases.has(alias)) {
+					throw new Error(`Flag collision: Alias "${alias}" is already used`);
+				}
 
 				aliases.set(alias, {
 					name: flagName,
