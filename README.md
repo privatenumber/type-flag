@@ -94,6 +94,8 @@ Array types will not have an `undefined` type, but may be an empty array.
 #### Default values
 Set a default value with the `default` property. When a default is provided, the flag type will not include `undefined`.
 
+Pass in a function to return mutable values.
+
 ```ts
 const parsed = typeFlag(process.argv.slice(2), {
     someNumber: {
