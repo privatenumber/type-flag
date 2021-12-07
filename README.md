@@ -3,7 +3,7 @@
 Parse CLI argv flags with first-class type support. Think [minimist](https://github.com/substack/minimist), but typed!
 
 ### Features
-- **Typed flags** Automatically infer types on parsed argvs!
+- **Strongly typed** Apply types to parsed argvs!
 - **Custom types & validation** Pass in any function and the type will be inferred!
 - **Tiny** 2.7 kB minified!
 
@@ -21,7 +21,7 @@ Here's a simple usage example:
 ```ts
 import typeFlag from 'type-flag'
 
-// Pass in argvs, flag schemas, and parse! 
+// Pass in flag schemas, and parse! 
 const parsed = typeFlag({
 
     // Define flags here...
