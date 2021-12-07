@@ -1,6 +1,6 @@
 # type-flag <a href="https://npm.im/type-flag"><img src="https://badgen.net/npm/v/type-flag"></a> <a href="https://npm.im/type-flag"><img src="https://badgen.net/npm/dm/type-flag"></a> <a href="https://packagephobia.now.sh/result?p=type-flag"><img src="https://packagephobia.now.sh/badge?p=type-flag"></a>
 
-Parse CLI argv flags with first-class type support. Think [minimist](https://github.com/substack/minimist), but typed!
+CLI argument parser with first-class type support.
 
 ### Features
 - **Strongly typed** Apply types to parsed argvs!
@@ -303,43 +303,3 @@ Type: `string[]`
 Default: `process.argv.slice(2)`
 
 The argv array to parse.
-
-## 🙋‍♀️ FAQ
-
-### Why do I have to manually pass in `process.argv`?
-Few reasons:
-- Type-flag is designed to be an utility tool that can be extended by other CLI tools
-- To mock the simplicity & clarity of [minimist](https://github.com/substack/minimist)
-- Explicitly passing it in makes it easier to intercept for pre-processing and also testing
-
-### Why are the parsed flags in an array?
-To minimize the scope of the library to parsing & types.
-
-This way, the user can choose whether to accept an array of multiple values, or to pop the last element as a single value.
-
-Support for validation, required flags, default values, etc. should be added in user-land.
-
-### How is it different from minimist?
-
-- Typed schema
-
-	By default, minimist assumes usage is correct and infers flag types based on how the flags are used.
-
-	type-flag takes in flag schemas to determine how to parse flags.
-
-	For example, given a string and boolean flag with no values passed in:
-	```
-	$ cli --string --boolean value
-	```
-
-	minimist unconfigured would interpret `--string` as a boolean, and `--boolean` as a string. The `string` and `boolean` options would need to specify the appropriate flags, but they would not be automatically typed.
-	
-	type-flag would interpret `--string` with an empty string passed in, `--boolean` to be `true`, and `value` to be passed in as an argument (in `_`).
-
-- Combined aliases
-
-	It's pretty common in CLIs to to combine aliases into one flag (eg. `-a -v -z` → `-avz`).
-	
-	This is supported in both minimist and type-flag, however, type-flag interprets the following differently: `-n9`
-
-	minimist interprets that as `-n 9` or `-n=9`. But type-flag considers that `-9` may refer to a flag and interprets it as `-n -9`. A real example of this flag is in [`gzip`](https://linux.die.net/man/1/gzip#:~:text=-9), where `-9` is an alias for "best compression".
