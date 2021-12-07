@@ -28,15 +28,16 @@ const parsed = typeFlag(process.argv.slice(2), {
 
     someString: String,
 
-    someNumber: {
-        type: Number,
-        alias: 'n' // Set an alias (eg. -n <number>)
-    },
-
     someBoolean: {
         type: Boolean,
         alias: 'b',
         required: true
+    },
+
+    someNumber: {
+        type: Number,
+        alias: 'n',
+        default: 2
     },
 
     // Wrap with an array to indicate an array type
@@ -55,8 +56,8 @@ console.log(parsed.flags.someString)
 {
     flags: {
         someString: string | undefined;
-        someNumber: number | undefined;
         someBoolean: boolean;
+        someNumber: number;
         stringArray: string[];
         numberArray: number[];
     };
@@ -70,7 +71,10 @@ console.log(parsed.flags.someString)
 ### Usage
 
 #### Required flags
-Non-array types can be `undefined` unless `required: true` is set:
+By default, all flags are optional so the flag type may include `undefined` in case it was not passed in.
+
+Make a flag required by setting `required: true` and TypeFlag will throw when it is not passed in.
+
 ```ts
 const parsed = typeFlag(process.argv.slice(2), {
     someNumber: {
@@ -80,12 +84,33 @@ const parsed = typeFlag(process.argv.slice(2), {
 })
 ```
 
-When a flag is required, the return type can no longer be `undefined`:
+When a flag is required, the return type will no longer include `undefined`:
 ```ts
 {
-    someNumber: number;
+    someNumber: number; // No more " | undefined"
 }
 ```
+
+#### Default values
+Set a default value with the `default` property. When a default is provided, the flag type will not include `undefined`.
+
+Pass in a function to return mutable values.
+
+```ts
+const parsed = typeFlag(process.argv.slice(2), {
+    someNumber: {
+        type: Number,
+        default: 1
+    },
+
+    manyNumbers: {
+        type: [Number],
+        default: () => [1, 2, 3]
+    }
+})
+```
+
+Note, since a flag with a default value is inherently an optional flag, it is mutually exclusive with the `required` option.
 
 #### kebab-case flags mapped to camelCase
 When passing in the flags, they can be in kebab-case and will automatically map to the camelCase equivalent.

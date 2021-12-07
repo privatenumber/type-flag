@@ -1,5 +1,4 @@
 import type {
-	TypeFunction,
 	Flags,
 	FlagTypeOrSchema,
 } from './types';
@@ -10,24 +9,11 @@ import {
 	parseFlag,
 	getDefaultFromTypeWithValue,
 	validateFlags,
+	getFlagType,
 } from './utils';
 
 const isAliasPattern = /^-[\da-z]+/i;
 const isFlagPattern = /^--[\w-]{2,}/;
-
-const getFlagType = (
-	flagSchema: FlagTypeOrSchema,
-): TypeFunction => {
-	if (typeof flagSchema === 'function') {
-		return flagSchema;
-	}
-
-	if (Array.isArray(flagSchema)) {
-		return flagSchema[0];
-	}
-
-	return getFlagType(flagSchema.type);
-};
 
 function typeFlag<Schemas extends Flags>(
 	argv: string[],
