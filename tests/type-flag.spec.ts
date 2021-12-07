@@ -148,6 +148,15 @@ describe('Parsing', () => {
 		expect<string | undefined>(parsed.flags.someString).toEqual('4');
 	});
 
+	test('kebab-case flags', () => {
+		const parsed = typeFlag(['--some-string=2', '--someString=3', '--some-string=4'], {
+			'some-string': String,
+		});
+
+		expect<string | undefined>(parsed.flags['some-string']).toEqual('4');
+		expect(!('someString' in parsed.flags)).toBe(true);
+	});
+
 	test('flag=', () => {
 		const parsed = typeFlag(['--string=hello', '-s=bye', '--string=', '--boolean=true', '--boolean=false', '--boolean=', 'world', '--number=3.14', '--number='], {
 			string: {
@@ -292,5 +301,45 @@ describe('Parsing', () => {
 		expect<string[]>(parsed.flags.stringArray).toEqual(['a', 'b']);
 		expect<number[]>(parsed.flags.numberArray).toEqual([1, 2]);
 		expect<string[]>(parsed._).toEqual(['world']);
+	});
+
+	describe('Required flag', () => {
+		test('Types and parsing', () => {
+			const parsed = typeFlag(['--string', 'hello', '--boolean', '--number', '1'], {
+				string: {
+					type: String,
+					required: true,
+				},
+				boolean: {
+					type: Boolean,
+					required: true,
+				},
+				number: Number,
+			});
+
+			expect<string>(parsed.flags.string).toEqual('hello');
+			expect<boolean>(parsed.flags.boolean).toEqual(true);
+			expect<number | undefined>(parsed.flags.number).toEqual(1);
+		});
+
+		test('Throw on missing', () => {
+			expect(() => {
+				typeFlag([], {
+					flagA: {
+						type: String,
+						required: true,
+					},
+				});
+			}).toThrow(/* 'Missing required option "--flagA"' */);
+
+			expect(() => {
+				typeFlag([], {
+					flagA: {
+						type: [String],
+						required: true,
+					},
+				});
+			}).toThrow(/* 'Missing required option "--flagA"' */);
+		});
 	});
 });

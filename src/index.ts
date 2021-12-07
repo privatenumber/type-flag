@@ -9,6 +9,7 @@ import {
 	mapAliases,
 	parseFlag,
 	getDefaultFromTypeWithValue,
+	validateFlags,
 } from './utils';
 
 const isAliasPattern = /^-[\da-z]+/i;
@@ -153,6 +154,8 @@ function typeFlag<Schemas extends Flags>(
 	if (expectingValue) {
 		expectingValue();
 	}
+
+	validateFlags(schemas, flags);
 
 	return {
 		flags,
