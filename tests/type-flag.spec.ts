@@ -1,82 +1,109 @@
 import typeFlag from '../src';
 
 describe('Error handling', () => {
-	test('Empty flag name', () => {
-		expect(() => {
-			typeFlag({
-				'': String,
-			}, []);
-		}).toThrow(/* 'Invalid flag name: empty' */);
+	describe('Invalid flag name', () => {
+		test('Empty flag name', () => {
+			expect(() => {
+				typeFlag({
+					'': String,
+				}, []);
+			}).toThrow(/* 'Invalid flag name: empty' */);
+		});
+
+		test('Single character flag name', () => {
+			expect(() => {
+				typeFlag({
+					i: String,
+				}, []);
+			}).toThrow(/* 'Invalid flag name: single characters are reserved for aliases' */);
+		});
+
+		test('Reserved characters', () => {
+			expect(() => {
+				typeFlag({ 'flag a': String }, []);
+			}).toThrow(/* Flag name cannot contain the character " " */);
+
+			expect(() => {
+				typeFlag({ 'flag=b': String }, []);
+			}).toThrow(/* Flag name cannot contain the character "=" */);
+
+			expect(() => {
+				typeFlag({ 'flag:c': String }, []);
+			}).toThrow(/* Flag name cannot contain the character ":" */);
+
+			expect(() => {
+				typeFlag({ 'flag.d': String }, []);
+			}).toThrow(/* Flag name cannot contain the character "." */);
+		});
+
+		test('Collision - camelCase to kebab-case', () => {
+			expect(() => {
+				typeFlag({
+					flagA: String,
+					'flag-a': String,
+				}, []);
+			}).toThrow(/* 'Invalid flag name "flagA": collides with flag "flag-a"' */);
+		});
+
+		test('Collision - kebab-case to camelCase', () => {
+			expect(() => {
+				typeFlag({
+					'flag-a': String,
+					flagA: String,
+				}, []);
+			}).toThrow(/* 'Invalid flag name "flag-a": collides with flag "flagA"' */);
+		});
 	});
 
-	test('Single character flag name', () => {
-		expect(() => {
-			typeFlag({
-				i: String,
-			}, []);
-		}).toThrow(/* 'Invalid flag name: single characters are reserved for aliases' */);
+	describe('Invalid alias', () => {
+		test('Empty alias', () => {
+			expect(() => {
+				typeFlag({
+					flagA: {
+						type: String,
+						alias: '',
+					},
+				}, []);
+			}).toThrow(/* 'Empty alias' */);
+		});
+
+		test('Multi-character alias', () => {
+			expect(() => {
+				typeFlag({
+					flagA: {
+						type: String,
+						alias: 'flag-a',
+					},
+				}, []);
+			}).toThrow(/* 'Multi character' */);
+		});
+
+		test('Collision - alias to alias', () => {
+			expect(() => {
+				typeFlag({
+					flagA: {
+						type: String,
+						alias: 'a',
+					},
+					flagB: {
+						type: String,
+						alias: 'a',
+					},
+				}, []);
+			}).toThrow(/* 'Flag collision: Alias "a" is already used' */);
+		});
 	});
 
-	test('Multi-character alias', () => {
+	test('Missing required type', () => {
 		expect(() => {
 			typeFlag({
-				flagA: {
-					type: String,
-					alias: 'flag-a',
+				// @ts-expect-error missing
+				missingType: {
+					alias: 't',
 				},
-			}, []);
-		}).toThrow(/* 'Multi character' */);
-	});
 
-	test('Reserved characters', () => {
-		expect(() => {
-			typeFlag({ 'flag a': String }, []);
-		}).toThrow(/* Flag name cannot contain the character " " */);
-
-		expect(() => {
-			typeFlag({ 'flag=b': String }, []);
-		}).toThrow(/* Flag name cannot contain the character "=" */);
-
-		expect(() => {
-			typeFlag({ 'flag:c': String }, []);
-		}).toThrow(/* Flag name cannot contain the character ":" */);
-
-		expect(() => {
-			typeFlag({ 'flag.d': String }, []);
-		}).toThrow(/* Flag name cannot contain the character "." */);
-	});
-
-	test('Collision - camelCase to kebab-case', () => {
-		expect(() => {
-			typeFlag({
-				flagA: String,
-				'flag-a': String,
-			}, []);
-		}).toThrow(/* 'Invalid flag name "flagA": collides with flag "flag-a"' */);
-	});
-
-	test('Collision - kebab-case to camelCase', () => {
-		expect(() => {
-			typeFlag({
-				'flag-a': String,
-				flagA: String,
-			}, []);
-		}).toThrow(/* 'Invalid flag name "flag-a": collides with flag "flagA"' */);
-	});
-
-	test('Collision - alias to alias', () => {
-		expect(() => {
-			typeFlag({
-				flagA: {
-					type: String,
-					alias: 'a',
-				},
-				flagB: {
-					type: String,
-					alias: 'a',
-				},
-			}, []);
-		}).toThrow(/* 'Flag collision: Alias "a" is already used' */);
+			}, ['--missing-type']);
+		}).toThrow('Missing type on flag "missingType"');
 	});
 
 	test('Flag type', () => {

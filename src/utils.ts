@@ -92,7 +92,7 @@ export function mapAliases<Schemas extends Flags>(
 		const schema = schemas[flagName] as FlagSchema;
 		if (schema && typeof schema === 'object') {
 			const { alias } = schema;
-			if (alias) {
+			if (typeof alias === 'string') {
 				if (alias.length === 0) {
 					throw new Error(`Invalid flag alias ${stringify(flagName)}: flag alias cannot be empty`);
 				}
@@ -117,7 +117,7 @@ export function mapAliases<Schemas extends Flags>(
 }
 
 const isArrayType = (schema: FlagTypeOrSchema) => {
-	if (typeof schema === 'function') {
+	if (!schema || typeof schema === 'function') {
 		return false;
 	}
 
@@ -196,8 +196,13 @@ export const validateFlags = <Schemas extends Flags>(
 };
 
 export const getFlagType = (
+	flagName: string,
 	flagSchema: FlagTypeOrSchema,
 ): TypeFunction => {
+	if (!flagSchema) {
+		throw new Error(`Missing type on flag "${flagName}"`);
+	}
+
 	if (typeof flagSchema === 'function') {
 		return flagSchema;
 	}
@@ -206,5 +211,5 @@ export const getFlagType = (
 		return flagSchema[0];
 	}
 
-	return getFlagType(flagSchema.type);
+	return getFlagType(flagName, flagSchema.type);
 };

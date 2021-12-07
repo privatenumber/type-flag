@@ -33,7 +33,7 @@ function typeFlag<Schemas extends Flags>(
 		flagSchema: FlagTypeOrSchema,
 		flagValue: any,
 	) => {
-		const flagType = getFlagType(flagSchema);
+		const flagType = getFlagType(flagName as string, flagSchema);
 
 		flagValue = getDefaultFromTypeWithValue(flagType, flagValue);
 
