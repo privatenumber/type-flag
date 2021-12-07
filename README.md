@@ -3,7 +3,7 @@
 Parse CLI argv flags with first-class type support. Think [minimist](https://github.com/substack/minimist), but typed!
 
 ### Features
-- **Typed flags** Automatically infer types on parsed argvs!
+- **Strongly typed** Apply types to parsed argvs!
 - **Custom types & validation** Pass in any function and the type will be inferred!
 - **Tiny** 2.7 kB minified!
 
@@ -21,8 +21,8 @@ Here's a simple usage example:
 ```ts
 import typeFlag from 'type-flag'
 
-// Pass in argvs, flag schemas, and parse! 
-const parsed = typeFlag(process.argv.slice(2), {
+// Pass in flag schemas, and parse! 
+const parsed = typeFlag({
 
     // Define flags here...
 
@@ -76,7 +76,7 @@ By default, all flags are optional so the flag type may include `undefined` in c
 Make a flag required by setting `required: true` and TypeFlag will throw when it is not passed in.
 
 ```ts
-const parsed = typeFlag(process.argv.slice(2), {
+const parsed = typeFlag({
     someNumber: {
         type: Number,
         required: true
@@ -97,7 +97,7 @@ Set a default value with the `default` property. When a default is provided, the
 Pass in a function to return mutable values.
 
 ```ts
-const parsed = typeFlag(process.argv.slice(2), {
+const parsed = typeFlag({
     someNumber: {
         type: Number,
         default: 1
@@ -186,7 +186,7 @@ function Size(size: Sizes) {
     return size;
 };
 
-const parsed = typeFlag(process.argv.slice(2), {
+const parsed = typeFlag({
     size: Size
 })
 ```
@@ -209,7 +209,7 @@ $ node ./cli --define:key=value
 ```
 
 ```ts
-const parsed = typeFlag(process.argv.slice(2), {
+const parsed = typeFlag({
     define: String
 })
 
@@ -234,7 +234,7 @@ function EnvObject(value: string): Env {
 	};
 }
 
-const parsed = typeFlag(process.argv.slice(2), {
+const parsed = typeFlag({
 	env: [EnvObject],
 });
 
@@ -267,7 +267,7 @@ $ node ./cli --boolean-flag false
 
 ## ⚙️ API
 
-### typeFlag(argv, flagSchema)
+### typeFlag(flagSchema, argv?)
 
 Returns an object with the shape:
 ```ts
@@ -281,12 +281,6 @@ Returns an object with the shape:
     _: string[];
 }
 ```
-
-#### argv
-Type: `string[]`
-
-The argv array to parse. Pass in `process.argv.slice(2)`.
-
 
 #### flagSchema
 Type:
@@ -304,6 +298,11 @@ type FlagSchema = {
 
 
 An object containing flag schema definitions. Where the key is the flag name, and the value is either the type function or an object containing the type function and/or alias.
+
+#### argv
+Type: `string[]`
+
+The argv array to parse. Defaults to `process.argv.slice(2)`.
 
 ## 🙋‍♀️ FAQ
 
