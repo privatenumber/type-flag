@@ -78,26 +78,26 @@ export function mapAliases<Schemas extends Flags>(
 		schema: FlagSchema;
 	}>();
 
-	for (const name in schemas) {
-		if (!hasOwn(schemas, name)) {
+	for (const flagName in schemas) {
+		if (!hasOwn(schemas, flagName)) {
 			continue;
 		}
 
-		validateFlagName(schemas, name);
+		validateFlagName(schemas, flagName);
 
-		const schema = schemas[name] as FlagSchema;
+		const schema = schemas[flagName] as FlagSchema;
 		if (schema && typeof schema === 'object') {
 			const { alias } = schema;
 			if (alias) {
-				assert(alias.length > 0, `Invalid flag alias ${stringify(name)}: flag alias cannot be empty`);
-				assert(alias.length === 1, `Invalid flag alias ${stringify(name)}: flag aliases can only be a single-character`);
+				assert(alias.length > 0, `Invalid flag alias ${stringify(flagName)}: flag alias cannot be empty`);
+				assert(alias.length === 1, `Invalid flag alias ${stringify(flagName)}: flag aliases can only be a single-character`);
 				assert(
 					!aliases.has(alias),
 					`Flag collision: Alias "${alias}" is already used`,
 				);
 
 				aliases.set(alias, {
-					name,
+					name: flagName,
 					schema,
 				});
 			}
@@ -112,10 +112,12 @@ const isArrayType = (schema: FlagTypeOrSchema) => {
 		return false;
 	}
 
-	return (Array.isArray(schema) || Array.isArray(schema.type));
+	return Array.isArray(schema) || Array.isArray(schema.type);
 };
 
-export const createFlagsObject = <Schemas extends Flags>(schema: Flags) => {
+export const createFlagsObject = <Schemas extends Flags>(
+	schema: Schemas,
+) => {
 	const flags: Record<string, any> = {};
 
 	for (const flag in schema) {
@@ -142,4 +144,31 @@ export const getDefaultFromTypeWithValue = (
 	}
 
 	return value;
+};
+
+export const validateFlags = <Schemas extends Flags>(
+	schemas: Schemas,
+	flags: Record<keyof Schemas, any>,
+) => {
+	for (const flagName in schemas) {
+		if (!hasOwn(schemas, flagName)) {
+			continue;
+		}
+
+		const schema = schemas[flagName];
+
+		if (
+			schema
+			&& ('required' in schema)
+			&& schema.required
+		) {
+			const value = flags[flagName];
+			if (
+				value === undefined
+				|| (Array.isArray(value) && value.length === 0)
+			) {
+				throw new Error(`Missing required option "--${flagName}"`);
+			}
+		}
+	}
 };

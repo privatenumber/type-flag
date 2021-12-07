@@ -5,6 +5,7 @@ export type TypeFunctionArray<T = any> = [TypeFunction<T>];
 export type FlagSchema = {
 	type: TypeFunction | TypeFunctionArray;
 	alias?: string;
+	required?: true;
 };
 
 export type FlagTypeOrSchema = TypeFunction | TypeFunctionArray | FlagSchema;
@@ -21,7 +22,11 @@ export type InferFlagType<
 	Flag extends FlagTypeOrSchema
 > = Flag extends (TypeFunction<infer T> | { type: TypeFunction<infer T> })
 	// Type function return-type
-	? (T | undefined)
+	? (
+		Flag extends { required: true }
+			? T
+			: T | undefined
+	)
 
 	// Type function return-type in array
 	: (

@@ -35,7 +35,8 @@ const parsed = typeFlag(process.argv.slice(2), {
 
     someBoolean: {
         type: Boolean,
-        alias: 'b'
+        alias: 'b',
+        required: true
     },
 
     // Wrap with an array to indicate an array type
@@ -46,7 +47,7 @@ const parsed = typeFlag(process.argv.slice(2), {
     }
 })
 
-console.log(parsed.flags.someString[0])
+console.log(parsed.flags.someString)
 ```
 
 `parsed` resolves to the following type:
@@ -54,8 +55,8 @@ console.log(parsed.flags.someString[0])
 {
     flags: {
         someString: string | undefined;
-        someNumber: boolean | undefined;
-        someBoolean: number | undefined;
+        someNumber: number | undefined;
+        someBoolean: boolean;
         stringArray: string[];
         numberArray: number[];
     };
@@ -67,6 +68,24 @@ console.log(parsed.flags.someString[0])
 ```
 
 ### Usage
+
+#### Required flags
+Non-array types can be `undefined` unless `required: true` is set:
+```ts
+const parsed = typeFlag(process.argv.slice(2), {
+    someNumber: {
+        type: Number,
+        required: true
+    }
+})
+```
+
+When a flag is required, the return type can no longer be `undefined`:
+```ts
+{
+    someNumber: number;
+}
+```
 
 #### kebab-case flags mapped to camelCase
 When passing in the flags, they can be in kebab-case and will automatically map to the camelCase equivalent.
@@ -253,6 +272,7 @@ type FlagSchema = {
     [flagName: string]: TypeFunction | [TypeFunction] | {
         type: TypeFunction | [TypeFunction];
         alias?: string;
+        required?: true;
     };
 };
 ```
