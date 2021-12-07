@@ -28,15 +28,16 @@ const parsed = typeFlag(process.argv.slice(2), {
 
     someString: String,
 
-    someNumber: {
-        type: Number,
-        alias: 'n' // Set an alias (eg. -n <number>)
-    },
-
     someBoolean: {
         type: Boolean,
         alias: 'b',
         required: true
+    },
+
+    someNumber: {
+        type: Number,
+        alias: 'n',
+        default: 2
     },
 
     // Wrap with an array to indicate an array type
@@ -55,8 +56,8 @@ console.log(parsed.flags.someString)
 {
     flags: {
         someString: string | undefined;
-        someNumber: number | undefined;
         someBoolean: boolean;
+        someNumber: number;
         stringArray: string[];
         numberArray: number[];
     };
@@ -70,7 +71,8 @@ console.log(parsed.flags.someString)
 ### Usage
 
 #### Required flags
-Non-array types can be `undefined` unless `required: true` is set:
+Mark a flag as required by setting `required: true`. Optional flags include `undefined` in the flag type, but required ones will not.
+
 ```ts
 const parsed = typeFlag(process.argv.slice(2), {
     someNumber: {
@@ -83,9 +85,30 @@ const parsed = typeFlag(process.argv.slice(2), {
 When a flag is required, the return type can no longer be `undefined`:
 ```ts
 {
-    someNumber: number;
+    someNumber: number; // No more " | undefined"
 }
 ```
+
+Array types will not have an `undefined` type, but may be an empty array.
+
+#### Default values
+Set a default value with the `default` property. When a default is provided, the flag type will not include `undefined`.
+
+```ts
+const parsed = typeFlag(process.argv.slice(2), {
+    someNumber: {
+        type: Number,
+        default: 1
+    },
+
+    manyNumbers: {
+        type: [Number],
+        default: () => [1, 2, 3]
+    }
+})
+```
+
+Note, since a flag with a default value is inherently an optional flag, it is mutually exclusive with the `required` option.
 
 #### kebab-case flags mapped to camelCase
 When passing in the flags, they can be in kebab-case and will automatically map to the camelCase equivalent.
