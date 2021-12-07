@@ -185,3 +185,17 @@ export const validateFlags = <Schemas extends Flags>(
 		}
 	}
 };
+
+export const getFlagType = (
+	flagSchema: FlagTypeOrSchema,
+): TypeFunction => {
+	if (typeof flagSchema === 'function') {
+		return flagSchema;
+	}
+
+	if (Array.isArray(flagSchema)) {
+		return flagSchema[0];
+	}
+
+	return getFlagType(flagSchema.type);
+};
