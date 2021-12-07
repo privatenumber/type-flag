@@ -71,7 +71,9 @@ console.log(parsed.flags.someString)
 ### Usage
 
 #### Required flags
-Mark a flag as required by setting `required: true`. Optional flags include `undefined` in the flag type, but required ones will not.
+By default, all flags are optional so the flag type may include `undefined` in case it was not passed in.
+
+Make a flag required by setting `required: true` and TypeFlag will throw when it is not passed in.
 
 ```ts
 const parsed = typeFlag(process.argv.slice(2), {
@@ -82,14 +84,12 @@ const parsed = typeFlag(process.argv.slice(2), {
 })
 ```
 
-When a flag is required, the return type can no longer be `undefined`:
+When a flag is required, the return type will no longer include `undefined`:
 ```ts
 {
     someNumber: number; // No more " | undefined"
 }
 ```
-
-Array types will not have an `undefined` type, but may be an empty array.
 
 #### Default values
 Set a default value with the `default` property. When a default is provided, the flag type will not include `undefined`.
