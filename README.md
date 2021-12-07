@@ -211,7 +211,7 @@ const parsed = typeFlag({
     define: String
 })
 
-console.log(parsed.flags.define) // ['key=value']
+console.log(parsed.flags.define) // => 'key=value'
 ```
 
 ### Dot-nested flags
