@@ -23,10 +23,6 @@ export type Flags = {
 	[flagName: string]: FlagTypeOrSchema;
 };
 
-export type ParsedFlags = {
-	[flag: string]: (string | boolean)[];
-};
-
 export type InferFlagType<
 	Flag extends FlagTypeOrSchema
 > = Flag extends (TypeFunction<infer T> | { type: TypeFunction<infer T> })
@@ -43,3 +39,13 @@ export type InferFlagType<
 			? T[]
 			: never
 	);
+
+export type TypeFlag<Schemas extends Flags> = {
+	flags: {
+		[flag in keyof Schemas]: InferFlagType<Schemas[flag]>;
+	};
+	unknownFlags: {
+		[flag: string]: (string | boolean)[];
+	};
+	_: string[];
+};

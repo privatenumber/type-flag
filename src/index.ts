@@ -1,6 +1,7 @@
 import type {
 	Flags,
 	FlagTypeOrSchema,
+	TypeFlag,
 } from './types';
 import {
 	toCamelCase,
@@ -20,11 +21,11 @@ function typeFlag<Schemas extends Flags>(
 	argv: string[] = process.argv.slice(2),
 ) {
 	const aliasesMap = mapAliases(schemas);
-	const flags = createFlagsObject<Schemas>(schemas);
-	const unknownFlags: {
-		[flag: string]: (string | boolean)[];
-	} = {};
-	const remainingArguments: string[] = [];
+	const parsed: TypeFlag<Schemas> = {
+		flags: createFlagsObject(schemas),
+		unknownFlags: {},
+		_: [],
+	};
 
 	let expectingValue: undefined | ((value?: string | boolean) => void);
 
@@ -38,17 +39,17 @@ function typeFlag<Schemas extends Flags>(
 		flagValue = getDefaultFromTypeWithValue(flagType, flagValue);
 
 		if (flagValue !== undefined && !Number.isNaN(flagValue)) {
-			if (Array.isArray(flags[flagName])) {
-				flags[flagName].push(flagType(flagValue));
+			if (Array.isArray(parsed.flags[flagName])) {
+				parsed.flags[flagName].push(flagType(flagValue));
 			} else {
-				flags[flagName] = flagType(flagValue);
+				parsed.flags[flagName] = flagType(flagValue);
 			}
 		} else {
 			expectingValue = (value) => {
-				if (Array.isArray(flags[flagName])) {
-					flags[flagName].push(flagType(getDefaultFromTypeWithValue(flagType, value || '')));
+				if (Array.isArray(parsed.flags[flagName])) {
+					parsed.flags[flagName].push(flagType(getDefaultFromTypeWithValue(flagType, value || '')));
 				} else {
-					flags[flagName] = flagType(getDefaultFromTypeWithValue(flagType, value || ''));
+					parsed.flags[flagName] = flagType(getDefaultFromTypeWithValue(flagType, value || ''));
 				}
 
 				expectingValue = undefined;
@@ -60,15 +61,15 @@ function typeFlag<Schemas extends Flags>(
 		flagName: string,
 		flagValue: any,
 	) => {
-		if (!(flagName in unknownFlags)) {
-			unknownFlags[flagName] = [];
+		if (!(flagName in parsed.unknownFlags)) {
+			parsed.unknownFlags[flagName] = [];
 		}
 
 		if (flagValue !== undefined) {
-			unknownFlags[flagName].push(flagValue);
+			parsed.unknownFlags[flagName].push(flagValue);
 		} else {
 			expectingValue = (value = true) => {
-				unknownFlags[flagName].push(value);
+				parsed.unknownFlags[flagName].push(value);
 				expectingValue = undefined;
 			};
 		}
@@ -78,7 +79,7 @@ function typeFlag<Schemas extends Flags>(
 		const argvElement = argv[i];
 
 		if (argvElement === '--') {
-			remainingArguments.push(...argv.slice(i + 1));
+			parsed._.push(...argv.slice(i + 1));
 			break;
 		}
 
@@ -133,7 +134,7 @@ function typeFlag<Schemas extends Flags>(
 		} else if (expectingValue) { // Not a flag, but expecting a value
 			expectingValue(argvElement);
 		} else { // Unexpected value
-			remainingArguments.push(argvElement);
+			parsed._.push(argvElement);
 		}
 	}
 
@@ -141,12 +142,12 @@ function typeFlag<Schemas extends Flags>(
 		expectingValue();
 	}
 
-	validateFlags(schemas, flags);
+	validateFlags(schemas, parsed.flags);
 
-	return {
-		flags,
-		unknownFlags,
-		_: remainingArguments,
+	type Parsed = typeof parsed;
+	return parsed as {
+		// This exposes the content of "TypeFlag<T>" in type hints
+		[Key in keyof Parsed]: Parsed[Key];
 	};
 }
 
