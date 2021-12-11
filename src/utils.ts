@@ -6,6 +6,13 @@ import type {
 	FlagTypeOrSchema,
 } from './types';
 
+// https://stackoverflow.com/a/56249765/911407
+declare global {
+	interface ArrayConstructor {
+		isArray(array: ReadonlyArray<any> | any): array is ReadonlyArray<any>;
+	}
+}
+
 const kebabCasePattern = /-(\w)/g;
 export const toCamelCase = (string: string) => string.replace(
 	kebabCasePattern,

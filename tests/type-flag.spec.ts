@@ -105,8 +105,10 @@ describe('Error handling', () => {
 			}, ['--missing-type']);
 		}).toThrow('Missing type on flag "missingType"');
 	});
+});
 
-	test('Flag type', () => {
+describe('Types', () => {
+	test('Errors', () => {
 		typeFlag({
 			// @ts-expect-error must be a function
 			flagA: false,
@@ -134,6 +136,14 @@ describe('Error handling', () => {
 				default: '',
 			},
 		}, []);
+	});
+
+	test('Readonly type', () => {
+		typeFlag({
+			flagA: {
+				type: [String],
+			},
+		} as const, []);
 	});
 });
 

@@ -1,6 +1,6 @@
 export type TypeFunction<T = any> = (value: any) => T;
 
-export type TypeFunctionArray<T = any> = [TypeFunction<T>];
+export type TypeFunctionArray<T = any> = readonly [TypeFunction<T>];
 
 type FlagSchemaBase<T> = {
 	type: TypeFunction<T> | TypeFunctionArray<T>;
