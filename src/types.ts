@@ -3,18 +3,24 @@ export type TypeFunction<T = any> = (value: any) => T;
 export type TypeFunctionArray<T = any> = readonly [TypeFunction<T>];
 
 type FlagSchemaBase<T> = {
-	type: TypeFunction<T> | TypeFunctionArray<T>;
+	type: T;
 	alias?: string;
 };
 
-export type FlagSchema<T = any> = (
+type FlagSchmaRequired<T> = FlagSchemaBase<T> & {
+	required: true;
+};
+
+type FlagSchmaDefault<T> = FlagSchemaBase<T> & {
+	default: any;
+	// Mutually exclusive with default
+	required?: undefined;
+};
+
+export type FlagSchema<T = TypeFunction | TypeFunctionArray> = (
 	FlagSchemaBase<T>
-	| (FlagSchemaBase<T> & { required: true })
-	| (FlagSchemaBase<T> & {
-		default: T | (() => T);
-		// Mutually exclusive with default
-		required?: undefined;
-	})
+	| FlagSchmaRequired<T>
+	| FlagSchmaDefault<T>
 );
 
 export type FlagTypeOrSchema = TypeFunction | TypeFunctionArray | FlagSchema;
@@ -25,17 +31,17 @@ export type Flags = {
 
 export type InferFlagType<
 	Flag extends FlagTypeOrSchema
-> = Flag extends (TypeFunction<infer T> | { type: TypeFunction<infer T> })
+> = Flag extends (TypeFunction<infer T> | FlagSchema<TypeFunction<infer T>>)
 	// Type function return-type
 	? (
-		Flag extends { required?: true; default?: any }
+		Flag extends (FlagSchmaRequired<TypeFunction<T>> | FlagSchmaDefault<TypeFunction<T>>)
 			? T
 			: T | undefined
 	)
 
 	// Type function return-type in array
 	: (
-		Flag extends (TypeFunctionArray<infer T> | { type: TypeFunctionArray<infer T> })
+		Flag extends (TypeFunctionArray<infer T> | FlagSchema<TypeFunctionArray<infer T>>)
 			? T[]
 			: never
 	);

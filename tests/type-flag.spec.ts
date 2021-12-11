@@ -1,4 +1,5 @@
 import typeFlag from '../src';
+import type { Flags } from '../src/types';
 
 describe('Error handling', () => {
 	describe('Invalid flag name', () => {
@@ -144,6 +145,25 @@ describe('Types', () => {
 				type: [String],
 			},
 		} as const, []);
+
+		const readonly = <F extends Flags>(
+			options: Readonly<F>,
+			argv: string[],
+		) => typeFlag(options, argv);
+
+		const parsed = readonly({
+			flagA: {
+				type: String,
+				required: true,
+			},
+			flagB: {
+				type: [String],
+				default: 'world',
+			},
+		}, ['--flag-a', 'hello']);
+
+		expect<string>(parsed.flags.flagA);
+		expect<string[]>(parsed.flags.flagB);
 	});
 });
 
