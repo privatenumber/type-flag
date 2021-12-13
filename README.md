@@ -68,9 +68,9 @@ const parsed = typeFlag({
 ### Usage
 
 #### Default values
-Set a default value with the `default` property. When a default is provided, the flag type will not include `undefined`.
+Set a default value with the `default` property. When a default is provided, the flag type will include that instead of `undefined`.
 
-Pass in a function to return mutable values.
+When using mutable values (eg. objects/arrays) as a default, pass in a function that creates it to avoid mutation-related bugs.
 
 ```ts
 const parsed = typeFlag({
