@@ -193,11 +193,6 @@ export const validateFlags = <Schemas extends Flags>(
 			}
 
 			flags[flagName] = defaultValue;
-		} else if (
-			('required' in schema)
-			&& schema.required
-		) {
-			throw new Error(`Missing required option "--${flagName}"`);
 		}
 	}
 };
