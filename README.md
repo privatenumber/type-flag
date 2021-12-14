@@ -254,7 +254,7 @@ console.log(parsed.flags.verbose.length);
 ```
 
 ```sh
-$ node ./cli -vvv // logs 3
+$ node ./cli -vvv # logs 3
 ```
 
 ## ⚙️ API
