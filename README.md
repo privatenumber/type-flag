@@ -79,7 +79,7 @@ $ node ./cli --some-string 'hello' --some-boolean --some-number 3
 }
 ```
 
-## Usage
+## 🧑‍💻 Usage
 
 ### Default values
 Set a default value with the `default` property. When a default is provided, the flag type will include that instead of `undefined`.
