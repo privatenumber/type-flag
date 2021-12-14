@@ -239,6 +239,24 @@ $ node ./cli --boolean-flag false
 }
 ```
 
+### Counting flags
+To create an API where passing in a flag multiple times increases a count (a pretty common one is `-vvv`), you can use an array-boolean type and count the size of the array:
+
+```ts
+const parsed = typeFlag({
+	verbose: {
+		type: [Boolean],
+		alias: 'v',
+	},
+});
+
+console.log(parsed.flags.verbose.length);
+```
+
+```sh
+$ node ./cli -vvv // logs 3
+```
+
 ## ⚙️ API
 
 ### typeFlag(flagSchema, argv?)
