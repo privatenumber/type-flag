@@ -47,7 +47,7 @@ const parsed = typeFlag({
     }
 })
 
-console.log(parsed.flags);
+console.log(parsed.flags)
 ```
 
 When you execute the file in the command-line, you can see the argvs parsed:
@@ -66,16 +66,16 @@ $ node ./cli --some-string 'hello' --some-boolean --some-number 3
 ```ts
 {
     flags: {
-        someString: string | undefined;
-        someBoolean: boolean;
-        someNumber: number;
-        stringArray: string[];
-        numberArray: number[];
-    };
+        someString: string | undefined
+        someBoolean: boolean
+        someNumber: number
+        stringArray: string[]
+        numberArray: number[]
+    }
     unknownFlags: {
-        [flagName: string]: (string | boolean)[];
-    };
-    _: string[];
+        [flagName: string]: (string | boolean)[]
+    }
+    _: string[]
 }
 ```
 
@@ -162,17 +162,17 @@ To create a new type, simply declare a function that accepts a string argument a
 
 In this example, the `size` flag is enforced to be either `small`, `medium` or `large`.
 ```ts
-const possibleSizes = ['small', 'medium', 'large'] as const;
+const possibleSizes = ['small', 'medium', 'large'] as const
 
-type Sizes = typeof possibleSizes[number];
+type Sizes = typeof possibleSizes[number]
 
 function Size(size: Sizes) {
     if (!possibleSizes.includes(size)) {
-        throw new Error(`Invalid size: "${size}"`);
+        throw new Error(`Invalid size: "${size}"`)
     }
 
-    return size;
-};
+    return size
+}
 
 const parsed = typeFlag({
     size: Size
@@ -183,8 +183,8 @@ const parsed = typeFlag({
 ```ts
 const parsed: {
     flags: {
-        size: 'small' | 'medium' | 'large' | undefined;
-    };
+        size: 'small' | 'medium' | 'large' | undefined
+    }
     ...
 }
 ```
@@ -211,24 +211,24 @@ $ node ./cli --env.TOKEN=123 --env.CI
 
 ```ts
 type Env = {
-	TOKEN?: string;
-	CI?: boolean;
-};
+	TOKEN?: string
+	CI?: boolean
+}
 
 function EnvObject(value: string): Env {
-	const [propertyName, propertyValue] = value.split('=');
+	const [propertyName, propertyValue] = value.split('=')
 	return {
-		[propertyName]: propertyValue || true,
-	};
+		[propertyName]: propertyValue || true
+	}
 }
 
 const parsed = typeFlag({
-	env: [EnvObject],
-});
+	env: [EnvObject]
+})
 
-const env = parsed.flags.env.reduce((agg, next) => Object.assign(agg, next), {});
+const env = parsed.flags.env.reduce((agg, next) => Object.assign(agg, next), {})
 
-console.log(env); // { TOKEN: 123, CI: true }
+console.log(env) // { TOKEN: 123, CI: true }
 ```
 
 ### Inverting a boolean
@@ -260,11 +260,11 @@ To create an API where passing in a flag multiple times increases a count (a pre
 const parsed = typeFlag({
 	verbose: {
 		type: [Boolean],
-		alias: 'v',
-	},
-});
+		alias: 'v'
+	}
+})
 
-console.log(parsed.flags.verbose.length);
+console.log(parsed.flags.verbose.length)
 ```
 
 ```sh
@@ -279,27 +279,27 @@ Returns an object with the shape:
 ```ts
 {
     flags: {
-        [flagName: string]: InferredType;
-    };
+        [flagName: string]: InferredType
+    }
     unknownFlags: {
-        [flagName: string]: (string | boolean)[];
-    };
-    _: string[];
+        [flagName: string]: (string | boolean)[]
+    }
+    _: string[]
 }
 ```
 
 #### flagSchema
 Type:
 ```ts
-type TypeFunction = (argvValue: any) => any;
+type TypeFunction = (argvValue: any) => any
 
 type FlagSchema = {
     [flagName: string]: TypeFunction | [TypeFunction] | {
-        type: TypeFunction | [TypeFunction];
-        alias?: string;
-        default?: any;
-    };
-};
+        type: TypeFunction | [TypeFunction]
+        alias?: string
+        default?: any
+    }
+}
 ```
 
 
