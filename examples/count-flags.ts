@@ -1,5 +1,5 @@
 /**
- * This example demonstrates how to invert a boolean flag
+ * This example demonstrates how to count the number of flags
  *
  * Usage:
  * $ npx esno ./examples/count-flags -vvv

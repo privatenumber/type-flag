@@ -183,7 +183,7 @@ const parsed = typeFlag({
 ```ts
 const parsed: {
     flags: {
-        size: Sizes | undefined;
+        size: 'small' | 'medium' | 'large' | undefined;
     };
     ...
 }
