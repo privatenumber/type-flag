@@ -19,7 +19,7 @@ function EnvironmentObject(value: string): Environment {
 	};
 }
 
-const parsed = typeFlag(process.argv.slice(2), {
+const parsed = typeFlag({
 	env: [EnvironmentObject],
 });
 
