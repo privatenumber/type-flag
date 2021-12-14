@@ -17,11 +17,11 @@ npm i type-flag
 
 ## 🚦 Quick start
 
-Here's a simple usage example:
+Here's a simple example file `cli.ts`:
 ```ts
 import typeFlag from 'type-flag'
 
-// Pass in flag schemas, and parse! 
+// Pass in flag schemas and automatically parse process.argv!
 const parsed = typeFlag({
 
     // Define flags here...
@@ -39,13 +39,27 @@ const parsed = typeFlag({
         default: 2
     },
 
-    // Wrap with an array to indicate an array type
+    // Wrap type with an array to indicate accept multiple flags
     stringArray: [String],
 
     numberArray: {
         type: [Number]
     }
 })
+
+console.log(parsed.flags);
+```
+
+When you execute the file in the command-line, you can see the argvs parsed:
+```sh
+$ node ./cli --some-string 'hello' --some-boolean --some-number 3
+> {
+  someString: 'hello',
+  someBoolean: true,
+  someNumber: 3,
+  stringArray: [],
+  numberArray: []
+}
 ```
 
 `parsed` has the following type:
@@ -65,9 +79,9 @@ const parsed = typeFlag({
 }
 ```
 
-### Usage
+## Usage
 
-#### Default values
+### Default values
 Set a default value with the `default` property. When a default is provided, the flag type will include that instead of `undefined`.
 
 When using mutable values (eg. objects/arrays) as a default, pass in a function that creates it to avoid mutation-related bugs.
@@ -86,13 +100,13 @@ const parsed = typeFlag({
 })
 ```
 
-#### kebab-case flags mapped to camelCase
+### kebab-case flags mapped to camelCase
 When passing in the flags, they can be in kebab-case and will automatically map to the camelCase equivalent.
 ```sh
 $ node ./cli --someString hello --some-string world
 ```
 
-#### Unknown flags
+### Unknown flags
 When unrecognized flags are passed in, they are either interpreted as a string or boolean depending on usage.
 
 Note, unknown flags are not converted to camelCase.
@@ -111,7 +125,7 @@ This outputs the following:
 }
 ```
 
-#### Arguments
+### Arguments
 All argument values are passed into the `_` property.
 
 Notice how the "`value"` is parsed as an argument because the boolean flag doesn't accept a value.
@@ -130,7 +144,7 @@ This outputs the following:
 }
 ```
 
-#### Flag value delimiters
+### Flag value delimiters
 The characters `=`, `:` and `.` are reserved for delimiting the value from the flag.
 
 ```sh
