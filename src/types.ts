@@ -16,10 +16,12 @@ export type FlagSchema<TF = TypeFunction | TypeFunctionArray> = (
 	| FlagSchemaDefault<TF>
 );
 
-export type FlagTypeOrSchema = TypeFunction | TypeFunctionArray | FlagSchema;
+export type FlagTypeOrSchema<
+	ExtraOptions = Record<string, unknown>
+> = TypeFunction | TypeFunctionArray | (FlagSchema & ExtraOptions);
 
-export type Flags = {
-	[flagName: string]: FlagTypeOrSchema;
+export type Flags<ExtraOptions = Record<string, unknown>> = {
+	[flagName: string]: FlagTypeOrSchema<ExtraOptions>;
 };
 
 export type InferFlagType<
