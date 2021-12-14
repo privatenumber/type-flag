@@ -122,20 +122,6 @@ describe('Types', () => {
 				type: [String, String],
 				alias: 'a',
 			},
-
-			// @ts-expect-error required can only be true
-			requiredFalse: {
-				type: Boolean,
-				required: false,
-			},
-
-			requiredAndDefault: {
-				type: String,
-				required: true,
-
-				// @ts-expect-error required & default are mutually exclusive
-				default: '',
-			},
 		}, []);
 	});
 
@@ -154,15 +140,14 @@ describe('Types', () => {
 		const parsed = readonly({
 			flagA: {
 				type: String,
-				required: true,
 			},
 			flagB: {
 				type: [String],
-				default: 'world',
+				default: () => ['world'],
 			},
 		}, ['--flag-a', 'hello']);
 
-		expect<string>(parsed.flags.flagA);
+		expect<string | undefined>(parsed.flags.flagA);
 		expect<string[]>(parsed.flags.flagB);
 	});
 });
@@ -374,46 +359,6 @@ describe('Parsing', () => {
 		expect<string[]>(parsed._).toStrictEqual(['world']);
 	});
 
-	describe('Required flag', () => {
-		test('Types and parsing', () => {
-			const parsed = typeFlag({
-				string: {
-					type: String,
-					required: true,
-				},
-				boolean: {
-					type: Boolean,
-					required: true,
-				},
-				number: Number,
-			}, ['--string', 'hello', '--boolean', '--number', '1']);
-
-			expect<string>(parsed.flags.string).toBe('hello');
-			expect<boolean>(parsed.flags.boolean).toBe(true);
-			expect<number | undefined>(parsed.flags.number).toBe(1);
-		});
-
-		test('Throw on missing', () => {
-			expect(() => {
-				typeFlag({
-					flagA: {
-						type: String,
-						required: true,
-					},
-				}, []);
-			}).toThrow(/* 'Missing required option "--flagA"' */);
-
-			expect(() => {
-				typeFlag({
-					flagA: {
-						type: [String],
-						required: true,
-					},
-				}, []);
-			}).toThrow(/* 'Missing required option "--flagA"' */);
-		});
-	});
-
 	describe('Default flag value', () => {
 		test('Types and parsing', () => {
 			const parsed = typeFlag({
@@ -438,12 +383,18 @@ describe('Parsing', () => {
 					type: [String],
 					default: () => ['hello'],
 				},
+
+				inconsistentTypesC: {
+					type: Number,
+					default: 'world',
+				},
 			}, []);
 
 			expect<string>(parsed.flags.string).toBe('hello world');
 			expect<boolean | number>(parsed.flags.inconsistentTypes).toBe(1);
 			expect<boolean | undefined>(parsed.flags.inconsistentTypesB).toBe(undefined);
 			expect<string[]>(parsed.flags.arrayOfStrings).toStrictEqual(['hello']);
+			expect<string | number>(parsed.flags.inconsistentTypesC).toBe('world');
 		});
 	});
 });

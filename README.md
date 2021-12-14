@@ -30,8 +30,7 @@ const parsed = typeFlag({
 
     someBoolean: {
         type: Boolean,
-        alias: 'b',
-        required: true
+        alias: 'b'
     },
 
     someNumber: {
@@ -68,31 +67,10 @@ const parsed = typeFlag({
 
 ### Usage
 
-#### Required flags
-By default, all flags are optional so the flag type may include `undefined` in case it was not passed in.
-
-Make a flag required by setting `required: true` and TypeFlag will throw when it is not passed in.
-
-```ts
-const parsed = typeFlag({
-    someNumber: {
-        type: Number,
-        required: true
-    }
-})
-```
-
-When a flag is required, the return type will no longer include `undefined`:
-```ts
-{
-    someNumber: number; // No more " | undefined"
-}
-```
-
 #### Default values
-Set a default value with the `default` property. When a default is provided, the flag type will not include `undefined`.
+Set a default value with the `default` property. When a default is provided, the flag type will include that instead of `undefined`.
 
-Pass in a function to return mutable values.
+When using mutable values (eg. objects/arrays) as a default, pass in a function that creates it to avoid mutation-related bugs.
 
 ```ts
 const parsed = typeFlag({
@@ -107,8 +85,6 @@ const parsed = typeFlag({
     }
 })
 ```
-
-Note, since a flag with a default value is inherently an optional flag, it is mutually exclusive with the `required` option.
 
 #### kebab-case flags mapped to camelCase
 When passing in the flags, they can be in kebab-case and will automatically map to the camelCase equivalent.
@@ -289,7 +265,7 @@ type FlagSchema = {
     [flagName: string]: TypeFunction | [TypeFunction] | {
         type: TypeFunction | [TypeFunction];
         alias?: string;
-        required?: true;
+        default?: any;
     };
 };
 ```

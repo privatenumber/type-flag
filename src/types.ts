@@ -1,26 +1,19 @@
-export type TypeFunction<T = any> = (value: any) => T;
+export type TypeFunction<ReturnType = any> = (value: any) => ReturnType;
 
-export type TypeFunctionArray<T = any> = readonly [TypeFunction<T>];
+export type TypeFunctionArray<ReturnType = any> = readonly [TypeFunction<ReturnType>];
 
-type FlagSchemaBase<T> = {
-	type: T;
+type FlagSchemaBase<TF> = {
+	type: TF;
 	alias?: string;
 };
 
-type FlagSchmaRequired<T> = FlagSchemaBase<T> & {
-	required: true;
+type FlagSchemaDefault<TF, DefaultType = any> = FlagSchemaBase<TF> & {
+	default: DefaultType | (() => DefaultType);
 };
 
-type FlagSchmaDefault<T> = FlagSchemaBase<T> & {
-	default: any;
-	// Mutually exclusive with default
-	required?: undefined;
-};
-
-export type FlagSchema<T = TypeFunction | TypeFunctionArray> = (
-	FlagSchemaBase<T>
-	| FlagSchmaRequired<T>
-	| FlagSchmaDefault<T>
+export type FlagSchema<TF = TypeFunction | TypeFunctionArray> = (
+	FlagSchemaBase<TF>
+	| FlagSchemaDefault<TF>
 );
 
 export type FlagTypeOrSchema = TypeFunction | TypeFunctionArray | FlagSchema;
@@ -31,20 +24,23 @@ export type Flags = {
 
 export type InferFlagType<
 	Flag extends FlagTypeOrSchema
-> = Flag extends (TypeFunction<infer T> | FlagSchema<TypeFunction<infer T>>)
-	// Type function return-type
-	? (
-		Flag extends (FlagSchmaRequired<TypeFunction<T>> | FlagSchmaDefault<TypeFunction<T>>)
-			? T
-			: T | undefined
-	)
-
-	// Type function return-type in array
-	: (
-		Flag extends (TypeFunctionArray<infer T> | FlagSchema<TypeFunctionArray<infer T>>)
-			? T[]
-			: never
-	);
+> = (
+	Flag extends (TypeFunctionArray<infer T> | FlagSchema<TypeFunctionArray<infer T>>)
+		? (
+			Flag extends FlagSchemaDefault<TypeFunctionArray<T>, infer D>
+				? T[] | D
+				: T[]
+		)
+		: (
+			Flag extends TypeFunction<infer T> | FlagSchema<TypeFunction<infer T>>
+				? (
+					Flag extends FlagSchemaDefault<TypeFunction<T>, infer D>
+						? T | D
+						: T | undefined
+				)
+				: never
+		)
+);
 
 export type TypeFlag<Schemas extends Flags> = {
 	flags: {
