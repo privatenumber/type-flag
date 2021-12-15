@@ -80,9 +80,39 @@ $ node ./cli --some-string 'hello' --some-boolean --some-number 3
 ```
 
 ## 🧑‍💻 Usage
+### Defining flags
+Pass in an object where the key is the flag name and the value is the flag type—a parser function that takes in a string and parses it to that type. Default JavaScript constructors should be able to cover most use-cases: [String](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/String), [Number](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/Number), [Boolean](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean/Boolean), etc.
 
-### Default values
-Set a default value with the `default` property. When a default is provided, the flag type will include that instead of `undefined`.
+The value can also be an object with the `type` property as the flag type.
+
+```ts
+typeFlag({
+    // Short-hand: immediately set the type
+    stringFlag: String,
+    numberFlag: Number,
+    booleanFlag: Boolean,
+
+    // Object syntax:
+    stringFlag: {
+        type: String
+    }
+})
+```
+
+#### Aliases
+Flags are often given single-character aliases for shorthand usage (eg. `--help` to `-h`). To give a flag an alias, use the object syntax and set the `alias` property to a single-character name.
+
+```ts
+typeFlag({
+    stringFlag: {
+        type: String,
+        alias: 's'
+    }
+})
+```
+
+#### Default values
+Flags that are not passed in will default to being `undefined`. To set a different default value, use the object syntax and pass in a value as the `default` property. When a default is provided, the flag type will include that instead of `undefined`.
 
 When using mutable values (eg. objects/arrays) as a default, pass in a function that creates it to avoid mutation-related bugs.
 
@@ -95,6 +125,8 @@ const parsed = typeFlag({
 
     manyNumbers: {
         type: [Number],
+
+        // Use a function to return an object or array
         default: () => [1, 2, 3]
     }
 })
@@ -103,7 +135,7 @@ const parsed = typeFlag({
 ### kebab-case flags mapped to camelCase
 When passing in the flags, they can be in kebab-case and will automatically map to the camelCase equivalent.
 ```sh
-$ node ./cli --someString hello --some-string world
+$ node ./cli --someString hello --some-string world # These two map to the same flag
 ```
 
 ### Unknown flags
@@ -126,11 +158,9 @@ This outputs the following:
 ```
 
 ### Arguments
-All argument values are passed into the `_` property.
+All argument values are stored in the `_` property.
 
-Notice how the "`value"` is parsed as an argument because the boolean flag doesn't accept a value.
-
-Arguments after `--` will not be parsed.
+Everything after `--` will not be parsed and be treated as arguments.
 
 ```sh
 $ node ./cli --boolean value --string "hello world" "another value" -- --string "goodbye world"
@@ -143,6 +173,8 @@ This outputs the following:
 	...
 }
 ```
+
+Note: `value` after `--boolean` is parsed as an argument because the boolean flag doesn't accept a value.
 
 ### Flag value delimiters
 The characters `=`, `:` and `.` are reserved for delimiting the value from the flag.
