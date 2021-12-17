@@ -99,6 +99,22 @@ typeFlag({
 })
 ```
 
+#### Array type
+To accept multiple values of a flag, use an array type by simply wrapping the type in an array:
+
+```ts
+const parsed = typeFlag({
+    stringFlag: [String]
+})
+```
+
+This allows usage like this:
+```sh
+$ node ./cli --string-flag A --string-flag B
+
+# > parsed.flags.stringFlag = ['A', 'B']
+```
+
 #### Aliases
 Flags are often given single-character aliases for shorthand usage (eg. `--help` to `-h`). To give a flag an alias, use the object syntax and set the `alias` property to a single-character name.
 
@@ -131,6 +147,8 @@ const parsed = typeFlag({
     }
 })
 ```
+
+To get `undefined` in the parsed flag type, make sure [`strict`](https://www.typescriptlang.org/tsconfig/#strict) or [`strictNullChecks`](https://www.typescriptlang.org/tsconfig#strictNullChecks) is enabled!
 
 ### kebab-case flags mapped to camelCase
 When passing in the flags, they can be in kebab-case and will automatically map to the camelCase equivalent.
