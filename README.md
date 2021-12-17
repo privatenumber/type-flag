@@ -167,7 +167,7 @@ $ node ./cli --someString hello --some-string world
 ```
 
 ### Unknown flags
-When unrecognized flags are passed in, they are either interpreted as a string or boolean depending on usage. Unknown flags are not converted to camelCase.
+When unrecognized flags are passed in, they are either interpreted as a string or boolean depending on usage. Unknown flags are not converted to camelCase to allow for accurate error handling.
 
 ```sh
 $ node ./cli --unknown-flag --unknown-flag 2
