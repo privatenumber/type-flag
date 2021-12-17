@@ -1,6 +1,6 @@
 export type TypeFunction<ReturnType = any> = (value: any) => ReturnType;
 
-export type TypeFunctionArray<ReturnType = any> = readonly [TypeFunction<ReturnType>];
+type TypeFunctionArray<ReturnType = any> = readonly [TypeFunction<ReturnType>];
 
 type FlagSchemaBase<TF> = {
 	type: TF;

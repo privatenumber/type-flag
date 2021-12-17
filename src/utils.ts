@@ -1,9 +1,9 @@
 import type {
 	TypeFunction,
 	FlagSchema,
+	FlagTypeOrSchema,
 	Flags,
 	InferFlagType,
-	FlagTypeOrSchema,
 } from './types';
 
 // https://stackoverflow.com/a/56249765/911407
