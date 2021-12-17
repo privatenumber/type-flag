@@ -9,6 +9,10 @@ CLI argument parser with first-class type support.
 - **Configurable defaults** Set better defaults to avoid checking whether a flag was passed in!
 - **Tiny** 1.3 kB minified + gzipped!
 
+
+→ [Try it out online](https://stackblitz.com/edit/type-flag-demo?devtoolsheight=50&file=src/index.ts&view=editor)
+
+
 <sub>Support this project by ⭐️ starring and sharing it. [Follow me](https://github.com/privatenumber) to see what other cool projects I'm working on! ❤️</sub>
 
 ## 🚀 Install
