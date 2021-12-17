@@ -162,13 +162,12 @@ To get `undefined` in the parsed flag type, make sure [`strict`](https://www.typ
 ### kebab-case flags mapped to camelCase
 When passing in the flags, they can be in kebab-case and will automatically map to the camelCase equivalent.
 ```sh
-$ node ./cli --someString hello --some-string world # These two map to the same flag
+# These two map to the same flag
+$ node ./cli --someString hello --some-string world
 ```
 
 ### Unknown flags
-When unrecognized flags are passed in, they are either interpreted as a string or boolean depending on usage.
-
-Note, unknown flags are not converted to camelCase.
+When unrecognized flags are passed in, they are either interpreted as a string or boolean depending on usage. Unknown flags are not converted to camelCase.
 
 ```sh
 $ node ./cli --unknown-flag --unknown-flag 2
@@ -240,7 +239,7 @@ const parsed = typeFlag({
 
 `parsed` resolves to the following type:
 ```ts
-const parsed: {
+{
     flags: {
         size: 'small' | 'medium' | 'large' | undefined
     }
