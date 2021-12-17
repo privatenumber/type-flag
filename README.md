@@ -129,6 +129,13 @@ typeFlag({
 })
 ```
 
+This allows usage like this:
+```sh
+$ node ./cli -s A
+
+# > parsed.flags.stringFlag = 'A'
+```
+
 #### Default values
 Flags that are not passed in will default to being `undefined`. To set a different default value, use the object syntax and pass in a value as the `default` property. When a default is provided, the flag type will include that instead of `undefined`.
 
@@ -150,7 +157,7 @@ const parsed = typeFlag({
 })
 ```
 
-To get `undefined` in the parsed flag type, make sure [`strict`](https://www.typescriptlang.org/tsconfig/#strict) or [`strictNullChecks`](https://www.typescriptlang.org/tsconfig#strictNullChecks) is enabled!
+To get `undefined` in the parsed flag type, make sure [`strict`](https://www.typescriptlang.org/tsconfig/#strict) or [`strictNullChecks`](https://www.typescriptlang.org/tsconfig#strictNullChecks) is enabled.
 
 ### kebab-case flags mapped to camelCase
 When passing in the flags, they can be in kebab-case and will automatically map to the camelCase equivalent.
