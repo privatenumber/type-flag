@@ -3,8 +3,10 @@
 CLI argument parser with first-class type support.
 
 ### Features
-- **Strongly typed** Apply types to parsed argvs!
-- **Custom types & validation** Pass in any function and the type will be inferred!
+- **Strongly typed** Parse argvs with confidence!
+- **Custom types & validation** Pass in any type function and the flag type will be inferred!
+- **Array types** Accept multiple flag values!
+- **Configurable defaults** Set better defaults to avoid checking whether a flag was passed in!
 - **Tiny** 2.7 kB minified!
 
 <sub>Support this project by ⭐️ starring and sharing it. [Follow me](https://github.com/privatenumber) to see what other cool projects I'm working on! ❤️</sub>
@@ -62,7 +64,7 @@ $ node ./cli --some-string 'hello' --some-boolean --some-number 3
 }
 ```
 
-`parsed` has the following type:
+`parsed` will have the following type:
 ```ts
 {
     flags: {
