@@ -16,6 +16,26 @@ import {
 const isAliasPattern = /^-[\da-z]+/i;
 const isFlagPattern = /^--[\w-]{2,}/;
 
+/**
+type-flag: typed argv parser
+
+@param schemas - A map of flag names to flag schemas
+@param argv - Optional argv array of strings. [Default: process.argv.slice(2)]
+@returns Parsed argv flags
+
+@example
+```ts
+import typeFlag from 'type-flag';
+
+const parsed = typeFlag({
+	foo: Boolean,
+	bar: {
+		type: Number,
+		default: 8
+	}
+})
+```
+*/
 export function typeFlag<Schemas extends Flags>(
 	schemas: Schemas,
 	argv: string[] = process.argv.slice(2),
