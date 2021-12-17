@@ -7,7 +7,7 @@ CLI argument parser with first-class type support.
 - **Custom types & validation** Pass in any type function and the flag type will be inferred!
 - **Array types** Accept multiple flag values!
 - **Configurable defaults** Set better defaults to avoid checking whether a flag was passed in!
-- **Tiny** 1.3 kB minified!
+- **Tiny** 1.3 kB minified + gzipped!
 
 <sub>Support this project by ⭐️ starring and sharing it. [Follow me](https://github.com/privatenumber) to see what other cool projects I'm working on! ❤️</sub>
 
