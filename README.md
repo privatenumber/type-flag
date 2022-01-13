@@ -1,6 +1,6 @@
-# type-flag <a href="https://npm.im/type-flag"><img src="https://badgen.net/npm/v/type-flag"></a> <a href="https://npm.im/type-flag"><img src="https://badgen.net/npm/dm/type-flag"></a> <a href="https://packagephobia.now.sh/result?p=type-flag"><img src="https://packagephobia.now.sh/badge?p=type-flag"></a>
+# type-flag <a href="https://npm.im/type-flag"><img src="https://badgen.net/npm/v/type-flag"></a>
 
-CLI argument parser with first-class type support.
+Typed & tiny CLI argument parser.
 
 ### Features
 - **Strongly typed** Parse argvs with confidence!
@@ -11,6 +11,11 @@ CLI argument parser with first-class type support.
 
 
 → [Try it out online](https://stackblitz.com/edit/type-flag-demo?devtoolsheight=50&file=src/index.ts&view=editor)
+
+
+> 🔥 Looking for something more robust?
+>
+> Checkout [_Cleye_](https://github.com/privatenumber/cleye), a CLI development tool powered by type-flag. It comes with argument parsing and a beautiful `--help` documentation generator.
 
 
 <sub>Support this project by ⭐️ starring and sharing it. [Follow me](https://github.com/privatenumber) to see what other cool projects I'm working on! ❤️</sub>
