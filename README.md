@@ -251,6 +251,31 @@ const parsed = typeFlag({
 }
 ```
 
+### Optional value flag
+It's common to have flags that act as a boolean when no value is passed in. This can be done by creating a custom type that returns both types.
+
+```ts
+function OptionalString(value: string) {
+    if (!value) {
+        return true
+    }
+
+    return value
+}
+
+const parsed = typeFlag({
+    optionalString: OptionalString
+})
+```
+
+```ts
+// $ node ./cli --optional-string
+parsed.flags.optionalString // => true
+
+// $ node ./cli --optional-string hello
+parsed.flags.optionalString // => 'hello'
+```
+
 ### Accepting flag values with `=` in it
 In use-cases where flag values contain `=`, you can use `:` instead. This allows flags like `--define:K=V`.
 
