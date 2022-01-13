@@ -69,7 +69,7 @@ $ node ./cli --some-string 'hello' --some-boolean --some-number 3
 ```
 
 `parsed` will have the following type:
-```ts
+```json5
 {
     flags: {
         someString: string | undefined
@@ -178,12 +178,12 @@ $ node ./cli --unknown-flag --unknown-flag 2
 ```
 
 This outputs the following:
-```ts
+```json5
 {
 	unknownFlags: {
 		'unknown-flag': [true, '2']
 	},
-	...
+	// ...
 }
 ```
 
@@ -197,10 +197,10 @@ $ node ./cli --boolean value --string "hello world" "another value" -- --string 
 ```
 
 This outputs the following:
-```ts
+```json5
 {
-	_: ['value', 'another value', '--string', 'goodbye world']
-	...
+    _: ['value', 'another value', '--string', 'goodbye world']
+    // ...
 }
 ```
 
@@ -242,12 +242,12 @@ const parsed = typeFlag({
 ```
 
 `parsed` resolves to the following type:
-```ts
+```json5
 {
-    flags: {
-        size: 'small' | 'medium' | 'large' | undefined
+   flags: {
+        'small' | 'medium' | 'large' | undefined
     }
-    ...
+    // ...
 }
 ```
 
@@ -272,25 +272,25 @@ $ node ./cli --env.TOKEN=123 --env.CI
 ```
 
 ```ts
-type Env = {
-	TOKEN?: string
-	CI?: boolean
+type Environment = {
+    TOKEN?: string
+    CI?: boolean
 }
 
-function EnvObject(value: string): Env {
-	const [propertyName, propertyValue] = value.split('=')
-	return {
-		[propertyName]: propertyValue || true
-	}
+function EnvironmentObject(value: string): Environment {
+    const [propertyName, propertyValue] = value.split('=')
+    return {
+        [propertyName]: propertyValue || true
+    }
 }
 
 const parsed = typeFlag({
-	env: [EnvObject]
+    env: [EnvironmentObject]
 })
 
-const env = parsed.flags.env.reduce((agg, next) => Object.assign(agg, next), {})
+const environment = parsed.flags.env.reduce((agg, next) => Object.assign(agg, next), {})
 
-console.log(env) // { TOKEN: 123, CI: true }
+console.log(environment) // { TOKEN: 123, CI: true }
 ```
 
 ### Inverting a boolean
@@ -306,7 +306,7 @@ Note, without the `=`, the `false` will be parsed as a separate argument.
 $ node ./cli --boolean-flag false
 ```
 
-```ts
+```json5
 {
     flags: {
         booleanFlag: true
@@ -320,10 +320,10 @@ To create an API where passing in a flag multiple times increases a count (a pre
 
 ```ts
 const parsed = typeFlag({
-	verbose: {
-		type: [Boolean],
-		alias: 'v'
-	}
+    verbose: {
+        type: [Boolean],
+        alias: 'v'
+    }
 })
 
 console.log(parsed.flags.verbose.length)
@@ -338,7 +338,7 @@ $ node ./cli -vvv # logs 3
 ### typeFlag(flagSchema, argv?)
 
 Returns an object with the shape:
-```ts
+```json5
 {
     flags: {
         [flagName: string]: InferredType
