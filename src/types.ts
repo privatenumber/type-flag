@@ -34,7 +34,7 @@ type FlagSchemaBase<TF> = {
 	```
 	*/
 	alias?: string;
-};
+} & Record<PropertyKey, unknown>;
 
 type FlagSchemaDefault<TF, DefaultType = any> = FlagSchemaBase<TF> & {
 	/**
