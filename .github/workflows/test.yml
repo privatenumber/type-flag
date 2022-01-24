@@ -22,4 +22,8 @@ jobs:
     - name: Install dependencies
       run: npx ci
     - name: Test
-      run: npm run test --if-present
+      run: npm run test
+    - name: Build
+      run: npm run build
+    - name: Test DTS
+      run: npm run test:dts
