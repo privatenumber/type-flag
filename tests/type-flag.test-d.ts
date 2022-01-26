@@ -38,7 +38,7 @@ type ExpectedType = {
 	unknownFlags: {
 		[flag: string]:(string | boolean)[];
 	};
-	_: string[];
+	_: string[] & { '--': string[] };
 };
 
 expectType<ExpectedType>(parsed);
