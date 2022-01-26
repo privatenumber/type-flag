@@ -94,5 +94,7 @@ export type TypeFlag<Schemas extends Flags> = {
 	unknownFlags: {
 		[flag: string]: (string | boolean)[];
 	};
-	_: string[];
+	_: string[] & {
+		'--': string[];
+	};
 };

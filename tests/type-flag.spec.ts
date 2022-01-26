@@ -157,7 +157,7 @@ describe('Parsing', () => {
 		const parsed = typeFlag({}, ['-invalidAlias']);
 
 		expect(parsed).toStrictEqual({
-			_: [],
+			_: Object.assign([], { '--': [] }),
 			flags: {},
 			unknownFlags: {
 				i: [true, true, true],
@@ -180,7 +180,14 @@ describe('Parsing', () => {
 
 		expect<string | undefined>(parsed.flags.flagA).toBe('');
 		expect<string | undefined>(parsed.flags.flagB).toBe(undefined);
-		expect<string[]>(parsed._).toStrictEqual(['--flagB']);
+		expect<string[]>(parsed._).toStrictEqual(
+			Object.assign(
+				['--flagB'],
+				{
+					'--': ['--flagB'],
+				},
+			),
+		);
 	});
 
 	test('strings, booleans, numbers', () => {
@@ -193,7 +200,12 @@ describe('Parsing', () => {
 		expect<string | undefined>(parsed.flags.string).toBe('');
 		expect<boolean | undefined>(parsed.flags.boolean).toBe(true);
 		expect<number | undefined>(parsed.flags.number).toBe(Number.NaN);
-		expect<string[]>(parsed._).toStrictEqual(['world']);
+		expect<string[]>(parsed._).toStrictEqual(
+			Object.assign(
+				['world'],
+				{ '--': [] },
+			),
+		);
 	});
 
 	test('convert kebab-case to camelCase', () => {
@@ -226,7 +238,12 @@ describe('Parsing', () => {
 		expect<string | undefined>(parsed.flags.string).toBe('');
 		expect<boolean | undefined>(parsed.flags.boolean).toBe(true);
 		expect<number | undefined>(parsed.flags.number).toBe(Number.NaN);
-		expect<string[]>(parsed._).toStrictEqual(['world']);
+		expect<string[]>(parsed._).toStrictEqual(
+			Object.assign(
+				['world'],
+				{ '--': [] },
+			),
+		);
 	});
 
 	test('flag: - to allow the use of = in values (or vice versa)', () => {
@@ -266,7 +283,12 @@ describe('Parsing', () => {
 		expect<string | undefined>(parsed.flags.string).toBe('');
 		expect<boolean | undefined>(parsed.flags.boolean).toBe(true);
 		expect<string[]>(Object.keys(parsed.flags)).toStrictEqual(['string', 'boolean']);
-		expect<string[]>(parsed._).toStrictEqual(['world']);
+		expect<string[]>(parsed._).toStrictEqual(
+			Object.assign(
+				['world'],
+				{ '--': [] },
+			),
+		);
 	});
 
 	test('unknown flags', () => {
@@ -309,7 +331,12 @@ describe('Parsing', () => {
 			unknownString: ['hello', true],
 			'kebab-case': [true],
 		});
-		expect<string[]>(parsed._).toStrictEqual(['a']);
+		expect<string[]>(parsed._).toStrictEqual(
+			Object.assign(
+				['a'],
+				{ '--': [] },
+			),
+		);
 	});
 
 	test('custom type', () => {
@@ -356,7 +383,12 @@ describe('Parsing', () => {
 		expect<number | undefined>(parsed.flags.number).toBe(Number.NaN);
 		expect<string[]>(parsed.flags.stringArray).toStrictEqual(['a', 'b']);
 		expect<number[]>(parsed.flags.numberArray).toStrictEqual([1, 2]);
-		expect<string[]>(parsed._).toStrictEqual(['world']);
+		expect<string[]>(parsed._).toStrictEqual(
+			Object.assign(
+				['world'],
+				{ '--': [] },
+			),
+		);
 	});
 
 	describe('Default flag value', () => {

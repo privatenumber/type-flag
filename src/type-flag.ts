@@ -15,6 +15,7 @@ import {
 
 const isAliasPattern = /^-[\da-z]+/i;
 const isFlagPattern = /^--[\w-]{2,}/;
+const END_OF_FLAGS = '--';
 
 /**
 type-flag: typed argv parser
@@ -44,7 +45,9 @@ export function typeFlag<Schemas extends Flags>(
 	const parsed: TypeFlag<Schemas> = {
 		flags: createFlagsObject(schemas),
 		unknownFlags: {},
-		_: [],
+		_: Object.assign([], {
+			[END_OF_FLAGS]: [],
+		}),
 	};
 
 	let expectingValue: undefined | ((value?: string | boolean) => void);
@@ -98,8 +101,10 @@ export function typeFlag<Schemas extends Flags>(
 	for (let i = 0; i < argv.length; i += 1) {
 		const argvElement = argv[i];
 
-		if (argvElement === '--') {
-			parsed._.push(...argv.slice(i + 1));
+		if (argvElement === END_OF_FLAGS) {
+			const endOfFlags = argv.slice(i + 1);
+			parsed._[END_OF_FLAGS] = endOfFlags;
+			parsed._.push(...endOfFlags);
 			break;
 		}
 
