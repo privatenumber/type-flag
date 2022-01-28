@@ -86,7 +86,9 @@ $ node ./cli --some-string 'hello' --some-boolean --some-number 3
     unknownFlags: {
         [flagName: string]: (string | boolean)[]
     }
-    _: string[]
+    _: string[] & {
+        '--': string[]
+    }
 }
 ```
 
@@ -195,7 +197,7 @@ This outputs the following:
 ### Arguments
 All argument values are stored in the `_` property.
 
-Everything after `--` will not be parsed and be treated as arguments.
+Everything after `--` (end-of-flags) is treated as arguments and will be stored in the `_['--']` property.
 
 ```sh
 $ node ./cli --boolean value --string "hello world" "another value" -- --string "goodbye world"
@@ -204,7 +206,16 @@ $ node ./cli --boolean value --string "hello world" "another value" -- --string 
 This outputs the following:
 ```json5
 {
-    _: ['value', 'another value', '--string', 'goodbye world']
+    _: [
+        'value',
+        'another value',
+        '--string',
+        'goodbye world',
+        '--': [
+            '--string',
+            'goodbye world'
+        ]
+    ]
     // ...
 }
 ```
