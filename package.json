@@ -31,7 +31,7 @@
 		}
 	},
 	"scripts": {
-		"build": "tsup src/index.ts --clean --format cjs,esm --dts --minify",
+		"build": "pkgroll",
 		"lint": "eslint .",
 		"test": "jest",
 		"test:dts": "tsd"
@@ -57,8 +57,8 @@
 		"husky": "^4.3.8",
 		"jest": "^27.4.5",
 		"lint-staged": "^12.1.2",
+		"pkgroll": "github:privatenumber/pkgroll#built/develop",
 		"tsd": "^0.19.1",
-		"tsup": "^5.11.6",
 		"typescript": "^4.5.4"
 	},
 	"eslintConfig": {
