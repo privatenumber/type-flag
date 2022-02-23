@@ -74,8 +74,8 @@ $ node ./cli --some-string 'hello' --some-boolean --some-number 3
 ```
 
 `parsed` will have the following type:
-```json5
-{
+```ts
+type Parsed = {
     flags: {
         someString: string | undefined
         someBoolean: boolean
@@ -187,10 +187,10 @@ $ node ./cli --unknown-flag --unknown-flag 2
 This outputs the following:
 ```json5
 {
-	unknownFlags: {
-		'unknown-flag': [true, '2']
-	},
-	// ...
+    unknownFlags: {
+        'unknown-flag': [true, '2']
+    },
+    // ...
 }
 ```
 
@@ -204,6 +204,7 @@ $ node ./cli --boolean value --string "hello world" "another value" -- --string 
 ```
 
 This outputs the following:
+<!-- eslint-skip -->
 ```json5
 {
     _: [
@@ -258,10 +259,10 @@ const parsed = typeFlag({
 ```
 
 `parsed` resolves to the following type:
-```json5
-{
-   flags: {
-        'small' | 'medium' | 'large' | undefined
+```ts
+type Parsed = {
+    flags: {
+        size: 'small' | 'medium' | 'large' | undefined
     }
     // ...
 }
@@ -379,8 +380,8 @@ $ node ./cli -vvv # logs 3
 ### typeFlag(flagSchema, argv?)
 
 Returns an object with the shape:
-```json5
-{
+```ts
+type Parsed = {
     flags: {
         [flagName: string]: InferredType
     }
