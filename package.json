@@ -29,7 +29,7 @@
 		"types": "./dist/index.d.ts"
 	},
 	"scripts": {
-		"build": "pkgroll",
+		"build": "pkgroll --minify",
 		"lint": "eslint .",
 		"test": "jest",
 		"test:dts": "tsd"
