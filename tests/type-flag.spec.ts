@@ -1,5 +1,5 @@
-import typeFlag from '../src';
-import type { Flags } from '../src/types';
+import typeFlag from '../dist/index'; // eslint-disable-line node/file-extension-in-import
+import type { Flags } from '../dist/index'; // eslint-disable-line node/file-extension-in-import
 
 describe('Error handling', () => {
 	describe('Invalid flag name', () => {
