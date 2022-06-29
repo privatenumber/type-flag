@@ -43,23 +43,10 @@
 		"test:dts": "tsd",
 		"dev": "tsx watch --conditions=development tests"
 	},
-	"husky": {
-		"hooks": {
-			"pre-commit": "lint-staged"
-		}
-	},
-	"lint-staged": {
-		"*.ts": [
-			"eslint",
-			"jest --bail --findRelatedTests"
-		]
-	},
 	"devDependencies": {
 		"@pvtnbr/eslint-config": "^0.26.0",
 		"@types/node": "^17.0.29",
 		"eslint": "^8.14.0",
-		"husky": "^4.3.8",
-		"lint-staged": "^12.1.2",
 		"manten": "^0.2.0",
 		"pkgroll": "^1.0.5",
 		"tsd": "^0.20.0",
