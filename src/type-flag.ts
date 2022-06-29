@@ -40,6 +40,9 @@ const parsed = typeFlag({
 export function typeFlag<Schemas extends Flags>(
 	schemas: Schemas,
 	argv: string[] = process.argv.slice(2),
+	options?: {
+		ignoreUnknown?: boolean;
+	},
 ) {
 	const aliasesMap = mapAliases(schemas);
 	const parsed: TypeFlag<Schemas> = {
@@ -133,7 +136,11 @@ export function typeFlag<Schemas extends Flags>(
 							isLast ? flagValue : true,
 						);
 					} else {
-						setUnknown(alias, isLast ? flagValue : true);
+						if (options?.ignoreUnknown) {
+							parsed._.push(argvElement);
+						} else {
+							setUnknown(alias, isLast ? flagValue : true);
+						}
 					}
 				}
 				continue;
@@ -151,7 +158,11 @@ export function typeFlag<Schemas extends Flags>(
 			}
 
 			if (!flagSchema) {
-				setUnknown(flagName, flagValue);
+				if (options?.ignoreUnknown) {
+					parsed._.push(argvElement);
+				} else {
+					setUnknown(flagName, flagValue);
+				}
 				continue;
 			}
 
