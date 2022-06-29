@@ -1,5 +1,5 @@
 import { describe, expect } from 'manten';
-import typeFlag, { type Flags } from '#type-flag'; // eslint-disable-line import/no-unresolved
+import typeFlag, { type Flags } from '#type-flag';
 
 describe('Error handling', ({ describe, test }) => {
 	describe('Invalid flag name', ({ test }) => {
