@@ -1,8 +1,8 @@
-import typeFlag from '../dist/index'; // eslint-disable-line node/file-extension-in-import
-import type { Flags } from '../dist/index'; // eslint-disable-line node/file-extension-in-import
+import { describe, expect } from 'manten';
+import typeFlag, { type Flags } from '#type-flag'; // eslint-disable-line import/no-unresolved
 
-describe('Error handling', () => {
-	describe('Invalid flag name', () => {
+describe('Error handling', ({ describe, test }) => {
+	describe('Invalid flag name', ({ test }) => {
 		test('Empty flag name', () => {
 			expect(() => {
 				typeFlag({
@@ -56,7 +56,7 @@ describe('Error handling', () => {
 		});
 	});
 
-	describe('Invalid alias', () => {
+	describe('Invalid alias', ({ test }) => {
 		test('Empty alias', () => {
 			expect(() => {
 				typeFlag({
@@ -108,7 +108,7 @@ describe('Error handling', () => {
 	});
 });
 
-describe('Types', () => {
+describe('Types', ({ test }) => {
 	test('Errors', () => {
 		typeFlag({
 			// @ts-expect-error must be a function
@@ -152,7 +152,7 @@ describe('Types', () => {
 	});
 });
 
-describe('Parsing', () => {
+describe('Parsing', ({ test }) => {
 	test('invalid consolidated aliases', () => {
 		const parsed = typeFlag({}, ['-invalidAlias']);
 
