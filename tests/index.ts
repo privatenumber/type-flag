@@ -354,7 +354,7 @@ describe('Parsing', ({ test }) => {
 			},
 			unknownFlags: {},
 			_: Object.assign(['--unknown', 'c', '--unknown=d', '-u'], {
-				['--']: [],
+				'--': [],
 			}),
 		});
 	});
