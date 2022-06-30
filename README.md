@@ -377,7 +377,7 @@ $ node ./cli -vvv # logs 3
 
 ## ⚙️ API
 
-### typeFlag(flagSchema, argv?)
+### typeFlag(flagSchema, argv, options)
 
 Returns an object with the shape:
 ```ts
@@ -415,3 +415,13 @@ Type: `string[]`
 Default: `process.argv.slice(2)`
 
 The argv array to parse.
+
+#### options
+
+Type:
+```ts
+type Options = {
+    // Whether not to parse unknown flags (treat as arguments)
+    ignoreUnknown?: boolean
+}
+```

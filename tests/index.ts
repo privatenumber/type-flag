@@ -339,6 +339,26 @@ describe('Parsing', ({ test }) => {
 		);
 	});
 
+	test('ignore unknown flags', () => {
+		const parsed = typeFlag(
+			{
+				string: [String],
+			},
+			['--string', 'a', '--string=b', '--unknown', 'c', '--unknown=d', '-u'],
+			{ ignoreUnknown: true },
+		);
+
+		expect(parsed).toStrictEqual({
+			flags: {
+				string: ['a', 'b'],
+			},
+			unknownFlags: {},
+			_: Object.assign(['--unknown', 'c', '--unknown=d', '-u'], {
+				'--': [],
+			}),
+		});
+	});
+
 	test('custom type', () => {
 		const ParseDate = (dateString: string) => new Date(dateString);
 
@@ -391,7 +411,7 @@ describe('Parsing', ({ test }) => {
 		);
 	});
 
-	describe('Default flag value', () => {
+	describe('Default flag value', ({ test }) => {
 		test('Types and parsing', () => {
 			const parsed = typeFlag({
 				string: {
