@@ -94,7 +94,7 @@ type Parsed = {
 
 ## 🧑‍💻 Usage
 ### Defining flags
-Pass in an object where the key is the flag name and the value is the flag type—a parser function that takes in a string and parses it to that type. Default JavaScript constructors should be able to cover most use-cases: [String](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/String), [Number](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/Number), [Boolean](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean/Boolean), etc.
+Pass in an object where the key is the flag name and the value is the flag type—a parser function that takes in a string and parses it to that type. Default [JavaScript](https://www.scaler.com/topics/javascript/) constructors should be able to cover most use-cases: [String](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/String), [Number](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/Number), [Boolean](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean/Boolean), etc.
 
 The value can also be an object with the `type` property as the flag type.
 
