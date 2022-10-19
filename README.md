@@ -194,6 +194,21 @@ This outputs the following:
 }
 ```
 
+#### Ignoring unknown flags
+Sometimes it may be undesirable to parse out unknown flags. For example, when an argument follows an unknown boolean flag, type-flag may assume that the argument was passed into the flag.
+
+In these cases, you can ignore them so they're treated as arguments.
+
+```ts
+const parsed = typeFlag({}, {
+    ignoreUnknown: true
+})
+
+// $ node ./cli --unknown hello
+console.log(parsed._) // => ['--unknown', 'hello]
+```
+
+
 ### Arguments
 All argument values are stored in the `_` property.
 
