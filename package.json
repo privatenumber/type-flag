@@ -43,11 +43,13 @@
 		"pretest": "npm run build",
 		"test": "tsx tests",
 		"test:dts": "tsd",
-		"dev": "tsx watch --conditions=development tests"
+		"dev": "tsx watch --conditions=development tests",
+		"prepack": "pnpm build && clean-pkg-json"
 	},
 	"devDependencies": {
 		"@pvtnbr/eslint-config": "^0.32.0",
 		"@types/node": "^18.0.0",
+		"clean-pkg-json": "^1.2.0",
 		"eslint": "^8.26.0",
 		"manten": "^0.4.0",
 		"pkgroll": "^1.4.0",
