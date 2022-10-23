@@ -49,11 +49,11 @@
 		"@pvtnbr/eslint-config": "^0.32.0",
 		"@types/node": "^18.0.0",
 		"eslint": "^8.26.0",
-		"manten": "^0.2.0",
-		"pkgroll": "^1.3.1",
-		"tsd": "^0.21.0",
-		"tsx": "^3.6.0",
-		"typescript": "^4.7.4"
+		"manten": "^0.4.0",
+		"pkgroll": "^1.4.0",
+		"tsd": "^0.24.1",
+		"tsx": "^3.10.4",
+		"typescript": "^4.8.4"
 	},
 	"eslintConfig": {
 		"extends": "@pvtnbr"
