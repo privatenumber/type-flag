@@ -40,9 +40,6 @@ const parsed = typeFlag({
 export function typeFlag<Schemas extends Flags>(
 	schemas: Schemas,
 	argv: string[] = process.argv.slice(2),
-	options: {
-		ignoreUnknown?: boolean;
-	} = {},
 ) {
 	const aliasesMap = mapAliases(schemas);
 	const parsed: TypeFlag<Schemas> = {
@@ -91,14 +88,11 @@ export function typeFlag<Schemas extends Flags>(
 			parsed.unknownFlags[flagName] = [];
 		}
 
-		if (flagValue !== undefined) {
-			parsed.unknownFlags[flagName].push(flagValue);
-		} else {
-			expectingValue = (value = true) => {
-				parsed.unknownFlags[flagName].push(value);
-				expectingValue = undefined;
-			};
+		if (flagValue === undefined) {
+			flagValue = true;
 		}
+
+		parsed.unknownFlags[flagName].push(flagValue);
 	};
 
 	for (let i = 0; i < argv.length; i += 1) {
@@ -127,18 +121,16 @@ export function typeFlag<Schemas extends Flags>(
 				for (let j = 0; j < flagName.length; j += 1) {
 					const alias = flagName[j];
 					const hasAlias = aliasesMap.get(alias);
-					const isLast = j === flagName.length - 1;
+					const isLastAlias = j === flagName.length - 1;
 
 					if (hasAlias) {
 						setKnown(
 							hasAlias.name,
 							hasAlias.schema,
-							isLast ? flagValue : true,
+							isLastAlias ? flagValue : true,
 						);
-					} else if (options?.ignoreUnknown) {
-						parsed._.push(argvElement);
 					} else {
-						setUnknown(alias, isLast ? flagValue : true);
+						setUnknown(alias, isLastAlias ? flagValue : true);
 					}
 				}
 				continue;
@@ -156,11 +148,7 @@ export function typeFlag<Schemas extends Flags>(
 			}
 
 			if (!flagSchema) {
-				if (options?.ignoreUnknown) {
-					parsed._.push(argvElement);
-				} else {
-					setUnknown(flagName, flagValue);
-				}
+				setUnknown(flagName, flagValue);
 				continue;
 			}
 
