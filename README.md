@@ -1,6 +1,6 @@
 # type-flag <a href="https://npm.im/type-flag"><img src="https://badgen.net/npm/v/type-flag"></a>
 
-Typed & tiny CLI argument parser.
+Tiny & typed command-line arguments parser
 
 ### Features
 - **Strongly typed** Parse argvs with confidence!

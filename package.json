@@ -1,11 +1,13 @@
 {
 	"name": "type-flag",
 	"version": "0.0.0-semantic-release",
-	"description": "Parse argv flags with types",
+	"description": "Tiny & typed command-line arguments parser",
 	"keywords": [
 		"cli",
+		"command-line",
 		"flag",
 		"argv",
+		"arguments",
 		"parser",
 		"typed",
 		"typescript"
