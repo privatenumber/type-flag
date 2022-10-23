@@ -40,7 +40,6 @@
 	"scripts": {
 		"build": "pkgroll --minify",
 		"lint": "eslint --cache .",
-		"pretest": "npm run build",
 		"test": "tsx tests",
 		"test:dts": "tsd",
 		"dev": "tsx watch --conditions=development tests",
