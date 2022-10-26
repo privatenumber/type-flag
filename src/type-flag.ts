@@ -139,7 +139,7 @@ export function typeFlag<Schemas extends Flags>(
 			setValueOnPreviousFlag(
 				type === Type.Argument
 					? argvElement
-					: undefined
+					: undefined,
 			);
 
 			if (type === Type.Argument) {
