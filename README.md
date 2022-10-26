@@ -1,13 +1,13 @@
 # type-flag <a href="https://npm.im/type-flag"><img src="https://badgen.net/npm/v/type-flag"></a>
 
-Tiny & typed command-line arguments parser
+Typed command-line arguments parser
 
 ### Features
-- **Strongly typed** Parse argvs with confidence!
-- **Custom types & validation** Pass in any type function and the flag type will be inferred!
-- **Array types** Accept multiple flag values!
-- **Configurable defaults** Set better defaults to avoid checking whether a flag was passed in!
-- **Tiny** 1.3 kB minified + gzipped!
+- **Strongly typed** Parse argvs with confidence
+- **Custom types & validation** Pass in any parser function and the flag type will be inferred
+- **Array types** Accept multiple flag values
+- **Configurable defaults** Set better defaults to avoid checking whether a flag was passed in
+- **Tiny** 1.3 kB minified + gzipped
 
 
 → [Try it out online](https://stackblitz.com/edit/type-flag-demo?devtoolsheight=50&file=src/index.ts&view=editor)
@@ -50,7 +50,7 @@ const parsed = typeFlag({
         default: 2
     },
 
-    // Wrap type with an array to indicate accept multiple flags
+    // Wrap type with an array to accept multiple flags
     stringArray: [String],
 
     numberArray: {
@@ -249,7 +249,7 @@ This allows for usage like `--flag:key=value` or `--flag.property=value` to be p
 
 ## 👨🏻‍🏫 Examples
 
-### Using a custom type
+### Custom flag type
 Basic types can be set using [built-in functions in JavaScript](https://www.w3schools.com/js/js_object_constructors.asp#:~:text=Built-in%20JavaScript%20Constructors), but sometimes you want to a new type, narrow the type, or add validation.
 
 To create a new type, simply declare a function that accepts a string argument and returns the parsed value with the expected type.
