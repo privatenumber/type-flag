@@ -152,7 +152,7 @@ describe('Types', ({ test }) => {
 	});
 });
 
-describe('Parsing', ({ test, describe }) => {
+describe('Parsing', ({ describe, test }) => {
 	test('invalid consolidated aliases', () => {
 		const parsed = typeFlag({}, ['-invalidAlias']);
 
