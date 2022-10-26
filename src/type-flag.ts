@@ -166,18 +166,18 @@ export function typeFlag<Schemas extends Flags>(
 				for (let j = 0; j < flagName.length; j += 1) {
 					const alias = flagName[j];
 					const hasAlias = aliasesMap.get(alias);
-					const isLast = j === flagName.length - 1;
+					const isLastAlias = j === flagName.length - 1;
 
 					if (hasAlias) {
 						setKnown(
 							hasAlias.name,
 							hasAlias.schema,
-							isLast ? flagValue : true,
+							isLastAlias ? flagValue : true,
 						);
 					} else if (ignoreUnknown) {
 						parsed._.push(argvElement);
 					} else {
-						setUnknown(alias, isLast ? flagValue : true);
+						setUnknown(alias, isLastAlias ? flagValue : true);
 					}
 				}
 				continue;
