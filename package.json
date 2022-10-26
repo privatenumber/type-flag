@@ -1,7 +1,7 @@
 {
 	"name": "type-flag",
 	"version": "0.0.0-semantic-release",
-	"description": "Tiny & typed command-line arguments parser",
+	"description": "Typed command-line arguments parser",
 	"keywords": [
 		"cli",
 		"command-line",
