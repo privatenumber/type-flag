@@ -152,7 +152,7 @@ describe('Types', ({ test }) => {
 	});
 });
 
-describe('Parsing', ({ test }) => {
+describe('Parsing', ({ test, describe }) => {
 	test('invalid consolidated aliases', () => {
 		const parsed = typeFlag({}, ['-invalidAlias']);
 
@@ -172,7 +172,7 @@ describe('Parsing', ({ test }) => {
 		});
 	});
 
-	test('don\'t parse after --', () => {
+	test('end of flags', () => {
 		const parsed = typeFlag({
 			flagA: String,
 			flagB: String,
@@ -183,10 +183,27 @@ describe('Parsing', ({ test }) => {
 		expect<string[]>(parsed._).toStrictEqual(
 			Object.assign(
 				['--flagB'],
-				{
-					'--': ['--flagB'],
-				},
+				{ '--': ['--flagB'] },
 			),
+		);
+	});
+
+	test('earlyTermination', () => {
+		const parsed = typeFlag(
+			{
+				flagA: Boolean,
+				flagB: Boolean,
+			},
+			['--flagA', './file', '--flagB'],
+			{
+				earlyTermination: ({ type }) => type === 'argument',
+			},
+		);
+
+		expect<boolean | undefined>(parsed.flags.flagA).toBe(true);
+		expect<boolean | undefined>(parsed.flags.flagB).toBe(undefined);
+		expect<string[]>(parsed._).toStrictEqual(
+			Object.assign([], { '--': [] }),
 		);
 	});
 
