@@ -136,7 +136,11 @@ export function typeFlag<Schemas extends Flags>(
 		);
 
 		if (setValueOnPreviousFlag) {
-			setValueOnPreviousFlag(type === Type.Argument ? argvElement : undefined);
+			setValueOnPreviousFlag(
+				type === Type.Argument
+					? argvElement
+					: undefined
+			);
 
 			if (type === Type.Argument) {
 				// Skip because it was actually a value, not an argument
