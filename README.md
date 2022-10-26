@@ -249,7 +249,7 @@ This allows for usage like `--flag:key=value` or `--flag.property=value` to be p
 
 ## 👨🏻‍🏫 Examples
 
-### Using a custom type
+### Custom flag type
 Basic types can be set using [built-in functions in JavaScript](https://www.w3schools.com/js/js_object_constructors.asp#:~:text=Built-in%20JavaScript%20Constructors), but sometimes you want to a new type, narrow the type, or add validation.
 
 To create a new type, simply declare a function that accepts a string argument and returns the parsed value with the expected type.
