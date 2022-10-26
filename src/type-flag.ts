@@ -106,9 +106,9 @@ export function typeFlag<Schemas extends Flags>(
 		const argvElement = argv[i];
 
 		if (argvElement === END_OF_FLAGS) {
-			const endOfFlags = argv.slice(i + 1);
-			parsed._[END_OF_FLAGS] = endOfFlags;
-			parsed._.push(...endOfFlags);
+			const remainingArgs = argv.slice(i + 1);
+			parsed._[END_OF_FLAGS] = remainingArgs;
+			parsed._.push(...remainingArgs);
 			break;
 		}
 

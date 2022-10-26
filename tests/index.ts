@@ -152,7 +152,7 @@ describe('Types', ({ test }) => {
 	});
 });
 
-describe('Parsing', ({ test }) => {
+describe('Parsing', ({ describe, test }) => {
 	test('invalid consolidated aliases', () => {
 		const parsed = typeFlag({}, ['-invalidAlias']);
 
@@ -172,7 +172,7 @@ describe('Parsing', ({ test }) => {
 		});
 	});
 
-	test('don\'t parse after --', () => {
+	test('end of flags', () => {
 		const parsed = typeFlag({
 			flagA: String,
 			flagB: String,
