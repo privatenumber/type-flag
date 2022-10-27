@@ -4,7 +4,7 @@ import type {
 	TypeFlag,
 } from './types';
 import {
-	toCamelCase,
+	kebabToCamel,
 	createFlagsObject,
 	mapAliases,
 	parseFlag,
@@ -148,7 +148,7 @@ export function typeFlag<Schemas extends Flags>(
 			let flagSchema = schemas[flagName];
 
 			if (!flagSchema) {
-				const camelized = toCamelCase(flagName);
+				const camelized = kebabToCamel(flagName);
 				flagSchema = schemas[camelized];
 
 				if (flagSchema) {
