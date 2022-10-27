@@ -4,13 +4,14 @@ import type {
 	TypeFlag,
 } from './types';
 import {
-	toCamelCase,
+	kebabToCamel,
 	createFlagsObject,
 	mapAliases,
 	parseFlag,
 	getDefaultFromTypeWithValue,
 	validateFlags,
 	getFlagType,
+	get,
 } from './utils';
 
 const isAliasPattern = /^-[\da-z]+/i;
@@ -105,14 +106,11 @@ export function typeFlag<Schemas extends Flags>(
 			parsed.unknownFlags[flagName] = [];
 		}
 
-		if (flagValue !== undefined) {
-			parsed.unknownFlags[flagName].push(flagValue);
-		} else {
-			setValueOnPreviousFlag = (value = true) => {
-				parsed.unknownFlags[flagName].push(value);
-				setValueOnPreviousFlag = undefined;
-			};
+		if (flagValue === undefined) {
+			flagValue = true;
 		}
+
+		parsed.unknownFlags[flagName].push(flagValue);
 	};
 
 	for (let i = 0; i < argv.length; i += 1) {
@@ -165,7 +163,7 @@ export function typeFlag<Schemas extends Flags>(
 			if (type === Type.Alias) {
 				for (let j = 0; j < flagName.length; j += 1) {
 					const alias = flagName[j];
-					const hasAlias = aliasesMap.get(alias);
+					const hasAlias = get(aliasesMap, alias);
 					const isLastAlias = j === flagName.length - 1;
 
 					if (hasAlias) {
@@ -183,11 +181,11 @@ export function typeFlag<Schemas extends Flags>(
 				continue;
 			}
 
-			let flagSchema = schemas[flagName];
+			let flagSchema = get(schemas, flagName);
 
 			if (!flagSchema) {
-				const camelized = toCamelCase(flagName);
-				flagSchema = schemas[camelized];
+				const camelized = kebabToCamel(flagName);
+				flagSchema = get(schemas, camelized);
 
 				if (flagSchema) {
 					flagName = camelized;

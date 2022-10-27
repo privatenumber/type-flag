@@ -1,7 +1,7 @@
 import { describe, expect } from 'manten';
 import typeFlag, { type Flags } from '#type-flag';
 
-describe('Error handling', ({ describe, test }) => {
+describe('Error handling', ({ describe }) => {
 	describe('Invalid flag name', ({ test }) => {
 		test('Empty flag name', () => {
 			expect(() => {
@@ -94,18 +94,6 @@ describe('Error handling', ({ describe, test }) => {
 			}).toThrow(/* 'Flag collision: Alias "a" is already used' */);
 		});
 	});
-
-	test('Missing required type', () => {
-		expect(() => {
-			typeFlag({
-				// @ts-expect-error missing
-				missingType: {
-					alias: 't',
-				},
-
-			}, ['--missing-type']);
-		}).toThrow('Missing type on flag "missingType"');
-	});
 });
 
 describe('Types', ({ test }) => {
@@ -153,22 +141,32 @@ describe('Types', ({ test }) => {
 });
 
 describe('Parsing', ({ describe, test }) => {
-	test('invalid consolidated aliases', () => {
-		const parsed = typeFlag({}, ['-invalidAlias']);
+	describe('edge-cases', ({ test }) => {
+		test('Object prototype property', () => {
+			const parsed = typeFlag({}, ['--to-string']);
+			expect(parsed.flags).toStrictEqual({});
+			expect(parsed.unknownFlags).toStrictEqual({
+				'to-string': [true],
+			});
+		});
 
-		expect(parsed).toStrictEqual({
-			_: Object.assign([], { '--': [] }),
-			flags: {},
-			unknownFlags: {
-				i: [true, true, true],
-				n: [true],
-				v: [true],
-				a: [true, true],
-				l: [true, true],
-				d: [true],
-				A: [true],
-				s: [true],
-			},
+		test('invalid consolidated aliases', () => {
+			const parsed = typeFlag({}, ['-invalidAlias']);
+
+			expect(parsed).toStrictEqual({
+				_: Object.assign([], { '--': [] }),
+				flags: {},
+				unknownFlags: {
+					i: [true, true, true],
+					n: [true],
+					v: [true],
+					a: [true, true],
+					l: [true, true],
+					d: [true],
+					A: [true],
+					s: [true],
+				},
+			});
 		});
 	});
 
@@ -312,19 +310,17 @@ describe('Parsing', ({ describe, test }) => {
 		const parsed = typeFlag(
 			{},
 			[
+				'--unknownFlag',
+				'arg1',
 				'--unknownFlag=false',
 				'--unknownFlag=',
-				'a',
-				'--unknownFlag',
+				'arg2',
 				'-u',
-				'4',
-				'-u=a',
-				'--unknownString',
-				'hello',
-				'--unknownString',
+				'arg3',
+				'-u=value',
 				'-3',
 				'-sdf',
-				'4',
+				'arg4',
 				'-ff=a',
 				'--kebab-case',
 			],
@@ -339,18 +335,17 @@ describe('Parsing', ({ describe, test }) => {
 		};
 
 		expect<UnknownFlags>(parsed.unknownFlags).toStrictEqual({
-			unknownFlag: ['false', '', true],
-			u: ['4', 'a'],
+			unknownFlag: [true, 'false', ''],
+			u: [true, 'value'],
 			3: [true],
 			s: [true],
 			d: [true],
-			f: ['4', true, 'a'],
-			unknownString: ['hello', true],
+			f: [true, true, 'a'],
 			'kebab-case': [true],
 		});
 		expect<string[]>(parsed._).toStrictEqual(
 			Object.assign(
-				['a'],
+				['arg1', 'arg2', 'arg3', 'arg4'],
 				{ '--': [] },
 			),
 		);
@@ -370,9 +365,10 @@ describe('Parsing', ({ describe, test }) => {
 				string: ['a', 'b'],
 			},
 			unknownFlags: {},
-			_: Object.assign(['--unknown', 'c', '--unknown=d', '-u'], {
-				'--': [],
-			}),
+			_: Object.assign(
+				['--unknown', 'c', '--unknown=d', '-u'],
+				{ '--': [] },
+			),
 		});
 	});
 
