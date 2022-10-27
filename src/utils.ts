@@ -100,16 +100,18 @@ export function mapAliases<Schemas extends Flags>(
 		if (schema && typeof schema === 'object') {
 			const { alias } = schema;
 			if (typeof alias === 'string') {
+				const errorPrefix = `Flag alias ${stringify(alias)} for flag ${stringify(flagName)}`;
+
 				if (alias.length === 0) {
-					throw new Error(`Flag alias for ${stringify(flagName)} cannot be empty`);
+					throw new Error(`${errorPrefix} cannot be empty`);
 				}
 
 				if (alias.length > 1) {
-					throw new Error(`Flag alias for ${stringify(flagName)} must be a single character`);
+					throw new Error(`${errorPrefix} must be a single character`);
 				}
 
 				if (aliases.has(alias)) {
-					throw new Error(`Flag alias ${stringify(alias)} for ${stringify(flagName)} is already used`);
+					throw new Error(`${errorPrefix} is already used`);
 				}
 
 				aliases.set(alias, {
@@ -204,10 +206,6 @@ export const getFlagType = (
 	flagName: string,
 	flagSchema: FlagTypeOrSchema,
 ): TypeFunction => {
-	if (!flagSchema) {
-		throw new Error(`Missing type on flag ${stringify(flagName)}`);
-	}
-
 	if (typeof flagSchema === 'function') {
 		return flagSchema;
 	}

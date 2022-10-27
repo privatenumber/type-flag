@@ -94,18 +94,6 @@ describe('Error handling', ({ describe, test }) => {
 			}).toThrow(/* 'Flag collision: Alias "a" is already used' */);
 		});
 	});
-
-	test('Missing required type', () => {
-		expect(() => {
-			typeFlag({
-				// @ts-expect-error missing
-				missingType: {
-					alias: 't',
-				},
-
-			}, ['--missing-type']);
-		}).toThrow('Missing type on flag "missingType"');
-	});
 });
 
 describe('Types', ({ test }) => {
