@@ -14,18 +14,23 @@ declare global {
 }
 
 const kebabCasePattern = /-(\w)/g;
-export const toCamelCase = (string: string) => string.replace(
+export const kebabToCamel = (string: string) => string.replace(
 	kebabCasePattern,
 	(_, afterHyphenCharacter) => afterHyphenCharacter.toUpperCase(),
 );
 
 const camelCasePattern = /\B([A-Z])/g;
-const toKebabCase = (string: string) => string.replace(camelCasePattern, '-$1').toLowerCase();
+const camelToKebab = (string: string) => string.replace(camelCasePattern, '-$1').toLowerCase();
 
 const { stringify } = JSON;
 
 const { hasOwnProperty } = Object.prototype;
-const hasOwn = (object: any, property: string | symbol) => hasOwnProperty.call(object, property);
+const hasOwn = (object: any, property: PropertyKey) => hasOwnProperty.call(object, property);
+
+export const get = (
+	object: any,
+	property: PropertyKey,
+) => hasOwn(object, property) && object[property];
 
 const flagPrefixPattern = /^--?/;
 const valueDelimiterPattern = /[.:=]/;
@@ -53,27 +58,27 @@ const validateFlagName = <Schemas extends Flags>(
 	schemas: Schemas,
 	flagName: string,
 ) => {
-	const errorPrefix = `Invalid flag name ${stringify(flagName)}:`;
+	const errorPrefix = `Flag name ${stringify(flagName)}`;
 
 	if (flagName.length === 0) {
-		throw new Error(`${errorPrefix} flag name cannot be empty}`);
+		throw new Error(`${errorPrefix} cannot be empty`);
 	}
 
 	if (flagName.length === 1) {
-		throw new Error(`${errorPrefix} single characters are reserved for aliases`);
+		throw new Error(`${errorPrefix} must be longer than a character`);
 	}
 
 	const hasReservedCharacter = flagName.match(reservedCharactersPattern);
 	if (hasReservedCharacter) {
-		throw new Error(`${errorPrefix} flag name cannot contain the character ${stringify(hasReservedCharacter?.[0])}`);
+		throw new Error(`${errorPrefix} cannot contain the character ${stringify(hasReservedCharacter?.[0])}`);
 	}
 
-	let checkDifferentCase;
+	let checkDifferentCase: string | undefined;
 
 	if (kebabCasePattern.test(flagName)) {
-		checkDifferentCase = toCamelCase(flagName);
+		checkDifferentCase = kebabToCamel(flagName);
 	} else if (camelCasePattern.test(flagName)) {
-		checkDifferentCase = toKebabCase(flagName);
+		checkDifferentCase = camelToKebab(flagName);
 	}
 
 	if (checkDifferentCase && hasOwn(schemas, checkDifferentCase)) {
@@ -84,10 +89,12 @@ const validateFlagName = <Schemas extends Flags>(
 export function mapAliases<Schemas extends Flags>(
 	schemas: Schemas,
 ) {
-	const aliases = new Map<string, {
-		name: string;
-		schema: FlagSchema;
-	}>();
+	const aliases: {
+		[alias: string]: {
+			name: string;
+			schema: FlagSchema;
+		};
+	} = {};
 
 	for (const flagName in schemas) {
 		if (!hasOwn(schemas, flagName)) {
@@ -100,22 +107,24 @@ export function mapAliases<Schemas extends Flags>(
 		if (schema && typeof schema === 'object') {
 			const { alias } = schema;
 			if (typeof alias === 'string') {
+				const errorPrefix = `Flag alias ${stringify(alias)} for flag ${stringify(flagName)}`;
+
 				if (alias.length === 0) {
-					throw new Error(`Invalid flag alias ${stringify(flagName)}: flag alias cannot be empty`);
+					throw new Error(`${errorPrefix} cannot be empty`);
 				}
 
 				if (alias.length > 1) {
-					throw new Error(`Invalid flag alias ${stringify(flagName)}: flag aliases can only be a single-character`);
+					throw new Error(`${errorPrefix} must be a single character`);
 				}
 
-				if (aliases.has(alias)) {
-					throw new Error(`Flag collision: Alias "${alias}" is already used`);
+				if (hasOwn(aliases, alias)) {
+					throw new Error(`${errorPrefix} is already used`);
 				}
 
-				aliases.set(alias, {
+				aliases[alias] = {
 					name: flagName,
 					schema,
-				});
+				};
 			}
 		}
 	}
@@ -123,13 +132,16 @@ export function mapAliases<Schemas extends Flags>(
 	return aliases;
 }
 
-const isArrayType = (schema: FlagTypeOrSchema) => {
-	if (!schema || typeof schema === 'function') {
-		return false;
-	}
-
-	return Array.isArray(schema) || Array.isArray(schema.type);
-};
+const isArrayType = (flagType: FlagTypeOrSchema) => (
+	flagType
+	&& (
+		Array.isArray(flagType)
+		|| (
+			('type' in flagType)
+			&& Array.isArray(flagType.type)
+		)
+	)
+);
 
 export const createFlagsObject = <Schemas extends Flags>(
 	schema: Schemas,
@@ -201,10 +213,6 @@ export const getFlagType = (
 	flagName: string,
 	flagSchema: FlagTypeOrSchema,
 ): TypeFunction => {
-	if (!flagSchema) {
-		throw new Error(`Missing type on flag "${flagName}"`);
-	}
-
 	if (typeof flagSchema === 'function') {
 		return flagSchema;
 	}
