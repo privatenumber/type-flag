@@ -1,7 +1,7 @@
 import { describe, expect } from 'manten';
 import typeFlag, { type Flags } from '#type-flag';
 
-describe('Error handling', ({ describe, test }) => {
+describe('Error handling', ({ describe }) => {
 	describe('Invalid flag name', ({ test }) => {
 		test('Empty flag name', () => {
 			expect(() => {
@@ -141,22 +141,32 @@ describe('Types', ({ test }) => {
 });
 
 describe('Parsing', ({ describe, test }) => {
-	test('invalid consolidated aliases', () => {
-		const parsed = typeFlag({}, ['-invalidAlias']);
+	describe('edge-cases', ({ test }) => {
+		test('Object prototype property', () => {
+			const parsed = typeFlag({}, ['--to-string']);
+			expect(parsed.flags).toStrictEqual({});
+			expect(parsed.unknownFlags).toStrictEqual({
+				'to-string': [true],
+			});
+		});
 
-		expect(parsed).toStrictEqual({
-			_: Object.assign([], { '--': [] }),
-			flags: {},
-			unknownFlags: {
-				i: [true, true, true],
-				n: [true],
-				v: [true],
-				a: [true, true],
-				l: [true, true],
-				d: [true],
-				A: [true],
-				s: [true],
-			},
+		test('invalid consolidated aliases', () => {
+			const parsed = typeFlag({}, ['-invalidAlias']);
+
+			expect(parsed).toStrictEqual({
+				_: Object.assign([], { '--': [] }),
+				flags: {},
+				unknownFlags: {
+					i: [true, true, true],
+					n: [true],
+					v: [true],
+					a: [true, true],
+					l: [true, true],
+					d: [true],
+					A: [true],
+					s: [true],
+				},
+			});
 		});
 	});
 

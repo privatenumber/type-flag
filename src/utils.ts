@@ -25,7 +25,12 @@ const camelToKebab = (string: string) => string.replace(camelCasePattern, '-$1')
 const { stringify } = JSON;
 
 const { hasOwnProperty } = Object.prototype;
-const hasOwn = (object: any, property: string | symbol) => hasOwnProperty.call(object, property);
+const hasOwn = (object: any, property: PropertyKey) => hasOwnProperty.call(object, property);
+
+export const get = (
+	object: any,
+	property: PropertyKey,
+) => hasOwn(object, property) && object[property];
 
 const flagPrefixPattern = /^--?/;
 const valueDelimiterPattern = /[.:=]/;
@@ -84,10 +89,12 @@ const validateFlagName = <Schemas extends Flags>(
 export function mapAliases<Schemas extends Flags>(
 	schemas: Schemas,
 ) {
-	const aliases = new Map<string, {
-		name: string;
-		schema: FlagSchema;
-	}>();
+	const aliases: {
+		[alias: string]: {
+			name: string;
+			schema: FlagSchema;
+		};
+	} = {};
 
 	for (const flagName in schemas) {
 		if (!hasOwn(schemas, flagName)) {
@@ -110,14 +117,14 @@ export function mapAliases<Schemas extends Flags>(
 					throw new Error(`${errorPrefix} must be a single character`);
 				}
 
-				if (aliases.has(alias)) {
+				if (hasOwn(aliases, alias)) {
 					throw new Error(`${errorPrefix} is already used`);
 				}
 
-				aliases.set(alias, {
+				aliases[alias] = {
 					name: flagName,
 					schema,
-				});
+				};
 			}
 		}
 	}

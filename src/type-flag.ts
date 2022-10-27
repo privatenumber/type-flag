@@ -11,6 +11,7 @@ import {
 	getDefaultFromTypeWithValue,
 	validateFlags,
 	getFlagType,
+	get,
 } from './utils';
 
 const isAliasPattern = /^-[\da-z]+/i;
@@ -127,7 +128,7 @@ export function typeFlag<Schemas extends Flags>(
 			if (isAlias) {
 				for (let j = 0; j < flagName.length; j += 1) {
 					const alias = flagName[j];
-					const hasAlias = aliasesMap.get(alias);
+					const hasAlias = get(aliasesMap, alias);
 					const isLastAlias = j === flagName.length - 1;
 
 					if (hasAlias) {
@@ -145,11 +146,11 @@ export function typeFlag<Schemas extends Flags>(
 				continue;
 			}
 
-			let flagSchema = schemas[flagName];
+			let flagSchema = get(schemas, flagName);
 
 			if (!flagSchema) {
 				const camelized = kebabToCamel(flagName);
-				flagSchema = schemas[camelized];
+				flagSchema = get(schemas, camelized);
 
 				if (flagSchema) {
 					flagName = camelized;
