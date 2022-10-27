@@ -3,15 +3,9 @@ import type {
 	FlagSchema,
 	FlagTypeOrSchema,
 	Flags,
-	InferFlagType,
 } from './types';
 
-// https://stackoverflow.com/a/56249765/911407
-declare global {
-	interface ArrayConstructor {
-		isArray(array: ReadonlyArray<any> | any): array is ReadonlyArray<any>;
-	}
-}
+const { stringify } = JSON;
 
 const kebabCasePattern = /-(\w)/g;
 export const kebabToCamel = (string: string) => string.replace(
@@ -22,15 +16,13 @@ export const kebabToCamel = (string: string) => string.replace(
 const camelCasePattern = /\B([A-Z])/g;
 const camelToKebab = (string: string) => string.replace(camelCasePattern, '-$1').toLowerCase();
 
-const { stringify } = JSON;
-
 const { hasOwnProperty } = Object.prototype;
 const hasOwn = (object: any, property: PropertyKey) => hasOwnProperty.call(object, property);
 
-export const get = (
-	object: any,
-	property: PropertyKey,
-) => hasOwn(object, property) && object[property];
+export const getOwn = <ObjectType>(
+	object: ObjectType,
+	property: keyof ObjectType,
+) => (hasOwn(object, property) ? object[property] : undefined);
 
 const flagPrefixPattern = /^--?/;
 const valueDelimiterPattern = /[.:=]/;
@@ -54,8 +46,8 @@ export const parseFlag = (flagArgv: string) => {
 
 const reservedCharactersPattern = /[\s.:=]/;
 
-const validateFlagName = <Schemas extends Flags>(
-	schemas: Schemas,
+const validateFlagName = (
+	schemas: Flags,
 	flagName: string,
 ) => {
 	const errorPrefix = `Flag name ${stringify(flagName)}`;
@@ -86,105 +78,104 @@ const validateFlagName = <Schemas extends Flags>(
 	}
 };
 
-export function mapAliases<Schemas extends Flags>(
-	schemas: Schemas,
-) {
-	const aliases: {
-		[alias: string]: {
-			name: string;
-			schema: FlagSchema;
-		};
-	} = {};
+type Aliases = {
+	[alias: string]: {
+		name: string;
+		schema: FlagSchema;
+	};
+};
 
-	for (const flagName in schemas) {
-		if (!hasOwn(schemas, flagName)) {
+export const mapAliases = (
+	schemas: Flags,
+) => {
+	const aliases: Aliases = {};
+
+	// eslint-disable-next-line guard-for-in
+	for (const name in schemas) {
+		const schema = getOwn(schemas, name) as FlagSchema;
+
+		// has-own check
+		if (!schema) {
 			continue;
 		}
 
-		validateFlagName(schemas, flagName);
+		validateFlagName(schemas, name);
 
-		const schema = schemas[flagName] as FlagSchema;
-		if (schema && typeof schema === 'object') {
-			const { alias } = schema;
-			if (typeof alias === 'string') {
-				const errorPrefix = `Flag alias ${stringify(alias)} for flag ${stringify(flagName)}`;
+		const { alias } = schema;
+		if (typeof alias === 'string') {
+			const errorPrefix = `Flag alias ${stringify(alias)} for flag ${stringify(name)}`;
 
-				if (alias.length === 0) {
-					throw new Error(`${errorPrefix} cannot be empty`);
-				}
-
-				if (alias.length > 1) {
-					throw new Error(`${errorPrefix} must be a single character`);
-				}
-
-				if (hasOwn(aliases, alias)) {
-					throw new Error(`${errorPrefix} is already used`);
-				}
-
-				aliases[alias] = {
-					name: flagName,
-					schema,
-				};
+			if (alias.length === 0) {
+				throw new Error(`${errorPrefix} cannot be empty`);
 			}
+
+			if (alias.length > 1) {
+				throw new Error(`${errorPrefix} must be a single character`);
+			}
+
+			if (hasOwn(aliases, alias)) {
+				throw new Error(`${errorPrefix} is already used`);
+			}
+
+			aliases[alias] = {
+				name,
+				schema,
+			};
 		}
 	}
 
 	return aliases;
-}
+};
 
 const isArrayType = (flagType: FlagTypeOrSchema) => (
 	flagType
 	&& (
 		Array.isArray(flagType)
 		|| (
-			('type' in flagType)
+			'type' in flagType
 			&& Array.isArray(flagType.type)
 		)
 	)
 );
 
-export const createFlagsObject = <Schemas extends Flags>(
-	schema: Schemas,
+export const createFlagsObject = (
+	schemas: Flags,
 ) => {
-	const flags: Record<string, any> = {};
+	const flags: Record<string, unknown> = {};
 
-	for (const flag in schema) {
-		if (hasOwn(schema, flag)) {
-			flags[flag] = isArrayType(schema[flag]) ? [] : undefined;
+	for (const flag in schemas) {
+		if (hasOwn(schemas, flag)) {
+			flags[flag] = isArrayType(schemas[flag]) ? [] : undefined;
 		}
 	}
 
-	return flags as {
-		[flag in keyof Schemas]: InferFlagType<Schemas[flag]>;
-	};
+	return flags;
 };
 
 export const getDefaultFromTypeWithValue = (
 	typeFunction: TypeFunction,
 	value: any,
 ) => {
-	if (typeFunction === Number && value === '') {
-		return Number.NaN;
+	if (typeFunction === Boolean) {
+		return value !== 'false';
 	}
 
-	if (typeFunction === Boolean) {
-		return (value !== 'false');
+	if (typeFunction === Number && value === '') {
+		return Number.NaN;
 	}
 
 	return value;
 };
 
-export const validateFlags = <Schemas extends Flags>(
-	schemas: Schemas,
-	flags: Record<keyof Schemas, any>,
+export const setDefaultFlagValues = (
+	schemas: Flags,
+	flags: Record<string, any>,
 ) => {
+	// eslint-disable-next-line guard-for-in
 	for (const flagName in schemas) {
-		if (!hasOwn(schemas, flagName)) {
-			continue;
-		}
+		const schema = getOwn(schemas, flagName);
 
-		const schema = schemas[flagName];
-
+		// has-own check
 		if (!schema) {
 			continue;
 		}
@@ -209,6 +200,16 @@ export const validateFlags = <Schemas extends Flags>(
 	}
 };
 
+/**
+ * Default Array.isArray doesn't support type-narrowing
+ * on readonly arrays.
+ *
+ * https://stackoverflow.com/a/56249765/911407
+ */
+const isReadonlyArray = (
+	array: readonly any[] | any,
+): array is readonly unknown[] => Array.isArray(array);
+
 export const getFlagType = (
 	flagName: string,
 	flagSchema: FlagTypeOrSchema,
@@ -217,7 +218,7 @@ export const getFlagType = (
 		return flagSchema;
 	}
 
-	if (Array.isArray(flagSchema)) {
+	if (isReadonlyArray(flagSchema)) {
 		return flagSchema[0];
 	}
 

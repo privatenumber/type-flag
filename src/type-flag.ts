@@ -9,14 +9,22 @@ import {
 	mapAliases,
 	parseFlag,
 	getDefaultFromTypeWithValue,
-	validateFlags,
+	setDefaultFlagValues,
 	getFlagType,
-	get,
+	getOwn,
 } from './utils';
 
 const isAliasPattern = /^-[\da-z]+/i;
 const isFlagPattern = /^--[\w-]{2,}/;
 const END_OF_FLAGS = '--';
+
+type ParsedFlags = {
+	flags: Record<string, unknown>;
+	unknownFlags: Record<string, (string | boolean)[]>;
+	_: string[] & {
+		'--': string[];
+	};
+};
 
 /**
 type-flag: typed argv parser
@@ -38,16 +46,16 @@ const parsed = typeFlag({
 })
 ```
 */
-export function typeFlag<Schemas extends Flags>(
+export const typeFlag = <Schemas extends Flags>(
 	schemas: Schemas,
 	argv: string[] = process.argv.slice(2),
 	options: {
 		ignoreUnknown?: boolean;
 	} = {},
-) {
+) => {
 	const { ignoreUnknown } = options;
 	const aliasesMap = mapAliases(schemas);
-	const parsed: TypeFlag<Schemas> = {
+	const parsed: ParsedFlags = {
 		flags: createFlagsObject(schemas),
 		unknownFlags: {},
 		_: Object.assign([], {
@@ -58,24 +66,26 @@ export function typeFlag<Schemas extends Flags>(
 	let setValueOnPreviousFlag: undefined | ((value?: string | boolean) => void);
 
 	const setKnown = (
-		flagName: keyof Schemas,
+		flagName: string,
 		flagSchema: FlagTypeOrSchema,
 		flagValue: any,
 	) => {
-		const flagType = getFlagType(flagName as string, flagSchema);
+		const flagType = getFlagType(flagName, flagSchema);
 
 		flagValue = getDefaultFromTypeWithValue(flagType, flagValue);
 
 		if (flagValue !== undefined && !Number.isNaN(flagValue)) {
-			if (Array.isArray(parsed.flags[flagName])) {
-				parsed.flags[flagName].push(flagType(flagValue));
+			const a = parsed.flags[flagName];
+			if (Array.isArray(a)) {
+				a.push(flagType(flagValue));
 			} else {
 				parsed.flags[flagName] = flagType(flagValue);
 			}
 		} else {
 			setValueOnPreviousFlag = (value) => {
-				if (Array.isArray(parsed.flags[flagName])) {
-					parsed.flags[flagName].push(flagType(getDefaultFromTypeWithValue(flagType, value || '')));
+				const a = parsed.flags[flagName];
+				if (Array.isArray(a)) {
+					a.push(flagType(getDefaultFromTypeWithValue(flagType, value || '')));
 				} else {
 					parsed.flags[flagName] = flagType(getDefaultFromTypeWithValue(flagType, value || ''));
 				}
@@ -125,7 +135,7 @@ export function typeFlag<Schemas extends Flags>(
 			if (isAlias) {
 				for (let j = 0; j < flagName.length; j += 1) {
 					const alias = flagName[j];
-					const hasAlias = get(aliasesMap, alias);
+					const hasAlias = getOwn(aliasesMap, alias);
 					const isLastAlias = j === flagName.length - 1;
 
 					if (hasAlias) {
@@ -143,11 +153,11 @@ export function typeFlag<Schemas extends Flags>(
 				continue;
 			}
 
-			let flagSchema = get(schemas, flagName);
+			let flagSchema = getOwn(schemas, flagName);
 
 			if (!flagSchema) {
 				const camelized = kebabToCamel(flagName);
-				flagSchema = get(schemas, camelized);
+				flagSchema = getOwn(schemas, camelized);
 
 				if (flagSchema) {
 					flagName = camelized;
@@ -175,11 +185,11 @@ export function typeFlag<Schemas extends Flags>(
 		setValueOnPreviousFlag();
 	}
 
-	validateFlags(schemas, parsed.flags);
+	setDefaultFlagValues(schemas, parsed.flags);
 
-	type Parsed = typeof parsed;
+	type Result = TypeFlag<Schemas>;
 	return parsed as {
 		// This exposes the content of "TypeFlag<T>" in type hints
-		[Key in keyof Parsed]: Parsed[Key];
+		[Key in keyof Result]: Result[Key];
 	};
-}
+};
