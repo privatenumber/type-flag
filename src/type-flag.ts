@@ -93,14 +93,11 @@ export function typeFlag<Schemas extends Flags>(
 			parsed.unknownFlags[flagName] = [];
 		}
 
-		if (flagValue !== undefined) {
-			parsed.unknownFlags[flagName].push(flagValue);
-		} else {
-			setValueOnPreviousFlag = (value = true) => {
-				parsed.unknownFlags[flagName].push(value);
-				setValueOnPreviousFlag = undefined;
-			};
+		if (flagValue === undefined) {
+			flagValue = true;
 		}
+
+		parsed.unknownFlags[flagName].push(flagValue);
 	};
 
 	for (let i = 0; i < argv.length; i += 1) {

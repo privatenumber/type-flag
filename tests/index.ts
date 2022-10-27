@@ -293,19 +293,17 @@ describe('Parsing', ({ describe, test }) => {
 		const parsed = typeFlag(
 			{},
 			[
+				'--unknownFlag',
+				'arg1',
 				'--unknownFlag=false',
 				'--unknownFlag=',
-				'a',
-				'--unknownFlag',
+				'arg2',
 				'-u',
-				'4',
-				'-u=a',
-				'--unknownString',
-				'hello',
-				'--unknownString',
+				'arg3',
+				'-u=value',
 				'-3',
 				'-sdf',
-				'4',
+				'arg4',
 				'-ff=a',
 				'--kebab-case',
 			],
@@ -320,18 +318,17 @@ describe('Parsing', ({ describe, test }) => {
 		};
 
 		expect<UnknownFlags>(parsed.unknownFlags).toStrictEqual({
-			unknownFlag: ['false', '', true],
-			u: ['4', 'a'],
+			unknownFlag: [true, 'false', ''],
+			u: [true, 'value'],
 			3: [true],
 			s: [true],
 			d: [true],
-			f: ['4', true, 'a'],
-			unknownString: ['hello', true],
+			f: [true, true, 'a'],
 			'kebab-case': [true],
 		});
 		expect<string[]>(parsed._).toStrictEqual(
 			Object.assign(
-				['a'],
+				['arg1', 'arg2', 'arg3', 'arg4'],
 				{ '--': [] },
 			),
 		);
