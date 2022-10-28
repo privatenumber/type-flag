@@ -99,9 +99,6 @@ describe('Error handling', ({ describe }) => {
 describe('Types', ({ test }) => {
 	test('Errors', () => {
 		typeFlag({
-			// @ts-expect-error must be a function
-			flagA: false,
-
 			// @ts-expect-error only one element allowed
 			flagB: [String, String],
 

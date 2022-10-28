@@ -10,7 +10,7 @@ import {
 	parseFlag,
 	getDefaultFromTypeWithValue,
 	setDefaultFlagValues,
-	getFlagType,
+	parseFlagType,
 	getOwn,
 } from './utils';
 
@@ -70,7 +70,7 @@ export const typeFlag = <Schemas extends Flags>(
 		flagSchema: FlagTypeOrSchema,
 		flagValue: any,
 	) => {
-		const flagType = getFlagType(flagName, flagSchema);
+		const [flagType] = parseFlagType(flagSchema);
 
 		flagValue = getDefaultFromTypeWithValue(flagType, flagValue);
 

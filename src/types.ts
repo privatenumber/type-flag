@@ -1,6 +1,8 @@
 export type TypeFunction<ReturnType = any> = (value: any) => ReturnType;
 
-type TypeFunctionArray<ReturnType = any> = readonly [TypeFunction<ReturnType>];
+type TypeFunctionArray<ReturnType> = readonly [TypeFunction<ReturnType>];
+
+export type FlagType<ReturnType = any> = TypeFunction<ReturnType> | TypeFunctionArray<ReturnType>;
 
 type FlagSchemaBase<TF> = {
 	/**
@@ -54,14 +56,14 @@ type FlagSchemaDefault<TF, DefaultType = any> = FlagSchemaBase<TF> & {
 	default: DefaultType | (() => DefaultType);
 };
 
-export type FlagSchema<TF = TypeFunction | TypeFunctionArray> = (
+export type FlagSchema<TF = FlagType> = (
 	FlagSchemaBase<TF>
 	| FlagSchemaDefault<TF>
 );
 
 export type FlagTypeOrSchema<
 	ExtraOptions = Record<string, unknown>
-> = TypeFunction | TypeFunctionArray | (FlagSchema & ExtraOptions);
+> = FlagType | (FlagSchema & ExtraOptions);
 
 export type Flags<ExtraOptions = Record<string, unknown>> = {
 	[flagName: string]: FlagTypeOrSchema<ExtraOptions>;

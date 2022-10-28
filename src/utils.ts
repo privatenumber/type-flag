@@ -127,16 +127,29 @@ export const mapAliases = (
 	return aliases;
 };
 
-const isArrayType = (flagType: FlagTypeOrSchema) => (
-	flagType
-	&& (
-		Array.isArray(flagType)
-		|| (
-			'type' in flagType
-			&& Array.isArray(flagType.type)
-		)
-	)
-);
+/**
+ * Default Array.isArray doesn't support type-narrowing
+ * on readonly arrays.
+ *
+ * https://stackoverflow.com/a/56249765/911407
+ */
+const isReadonlyArray = (
+	array: readonly any[] | any,
+): array is readonly unknown[] => Array.isArray(array);
+
+export const parseFlagType = (
+	flagSchema: FlagTypeOrSchema,
+): [parser: TypeFunction, isArray: boolean] => {
+	if (typeof flagSchema === 'function') {
+		return [flagSchema, false];
+	}
+
+	if (isReadonlyArray(flagSchema)) {
+		return [flagSchema[0], true];
+	}
+
+	return parseFlagType(flagSchema.type);
+};
 
 export const createFlagsObject = (
 	schemas: Flags,
@@ -145,7 +158,8 @@ export const createFlagsObject = (
 
 	for (const flag in schemas) {
 		if (hasOwn(schemas, flag)) {
-			flags[flag] = isArrayType(schemas[flag]) ? [] : undefined;
+			const [, isArray] = parseFlagType(schemas[flag]);
+			flags[flag] = isArray ? [] : undefined;
 		}
 	}
 
@@ -198,29 +212,4 @@ export const setDefaultFlagValues = (
 			flags[flagName] = defaultValue;
 		}
 	}
-};
-
-/**
- * Default Array.isArray doesn't support type-narrowing
- * on readonly arrays.
- *
- * https://stackoverflow.com/a/56249765/911407
- */
-const isReadonlyArray = (
-	array: readonly any[] | any,
-): array is readonly unknown[] => Array.isArray(array);
-
-export const getFlagType = (
-	flagName: string,
-	flagSchema: FlagTypeOrSchema,
-): TypeFunction => {
-	if (typeof flagSchema === 'function') {
-		return flagSchema;
-	}
-
-	if (isReadonlyArray(flagSchema)) {
-		return flagSchema[0];
-	}
-
-	return getFlagType(flagName, flagSchema.type);
 };
