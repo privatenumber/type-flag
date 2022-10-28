@@ -7,6 +7,8 @@ import type {
 
 const { stringify } = JSON;
 
+export const DOUBLE_DASH = '--';
+
 const kebabCasePattern = /-(\w)/g;
 export const kebabToCamel = (string: string) => string.replace(
 	kebabCasePattern,
@@ -24,24 +26,34 @@ export const getOwn = <ObjectType>(
 	property: keyof ObjectType,
 ) => (hasOwn(object, property) ? object[property] : undefined);
 
-const flagPrefixPattern = /^--?/;
 const valueDelimiterPattern = /[.:=]/;
 
-export const parseFlag = (flagArgv: string) => {
-	let flagName = flagArgv.replace(flagPrefixPattern, '');
-	let flagValue;
-	const hasValueDalimiter = flagName.match(valueDelimiterPattern);
+const isFlagPattern = /^-{1,2}[\da-z]/i;
 
+export const parseFlagArgv = (
+	flagArgv: string,
+): [
+	flagName: string,
+	flagValue: string | undefined,
+	isAlias: boolean,
+] | undefined => {
+	if (!isFlagPattern.test(flagArgv)) {
+		return;
+	}
+
+	const isAlias = !flagArgv.startsWith(DOUBLE_DASH);
+	let flagName = flagArgv.slice(isAlias ? 1 : 2);
+
+	let flagValue;
+
+	const hasValueDalimiter = flagName.match(valueDelimiterPattern);
 	if (hasValueDalimiter?.index) {
 		const equalIndex = hasValueDalimiter.index;
 		flagValue = flagName.slice(equalIndex + 1);
 		flagName = flagName.slice(0, equalIndex);
 	}
 
-	return {
-		flagName,
-		flagValue,
-	};
+	return [flagName, flagValue, isAlias];
 };
 
 const reservedCharactersPattern = /[\s.:=]/;
