@@ -178,19 +178,30 @@ export const createFlagsObject = (
 	return flags;
 };
 
-export const getDefaultFromTypeWithValue = (
+export const normalizeBoolean = <T>(
+	parser: TypeFunction,
+	value: T,
+) => {
+	if (parser === Boolean) {
+		return value !== 'false';
+	}
+
+	return value;
+};
+
+export const applyParser = (
 	typeFunction: TypeFunction,
 	value: any,
 ) => {
-	if (typeFunction === Boolean) {
-		return value !== 'false';
+	if (typeof value === 'boolean') {
+		return value;
 	}
 
 	if (typeFunction === Number && value === '') {
 		return Number.NaN;
 	}
 
-	return value;
+	return typeFunction(value);
 };
 
 export const setDefaultFlagValues = (

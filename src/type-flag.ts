@@ -9,7 +9,8 @@ import {
 	createFlagsObject,
 	mapAliases,
 	parseFlagArgv,
-	getDefaultFromTypeWithValue,
+	normalizeBoolean,
+	applyParser,
 	setDefaultFlagValues,
 	parseFlagType,
 	getOwn,
@@ -69,26 +70,22 @@ export const typeFlag = <Schemas extends Flags>(
 	) => {
 		const [flagType] = parseFlagType(flagSchema);
 
-		flagValue = getDefaultFromTypeWithValue(flagType, flagValue);
+		flagValue = normalizeBoolean(flagType, flagValue);
 
-		if (flagValue !== undefined && !Number.isNaN(flagValue)) {
+		setValueOnPreviousFlag = (value) => {
+			const parsedValue = applyParser(flagType, value || '');
 			const flagsArray = parsed.flags[flagName];
 			if (Array.isArray(flagsArray)) {
-				flagsArray.push(flagType(flagValue));
+				flagsArray.push(parsedValue);
 			} else {
-				parsed.flags[flagName] = flagType(flagValue);
+				parsed.flags[flagName] = parsedValue;
 			}
-		} else {
-			setValueOnPreviousFlag = (value) => {
-				const flagsArray = parsed.flags[flagName];
-				if (Array.isArray(flagsArray)) {
-					flagsArray.push(flagType(getDefaultFromTypeWithValue(flagType, value || '')));
-				} else {
-					parsed.flags[flagName] = flagType(getDefaultFromTypeWithValue(flagType, value || ''));
-				}
 
-				setValueOnPreviousFlag = undefined;
-			};
+			setValueOnPreviousFlag = undefined;
+		};
+
+		if (flagValue !== undefined) {
+			setValueOnPreviousFlag(flagValue);
 		}
 	};
 
