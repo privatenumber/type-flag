@@ -1,5 +1,5 @@
 import { expectType } from 'tsd';
-import typeFlag from '../dist/index.js';
+import typeFlag, { type TypeFlag } from '../dist/index.js';
 
 const parsed = typeFlag({
 	booleanFlag: Boolean,
@@ -42,3 +42,15 @@ type ExpectedType = {
 };
 
 expectType<ExpectedType>(parsed);
+
+type Result = TypeFlag<{
+	booleanFlag: BooleanConstructor;
+}>;
+
+expectType<Result>({
+	flags: {
+		booleanFlag: Math.random() ? true : undefined,
+	},
+	unknownFlags: {},
+	_: Object.assign([], { '--': [] }),
+});

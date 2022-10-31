@@ -1,6 +1,7 @@
 import type {
 	Flags,
 	FlagTypeOrSchema,
+	ParsedFlags,
 	TypeFlag,
 } from './types';
 import {
@@ -16,14 +17,6 @@ import {
 	hasOwn,
 	getOwn,
 } from './utils';
-
-type ParsedFlags = {
-	flags: Record<string, unknown>;
-	unknownFlags: Record<string, (string | boolean)[]>;
-	_: string[] & {
-		[DOUBLE_DASH]: string[];
-	};
-};
 
 /**
 type-flag: typed argv parser
@@ -54,7 +47,7 @@ export const typeFlag = <Schemas extends Flags>(
 ) => {
 	const { ignoreUnknown } = options;
 	const aliasesMap = mapAliases(schemas);
-	const parsed: ParsedFlags = {
+	const parsed: ParsedFlags<Record<string, unknown>> = {
 		flags: createFlagsObject(schemas),
 		unknownFlags: {},
 		_: Object.assign([], {
