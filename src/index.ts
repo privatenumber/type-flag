@@ -1,2 +1,2 @@
-export { typeFlag as default } from './type-flag';
+export { typeFlag } from './type-flag';
 export type { TypeFlag, Flags } from './types';

@@ -5,7 +5,7 @@
  * $ npx tsx ./examples/count-flags -vvv
  */
 
-import typeFlag from '#type-flag';
+import { typeFlag } from '#type-flag';
 
 const parsed = typeFlag({
 	verbose: {

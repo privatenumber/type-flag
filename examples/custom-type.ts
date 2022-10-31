@@ -5,7 +5,7 @@
  * $ npx tsx ./examples/count-flags --size medium
  */
 
-import typeFlag from '#type-flag';
+import { typeFlag } from '#type-flag';
 
 const possibleSizes = ['small', 'medium', 'large'] as const;
 
