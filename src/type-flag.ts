@@ -9,7 +9,6 @@ import {
 	normalizeBoolean,
 	applyParser,
 	hasOwn,
-	getOwn,
 } from './utils';
 import { argvIterator } from './argv-iterator';
 
@@ -53,10 +52,8 @@ export const typeFlag = <Schemas extends Flags>(
 
 	argvIterator(argv, {
 		onFlag(name, explicitValue, index) {
-			const knownFlag = getOwn(flagRegistry, name);
-
-			if (knownFlag) {
-				const [parser, values] = knownFlag;
+			if (hasOwn(flagRegistry, name)) {
+				const [parser, values] = flagRegistry[name];
 				const flagValue = normalizeBoolean(parser, explicitValue);
 				const getFollowingValue = (value?: string | boolean) => {
 					const parsedValue = applyParser(parser, value || '');

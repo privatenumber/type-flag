@@ -14,11 +14,6 @@ const camelToKebab = (string: string) => string.replace(camelCasePattern, '-$1')
 const { hasOwnProperty } = Object.prototype;
 export const hasOwn = (object: any, property: PropertyKey) => hasOwnProperty.call(object, property);
 
-export const getOwn = <ObjectType>(
-	object: ObjectType,
-	property: keyof ObjectType,
-) => (hasOwn(object, property) ? object[property] : undefined);
-
 /**
  * Default Array.isArray doesn't support type-narrowing
  * on readonly arrays.
@@ -113,17 +108,13 @@ export const createRegistry = (
 		registry[name] = value;
 	};
 
-	// eslint-disable-next-line guard-for-in
 	for (const flagName in schemas) {
-		const schema = getOwn(schemas, flagName);
-
-		// has-own check
-		if (!schema) {
+		if (!hasOwn(schemas, flagName)) {
 			continue;
 		}
-
 		validateFlagName(flagName);
 
+		const schema = schemas[flagName];
 		const [parser, isArray] = parseFlagType(schema);
 		const values: unknown[] = [];
 		const asdf = [parser, values];
