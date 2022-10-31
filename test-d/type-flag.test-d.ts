@@ -1,5 +1,5 @@
 import { expectType } from 'tsd';
-import { typeFlag } from '../dist/index.js';
+import { typeFlag } from '#type-flag';
 
 const parsed = typeFlag({
 	booleanFlag: Boolean,

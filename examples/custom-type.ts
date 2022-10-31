@@ -2,10 +2,10 @@
  * This example demonstrates how to create a custom type
  *
  * Usage:
- * $ npx esno ./examples/count-flags --size medium
+ * $ npx tsx ./examples/count-flags --size medium
  */
 
-import { typeFlag } from '..';
+import { typeFlag } from '#type-flag';
 
 const possibleSizes = ['small', 'medium', 'large'] as const;
 

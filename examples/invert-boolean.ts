@@ -2,10 +2,10 @@
  * This example demonstrates how to invert a boolean flag
  *
  * Usage:
- * $ npx esno ./examples/invert-boolean --boolean=false
+ * $ npx tsx ./examples/invert-boolean --boolean=false
  */
 
-import { typeFlag } from '..';
+import { typeFlag } from '#type-flag';
 
 const parsed = typeFlag({
 	boolean: Boolean,
