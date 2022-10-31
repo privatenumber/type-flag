@@ -30,7 +30,7 @@ npm i type-flag
 
 Here's a simple example file `cli.ts`:
 ```ts
-import typeFlag from 'type-flag'
+import { typeFlag } from 'type-flag'
 
 // Pass in flag schemas and automatically parse process.argv!
 const parsed = typeFlag({
