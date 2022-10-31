@@ -1,29 +1,17 @@
 import type {
 	Flags,
-	FlagTypeOrSchema,
+	ParsedFlags,
 	TypeFlag,
 } from './types';
 import {
 	DOUBLE_DASH,
-	kebabToCamel,
-	createFlagsObject,
-	mapAliases,
+	createRegistry,
 	normalizeBoolean,
 	applyParser,
-	setDefaultFlagValues,
-	parseFlagType,
 	hasOwn,
 	getOwn,
 } from './utils';
 import { argvIterator } from './argv-iterator';
-
-type ParsedFlags = {
-	flags: Record<string, unknown>;
-	unknownFlags: Record<string, (string | boolean)[]>;
-	_: string[] & {
-		[DOUBLE_DASH]: string[];
-	};
-};
 
 /**
 type-flag: typed argv parser
@@ -53,86 +41,43 @@ export const typeFlag = <Schemas extends Flags>(
 	} = {},
 ) => {
 	const { ignoreUnknown } = options;
-	const aliasesMap = mapAliases(schemas);
+	const [flagRegistry, flags] = createRegistry(schemas);
+	const unknownFlags: ParsedFlags['unknownFlags'] = {};
 	const parsed: ParsedFlags = {
-		flags: createFlagsObject(schemas),
-		unknownFlags: {},
+		flags,
+		unknownFlags,
 		_: Object.assign([], {
 			[DOUBLE_DASH]: [],
 		}),
 	};
 
-	const setKnown = (
-		flagName: string,
-		flagSchema: FlagTypeOrSchema,
-		explicitValue?: string,
-	) => {
-		const [flagType] = parseFlagType(flagSchema);
-		const flagValue = normalizeBoolean(flagType, explicitValue);
-
-		const setValueOnPreviousFlag = (value?: string | boolean) => {
-			const parsedValue = applyParser(flagType, value || '');
-			const flagsArray = parsed.flags[flagName];
-			if (Array.isArray(flagsArray)) {
-				flagsArray.push(parsedValue);
-			} else {
-				parsed.flags[flagName] = parsedValue;
-			}
-		};
-
-		return (
-			flagValue === undefined
-				? setValueOnPreviousFlag
-				: setValueOnPreviousFlag(flagValue)
-		);
-	};
-
-	const setUnknown = (
-		flagName: string,
-		explicitValue?: string,
-	) => {
-		if (!hasOwn(parsed.unknownFlags, flagName)) {
-			parsed.unknownFlags[flagName] = [];
-		}
-
-		parsed.unknownFlags[flagName].push(
-			explicitValue === undefined ? true : explicitValue,
-		);
-	};
-
 	argvIterator(argv, {
-		onFlag(name, value, index) {
-			if (name.length === 1) {
-				const hasAlias = getOwn(aliasesMap, name);
-				if (hasAlias) {
-					return setKnown(
-						hasAlias.name,
-						hasAlias.schema,
-						value,
-					);
-				} if (ignoreUnknown) {
-					parsed._.push(argv[index]);
-				} else {
-					setUnknown(name, value);
-				}
+		onFlag(name, explicitValue, index) {
+			const knownFlag = getOwn(flagRegistry, name);
+
+			if (knownFlag) {
+				const [parser, values] = knownFlag;
+				const flagValue = normalizeBoolean(parser, explicitValue);
+				const getFollowingValue = (value?: string | boolean) => {
+					const parsedValue = applyParser(parser, value || '');
+					values.push(parsedValue);
+				};
+
+				return (
+					flagValue === undefined
+						? getFollowingValue
+						: getFollowingValue(flagValue)
+				);
+			} if (ignoreUnknown) {
+				parsed._.push(argv[index]);
 			} else {
-				let flagSchema = getOwn(schemas, name);
-				if (!flagSchema) {
-					const camelized = kebabToCamel(name);
-					flagSchema = getOwn(schemas, camelized);
-
-					if (flagSchema) {
-						name = camelized;
-					}
+				if (!hasOwn(unknownFlags, name)) {
+					unknownFlags[name] = [];
 				}
 
-				if (flagSchema) {
-					return setKnown(name, flagSchema, value);
-				} if (ignoreUnknown) {
-					parsed._.push(argv[index]);
-				} else {
-					setUnknown(name, value);
-				}
+				unknownFlags[name].push(
+					explicitValue === undefined ? true : explicitValue,
+				);
 			}
 		},
 
@@ -146,8 +91,6 @@ export const typeFlag = <Schemas extends Flags>(
 			parsed._[DOUBLE_DASH] = args;
 		},
 	});
-
-	setDefaultFlagValues(schemas, parsed.flags);
 
 	type Result = TypeFlag<Schemas>;
 	return parsed as {

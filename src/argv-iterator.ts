@@ -1,6 +1,5 @@
 import {
 	DOUBLE_DASH,
-	parseFlagArgv,
 } from './utils';
 
 type BreakIteration = false;
@@ -25,6 +24,36 @@ type onEndOfFlags = (
 	args: string[],
 	index: number,
 ) => void
+
+const valueDelimiterPattern = /[.:=]/;
+
+const isFlagPattern = /^-{1,2}[\da-z]/i;
+
+const parseFlagArgv = (
+	flagArgv: string,
+): [
+	flagName: string,
+	flagValue: string | undefined,
+	isAlias: boolean,
+] | undefined => {
+	if (!isFlagPattern.test(flagArgv)) {
+		return;
+	}
+
+	const isAlias = !flagArgv.startsWith(DOUBLE_DASH);
+	let flagName = flagArgv.slice(isAlias ? 1 : 2);
+
+	let flagValue;
+
+	const hasValueDalimiter = flagName.match(valueDelimiterPattern);
+	if (hasValueDalimiter?.index) {
+		const equalIndex = hasValueDalimiter.index;
+		flagValue = flagName.slice(equalIndex + 1);
+		flagName = flagName.slice(0, equalIndex);
+	}
+
+	return [flagName, flagValue, isAlias];
+};
 
 export const argvIterator = (
 	argv: string[],
