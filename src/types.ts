@@ -1,4 +1,4 @@
-import { DOUBLE_DASH } from './utils';
+import type { DOUBLE_DASH } from './argv-iterator';
 
 export type TypeFunction<ReturnType = any> = (value: any) => ReturnType;
 
@@ -93,7 +93,9 @@ export type InferFlagType<
 
 export type ParsedFlags<Schemas = Record<string, unknown>> = {
 	flags: Schemas;
-	unknownFlags: Record<string, (string | boolean)[]>;
+	unknownFlags: {
+		[flagName: string]: (string | boolean)[];
+	};
 	_: string[] & {
 		[DOUBLE_DASH]: string[];
 	};

@@ -435,6 +435,10 @@ describe('Parsing', ({ describe, test }) => {
 					type: Number,
 					default: 'world',
 				},
+
+				noDefault: {
+					type: [String],
+				},
 			}, []);
 
 			expect<string>(parsed.flags.string).toBe('hello world');
@@ -442,6 +446,7 @@ describe('Parsing', ({ describe, test }) => {
 			expect<boolean | undefined>(parsed.flags.inconsistentTypesB).toBe(undefined);
 			expect<string[]>(parsed.flags.arrayOfStrings).toStrictEqual(['hello']);
 			expect<string | number>(parsed.flags.inconsistentTypesC).toBe('world');
+			expect<string[]>(parsed.flags.noDefault).toStrictEqual([]);
 		});
 	});
 });
