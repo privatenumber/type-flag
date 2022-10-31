@@ -75,7 +75,6 @@ export const argvIterator = (
 	for (let i = 0; i < argv.length; i += 1) {
 		const argvElement = argv[i];
 
-		// onEndOfFlags
 		if (argvElement === DOUBLE_DASH) {
 			if (triggerCallback() === false) {
 				break;
