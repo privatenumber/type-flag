@@ -1,6 +1,4 @@
-import {
-	DOUBLE_DASH,
-} from './utils';
+export const DOUBLE_DASH = '--';
 
 type BreakIteration = false;
 
@@ -16,14 +14,10 @@ type onFlag = (
 ) => void | BreakIteration | onValueCallbackType;
 
 type onArgument = (
-	argument: string,
-	index: number,
-) => void | BreakIteration;
-
-type onEndOfFlags = (
 	args: string[],
 	index: number,
-) => void
+	isEoF?: boolean,
+) => void | BreakIteration;
 
 const valueDelimiterPattern = /[.:=]/;
 
@@ -60,7 +54,6 @@ export const argvIterator = (
 	callbacks: {
 		onFlag?: onFlag;
 		onArgument?: onArgument;
-		onEoF?: onEndOfFlags;
 	},
 ) => {
 	let onValueCallback: undefined | onValueCallbackType;
@@ -82,14 +75,13 @@ export const argvIterator = (
 	for (let i = 0; i < argv.length; i += 1) {
 		const argvElement = argv[i];
 
-		// onEndOfFlags
 		if (argvElement === DOUBLE_DASH) {
 			if (triggerCallback() === false) {
 				break;
 			}
 
 			const remaining = argv.slice(i + 1);
-			callbacks.onEoF?.(remaining, i);
+			callbacks.onArgument?.(remaining, i, true);
 			break;
 		}
 
@@ -141,7 +133,7 @@ export const argvIterator = (
 				result === false
 				|| (
 					result === true // no callback set
-					&& callbacks.onArgument?.(argvElement, i) === false
+					&& callbacks.onArgument?.([argvElement], i) === false
 				)
 			) {
 				break;

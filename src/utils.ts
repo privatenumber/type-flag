@@ -5,19 +5,11 @@ import type {
 } from './types';
 
 const { stringify } = JSON;
-
-export const DOUBLE_DASH = '--';
-
 const camelCasePattern = /\B([A-Z])/g;
 const camelToKebab = (string: string) => string.replace(camelCasePattern, '-$1').toLowerCase();
 
 const { hasOwnProperty } = Object.prototype;
 export const hasOwn = (object: any, property: PropertyKey) => hasOwnProperty.call(object, property);
-
-export const getOwn = <ObjectType>(
-	object: ObjectType,
-	property: keyof ObjectType,
-) => (hasOwn(object, property) ? object[property] : undefined);
 
 /**
  * Default Array.isArray doesn't support type-narrowing
@@ -113,20 +105,16 @@ export const createRegistry = (
 		registry[name] = value;
 	};
 
-	// eslint-disable-next-line guard-for-in
 	for (const flagName in schemas) {
-		const schema = getOwn(schemas, flagName);
-
-		// has-own check
-		if (!schema) {
+		if (!hasOwn(schemas, flagName)) {
 			continue;
 		}
-
 		validateFlagName(flagName);
 
+		const schema = schemas[flagName];
 		const [parser, isArray] = parseFlagType(schema);
 		const values: unknown[] = [];
-		const asdf = [parser, values];
+		const flagData = [parser, values];
 
 		Object.defineProperty(flags, flagName, {
 			enumerable: true,
@@ -146,11 +134,11 @@ export const createRegistry = (
 			},
 		});
 
-		setFlag(flagName, asdf);
+		setFlag(flagName, flagData);
 
 		const kebabCasing = camelToKebab(flagName);
 		if (flagName !== kebabCasing) {
-			setFlag(kebabCasing, asdf);
+			setFlag(kebabCasing, flagData);
 		}
 
 		if ('alias' in schema && typeof schema.alias === 'string') {
@@ -165,7 +153,7 @@ export const createRegistry = (
 				throw new Error(`${errorPrefix} must be a single character`);
 			}
 
-			setFlag(alias, asdf);
+			setFlag(alias, flagData);
 		}
 	}
 

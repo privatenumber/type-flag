@@ -4,14 +4,15 @@ import type {
 	TypeFlag,
 } from './types';
 import {
-	DOUBLE_DASH,
 	createRegistry,
 	normalizeBoolean,
 	applyParser,
 	hasOwn,
-	getOwn,
 } from './utils';
-import { argvIterator } from './argv-iterator';
+import {
+	argvIterator,
+	DOUBLE_DASH,
+} from './argv-iterator';
 
 /**
 type-flag: typed argv parser
@@ -43,24 +44,18 @@ export const typeFlag = <Schemas extends Flags>(
 	const { ignoreUnknown } = options;
 	const [flagRegistry, flags] = createRegistry(schemas);
 	const unknownFlags: ParsedFlags['unknownFlags'] = {};
-	const parsed: ParsedFlags = {
-		flags,
-		unknownFlags,
-		_: Object.assign([], {
-			[DOUBLE_DASH]: [],
-		}),
-	};
+	const _ = [] as unknown as ParsedFlags['_'];
+	_[DOUBLE_DASH] = [];
 
 	argvIterator(argv, {
 		onFlag(name, explicitValue, index) {
-			const knownFlag = getOwn(flagRegistry, name);
-
-			if (knownFlag) {
-				const [parser, values] = knownFlag;
+			if (hasOwn(flagRegistry, name)) {
+				const [parser, values] = flagRegistry[name];
 				const flagValue = normalizeBoolean(parser, explicitValue);
 				const getFollowingValue = (value?: string | boolean) => {
-					const parsedValue = applyParser(parser, value || '');
-					values.push(parsedValue);
+					values.push(
+						applyParser(parser, value || ''),
+					);
 				};
 
 				return (
@@ -69,7 +64,7 @@ export const typeFlag = <Schemas extends Flags>(
 						: getFollowingValue(flagValue)
 				);
 			} if (ignoreUnknown) {
-				parsed._.push(argv[index]);
+				_.push(argv[index]);
 			} else {
 				if (!hasOwn(unknownFlags, name)) {
 					unknownFlags[name] = [];
@@ -81,19 +76,21 @@ export const typeFlag = <Schemas extends Flags>(
 			}
 		},
 
-		onArgument(argvElement) {
-			parsed._.push(argvElement);
-		},
+		onArgument(args, _index, isEoF) {
+			_.push(...args);
 
-		// merge with onArgument?
-		onEoF(args) {
-			parsed._.push(...args);
-			parsed._[DOUBLE_DASH] = args;
+			if (isEoF) {
+				_[DOUBLE_DASH] = args;
+			}
 		},
 	});
 
 	type Result = TypeFlag<Schemas>;
-	return parsed as {
+	return {
+		flags,
+		unknownFlags,
+		_,
+	} as {
 		// This exposes the content of "TypeFlag<T>" in type hints
 		[Key in keyof Result]: Result[Key];
 	};
