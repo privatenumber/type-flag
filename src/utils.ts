@@ -19,7 +19,7 @@ const camelCasePattern = /\B([A-Z])/g;
 const camelToKebab = (string: string) => string.replace(camelCasePattern, '-$1').toLowerCase();
 
 const { hasOwnProperty } = Object.prototype;
-const hasOwn = (object: any, property: PropertyKey) => hasOwnProperty.call(object, property);
+export const hasOwn = (object: any, property: PropertyKey) => hasOwnProperty.call(object, property);
 
 export const getOwn = <ObjectType>(
 	object: ObjectType,

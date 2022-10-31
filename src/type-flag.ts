@@ -8,13 +8,14 @@ import {
 	kebabToCamel,
 	createFlagsObject,
 	mapAliases,
-	parseFlagArgv,
 	normalizeBoolean,
 	applyParser,
 	setDefaultFlagValues,
 	parseFlagType,
+	hasOwn,
 	getOwn,
 } from './utils';
+import { argvIterator } from './argv-iterator';
 
 type ParsedFlags = {
 	flags: Record<string, unknown>;
@@ -61,18 +62,15 @@ export const typeFlag = <Schemas extends Flags>(
 		}),
 	};
 
-	let setValueOnPreviousFlag: undefined | ((value?: string | boolean) => void);
-
 	const setKnown = (
 		flagName: string,
 		flagSchema: FlagTypeOrSchema,
-		flagValue: any,
+		explicitValue?: string,
 	) => {
 		const [flagType] = parseFlagType(flagSchema);
+		const flagValue = normalizeBoolean(flagType, explicitValue);
 
-		flagValue = normalizeBoolean(flagType, flagValue);
-
-		setValueOnPreviousFlag = (value) => {
+		const setValueOnPreviousFlag = (value?: string | boolean) => {
 			const parsedValue = applyParser(flagType, value || '');
 			const flagsArray = parsed.flags[flagName];
 			if (Array.isArray(flagsArray)) {
@@ -80,97 +78,74 @@ export const typeFlag = <Schemas extends Flags>(
 			} else {
 				parsed.flags[flagName] = parsedValue;
 			}
-
-			setValueOnPreviousFlag = undefined;
 		};
 
-		if (flagValue !== undefined) {
-			setValueOnPreviousFlag(flagValue);
-		}
+		return (
+			flagValue === undefined
+				? setValueOnPreviousFlag
+				: setValueOnPreviousFlag(flagValue)
+		);
 	};
 
 	const setUnknown = (
 		flagName: string,
-		flagValue: any,
+		explicitValue?: string,
 	) => {
-		if (!(flagName in parsed.unknownFlags)) {
+		if (!hasOwn(parsed.unknownFlags, flagName)) {
 			parsed.unknownFlags[flagName] = [];
 		}
 
-		if (flagValue === undefined) {
-			flagValue = true;
-		}
-
-		parsed.unknownFlags[flagName].push(flagValue);
+		parsed.unknownFlags[flagName].push(
+			explicitValue === undefined ? true : explicitValue,
+		);
 	};
 
-	for (let i = 0; i < argv.length; i += 1) {
-		const argvElement = argv[i];
+	argvIterator(argv, {
+		onFlag(name, value, index) {
+			if (name.length === 1) {
+				const hasAlias = getOwn(aliasesMap, name);
+				if (hasAlias) {
+					return setKnown(
+						hasAlias.name,
+						hasAlias.schema,
+						value,
+					);
+				} if (ignoreUnknown) {
+					parsed._.push(argv[index]);
+				} else {
+					setUnknown(name, value);
+				}
+			} else {
+				let flagSchema = getOwn(schemas, name);
+				if (!flagSchema) {
+					const camelized = kebabToCamel(name);
+					flagSchema = getOwn(schemas, camelized);
 
-		if (argvElement === DOUBLE_DASH) {
-			const remainingArgs = argv.slice(i + 1);
-			parsed._[DOUBLE_DASH] = remainingArgs;
-			parsed._.push(...remainingArgs);
-			break;
-		}
-
-		const parsedFlag = parseFlagArgv(argvElement);
-		if (parsedFlag) {
-			if (setValueOnPreviousFlag) {
-				setValueOnPreviousFlag();
-			}
-
-			const [flagName, flagValue, isAlias] = parsedFlag;
-
-			if (isAlias) {
-				for (let j = 0; j < flagName.length; j += 1) {
-					const alias = flagName[j];
-					const hasAlias = getOwn(aliasesMap, alias);
-					const isLastAlias = j === flagName.length - 1;
-
-					if (hasAlias) {
-						setKnown(
-							hasAlias.name,
-							hasAlias.schema,
-							isLastAlias ? flagValue : true,
-						);
-					} else if (ignoreUnknown) {
-						parsed._.push(argvElement);
-					} else {
-						setUnknown(alias, isLastAlias ? flagValue : true);
+					if (flagSchema) {
+						name = camelized;
 					}
 				}
-				continue;
-			}
-
-			let name = flagName;
-			let flagSchema = getOwn(schemas, flagName);
-			if (!flagSchema) {
-				const camelized = kebabToCamel(flagName);
-				flagSchema = getOwn(schemas, camelized);
 
 				if (flagSchema) {
-					name = camelized;
+					return setKnown(name, flagSchema, value);
+				} if (ignoreUnknown) {
+					parsed._.push(argv[index]);
+				} else {
+					setUnknown(name, value);
 				}
 			}
+		},
 
-			if (flagSchema) {
-				setKnown(name, flagSchema, flagValue);
-			} else if (ignoreUnknown) {
-				parsed._.push(argvElement);
-			} else {
-				setUnknown(flagName, flagValue);
-			}
-		} else if (setValueOnPreviousFlag) { // Not a flag, but expecting a value
-			setValueOnPreviousFlag(argvElement);
-		} else { // Unexpected value
+		onArgument(argvElement) {
 			parsed._.push(argvElement);
-		}
-	}
+		},
 
-	if (setValueOnPreviousFlag) {
-		setValueOnPreviousFlag();
-	}
+		// merge with onArgument?
+		onEoF(args) {
+			parsed._.push(...args);
+			parsed._[DOUBLE_DASH] = args;
+		},
+	});
 
 	setDefaultFlagValues(schemas, parsed.flags);
 
