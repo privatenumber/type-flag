@@ -95,7 +95,7 @@ const validateFlagName = (
 
 	const hasReservedCharacter = flagName.match(reservedCharactersPattern);
 	if (hasReservedCharacter) {
-		throw new Error(`${errorPrefix} cannot contain the character ${stringify(hasReservedCharacter?.[0])}`);
+		throw new Error(`${errorPrefix} cannot contain ${stringify(hasReservedCharacter?.[0])}`);
 	}
 };
 

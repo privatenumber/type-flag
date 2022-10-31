@@ -42,9 +42,10 @@ export const typeFlag = <Schemas extends Flags>(
 ) => {
 	const { ignoreUnknown } = options;
 	const [flagRegistry, flags] = createRegistry(schemas);
+	const unknownFlags: ParsedFlags['unknownFlags'] = {};
 	const parsed: ParsedFlags = {
 		flags,
-		unknownFlags: {},
+		unknownFlags,
 		_: Object.assign([], {
 			[DOUBLE_DASH]: [],
 		}),
@@ -70,11 +71,11 @@ export const typeFlag = <Schemas extends Flags>(
 			} if (ignoreUnknown) {
 				parsed._.push(argv[index]);
 			} else {
-				if (!hasOwn(parsed.unknownFlags, name)) {
-					parsed.unknownFlags[name] = [];
+				if (!hasOwn(unknownFlags, name)) {
+					unknownFlags[name] = [];
 				}
 
-				parsed.unknownFlags[name].push(
+				unknownFlags[name].push(
 					explicitValue === undefined ? true : explicitValue,
 				);
 			}
