@@ -114,7 +114,7 @@ export const createRegistry = (
 		const schema = schemas[flagName];
 		const [parser, isArray] = parseFlagType(schema);
 		const values: unknown[] = [];
-		const asdf = [parser, values];
+		const flagData = [parser, values];
 
 		Object.defineProperty(flags, flagName, {
 			enumerable: true,
@@ -134,11 +134,11 @@ export const createRegistry = (
 			},
 		});
 
-		setFlag(flagName, asdf);
+		setFlag(flagName, flagData);
 
 		const kebabCasing = camelToKebab(flagName);
 		if (flagName !== kebabCasing) {
-			setFlag(kebabCasing, asdf);
+			setFlag(kebabCasing, flagData);
 		}
 
 		if ('alias' in schema && typeof schema.alias === 'string') {
@@ -153,7 +153,7 @@ export const createRegistry = (
 				throw new Error(`${errorPrefix} must be a single character`);
 			}
 
-			setFlag(alias, asdf);
+			setFlag(alias, flagData);
 		}
 	}
 
