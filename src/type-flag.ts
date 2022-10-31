@@ -76,14 +76,12 @@ export const typeFlag = <Schemas extends Flags>(
 			}
 		},
 
-		onArgument(argvElement) {
-			_.push(argvElement);
-		},
-
-		// merge with onArgument?
-		onEoF(args) {
+		onArgument(args, _index, isEoF) {
 			_.push(...args);
-			_[DOUBLE_DASH] = args;
+
+			if (isEoF) {
+				_[DOUBLE_DASH] = args;
+			}
 		},
 	});
 
