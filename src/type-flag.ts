@@ -13,6 +13,7 @@ import {
 	applyParser,
 	setDefaultFlagValues,
 	parseFlagType,
+	hasOwn,
 	getOwn,
 } from './utils';
 
@@ -93,7 +94,7 @@ export const typeFlag = <Schemas extends Flags>(
 		flagName: string,
 		flagValue: any,
 	) => {
-		if (!(flagName in parsed.unknownFlags)) {
+		if (!hasOwn(parsed.unknownFlags, flagName)) {
 			parsed.unknownFlags[flagName] = [];
 		}
 

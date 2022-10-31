@@ -303,6 +303,7 @@ describe('Parsing', ({ describe, test }) => {
 				'arg4',
 				'-ff=a',
 				'--kebab-case',
+				'--toString',
 			],
 		);
 
@@ -322,6 +323,7 @@ describe('Parsing', ({ describe, test }) => {
 			d: [true],
 			f: [true, true, 'a'],
 			'kebab-case': [true],
+			toString: [true],
 		});
 		expect<string[]>(parsed._).toStrictEqual(
 			Object.assign(
