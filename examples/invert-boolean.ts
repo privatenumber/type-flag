@@ -5,7 +5,7 @@
  * $ npx esno ./examples/invert-boolean --boolean=false
  */
 
-import typeFlag from '..';
+import { typeFlag } from '..';
 
 const parsed = typeFlag({
 	boolean: Boolean,

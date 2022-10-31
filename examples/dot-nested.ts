@@ -5,7 +5,7 @@
  * $ npx esno ./examples/dot-nested --env.TOKEN=123 --env.CI
  */
 
-import typeFlag from '..';
+import { typeFlag } from '..';
 
 type Environment = {
 	TOKEN?: string;

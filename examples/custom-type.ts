@@ -5,7 +5,7 @@
  * $ npx esno ./examples/count-flags --size medium
  */
 
-import typeFlag from '..';
+import { typeFlag } from '..';
 
 const possibleSizes = ['small', 'medium', 'large'] as const;
 

@@ -5,7 +5,7 @@
  * $ npx esno ./examples/count-flags -vvv
  */
 
-import typeFlag from '..';
+import { typeFlag } from '..';
 
 const parsed = typeFlag({
 	verbose: {
