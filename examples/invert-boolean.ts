@@ -5,7 +5,7 @@
  * $ npx tsx ./examples/invert-boolean --boolean=false
  */
 
-import typeFlag from '#type-flag';
+import { typeFlag } from '#type-flag';
 
 const parsed = typeFlag({
 	boolean: Boolean,

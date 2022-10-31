@@ -5,7 +5,7 @@
  * $ npx tsx ./examples/dot-nested --env.TOKEN=123 --env.CI
  */
 
-import typeFlag from '#type-flag';
+import { typeFlag } from '#type-flag';
 
 type Environment = {
 	TOKEN?: string;

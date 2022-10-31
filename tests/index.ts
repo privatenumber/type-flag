@@ -1,5 +1,5 @@
 import { describe, expect } from 'manten';
-import typeFlag, { type Flags } from '#type-flag';
+import { typeFlag, type Flags } from '#type-flag';
 
 describe('Error handling', ({ describe }) => {
 	describe('Invalid flag name', ({ test }) => {
