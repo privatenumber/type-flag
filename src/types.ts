@@ -1,3 +1,5 @@
+import { DOUBLE_DASH } from './utils';
+
 export type TypeFunction<ReturnType = any> = (value: any) => ReturnType;
 
 type TypeFunctionArray<ReturnType> = readonly [TypeFunction<ReturnType>];
@@ -89,14 +91,14 @@ export type InferFlagType<
 		)
 );
 
-export type TypeFlag<Schemas extends Flags> = {
-	flags: {
-		[flag in keyof Schemas]: InferFlagType<Schemas[flag]>;
-	};
-	unknownFlags: {
-		[flag: string]: (string | boolean)[];
-	};
+export type ParsedFlags<Schemas = Record<string, unknown>> = {
+	flags: Schemas;
+	unknownFlags: Record<string, (string | boolean)[]>;
 	_: string[] & {
-		'--': string[];
+		[DOUBLE_DASH]: string[];
 	};
 };
+
+export type TypeFlag<Schemas extends Flags> = ParsedFlags<{
+	[flag in keyof Schemas]: InferFlagType<Schemas[flag]>;
+}>;

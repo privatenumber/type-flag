@@ -1,5 +1,6 @@
 import type {
 	Flags,
+	ParsedFlags,
 	TypeFlag,
 } from './types';
 import {
@@ -11,14 +12,6 @@ import {
 	getOwn,
 } from './utils';
 import { argvIterator } from './argv-iterator';
-
-type ParsedFlags = {
-	flags: Record<string, unknown>;
-	unknownFlags: Record<string, (string | boolean)[]>;
-	_: string[] & {
-		[DOUBLE_DASH]: string[];
-	};
-};
 
 /**
 type-flag: typed argv parser
