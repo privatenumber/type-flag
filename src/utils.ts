@@ -1,6 +1,5 @@
 import type {
 	TypeFunction,
-	FlagSchema,
 	FlagTypeOrSchema,
 	Flags,
 } from './types';
@@ -8,12 +7,6 @@ import type {
 const { stringify } = JSON;
 
 export const DOUBLE_DASH = '--';
-
-const kebabCasePattern = /-(\w)/g;
-export const kebabToCamel = (string: string) => string.replace(
-	kebabCasePattern,
-	(_, afterHyphenCharacter) => afterHyphenCharacter.toUpperCase(),
-);
 
 const camelCasePattern = /\B([A-Z])/g;
 const camelToKebab = (string: string) => string.replace(camelCasePattern, '-$1').toLowerCase();
@@ -25,119 +18,6 @@ export const getOwn = <ObjectType>(
 	object: ObjectType,
 	property: keyof ObjectType,
 ) => (hasOwn(object, property) ? object[property] : undefined);
-
-const valueDelimiterPattern = /[.:=]/;
-
-const isFlagPattern = /^-{1,2}[\da-z]/i;
-
-export const parseFlagArgv = (
-	flagArgv: string,
-): [
-	flagName: string,
-	flagValue: string | undefined,
-	isAlias: boolean,
-] | undefined => {
-	if (!isFlagPattern.test(flagArgv)) {
-		return;
-	}
-
-	const isAlias = !flagArgv.startsWith(DOUBLE_DASH);
-	let flagName = flagArgv.slice(isAlias ? 1 : 2);
-
-	let flagValue;
-
-	const hasValueDalimiter = flagName.match(valueDelimiterPattern);
-	if (hasValueDalimiter?.index) {
-		const equalIndex = hasValueDalimiter.index;
-		flagValue = flagName.slice(equalIndex + 1);
-		flagName = flagName.slice(0, equalIndex);
-	}
-
-	return [flagName, flagValue, isAlias];
-};
-
-const reservedCharactersPattern = /[\s.:=]/;
-
-const validateFlagName = (
-	schemas: Flags,
-	flagName: string,
-) => {
-	const errorPrefix = `Flag name ${stringify(flagName)}`;
-
-	if (flagName.length === 0) {
-		throw new Error(`${errorPrefix} cannot be empty`);
-	}
-
-	if (flagName.length === 1) {
-		throw new Error(`${errorPrefix} must be longer than a character`);
-	}
-
-	const hasReservedCharacter = flagName.match(reservedCharactersPattern);
-	if (hasReservedCharacter) {
-		throw new Error(`${errorPrefix} cannot contain the character ${stringify(hasReservedCharacter?.[0])}`);
-	}
-
-	let checkDifferentCase: string | undefined;
-
-	if (kebabCasePattern.test(flagName)) {
-		checkDifferentCase = kebabToCamel(flagName);
-	} else if (camelCasePattern.test(flagName)) {
-		checkDifferentCase = camelToKebab(flagName);
-	}
-
-	if (checkDifferentCase && hasOwn(schemas, checkDifferentCase)) {
-		throw new Error(`${errorPrefix} collides with flag ${stringify(checkDifferentCase)}`);
-	}
-};
-
-type Aliases = {
-	[alias: string]: {
-		name: string;
-		schema: FlagSchema;
-	};
-};
-
-export const mapAliases = (
-	schemas: Flags,
-) => {
-	const aliases: Aliases = {};
-
-	// eslint-disable-next-line guard-for-in
-	for (const name in schemas) {
-		const schema = getOwn(schemas, name) as FlagSchema;
-
-		// has-own check
-		if (!schema) {
-			continue;
-		}
-
-		validateFlagName(schemas, name);
-
-		const { alias } = schema;
-		if (typeof alias === 'string') {
-			const errorPrefix = `Flag alias ${stringify(alias)} for flag ${stringify(name)}`;
-
-			if (alias.length === 0) {
-				throw new Error(`${errorPrefix} cannot be empty`);
-			}
-
-			if (alias.length > 1) {
-				throw new Error(`${errorPrefix} must be a single character`);
-			}
-
-			if (hasOwn(aliases, alias)) {
-				throw new Error(`${errorPrefix} is already used`);
-			}
-
-			aliases[alias] = {
-				name,
-				schema,
-			};
-		}
-	}
-
-	return aliases;
-};
 
 /**
  * Default Array.isArray doesn't support type-narrowing
@@ -161,21 +41,6 @@ export const parseFlagType = (
 	}
 
 	return parseFlagType(flagSchema.type);
-};
-
-export const createFlagsObject = (
-	schemas: Flags,
-) => {
-	const flags: Record<string, unknown> = {};
-
-	for (const flag in schemas) {
-		if (hasOwn(schemas, flag)) {
-			const [, isArray] = parseFlagType(schemas[flag]);
-			flags[flag] = isArray ? [] : undefined;
-		}
-	}
-
-	return flags;
 };
 
 export const normalizeBoolean = <T>(
@@ -204,10 +69,50 @@ export const applyParser = (
 	return typeFunction(value);
 };
 
-export const setDefaultFlagValues = (
-	schemas: Flags,
-	flags: Record<string, any>,
+type FlagParsingData = [
+	parser: TypeFunction,
+	values: unknown[],
+];
+
+type FlagRegistry = {
+	[flagName: string]: FlagParsingData;
+};
+
+const reservedCharactersPattern = /[\s.:=]/;
+
+const validateFlagName = (
+	flagName: string,
 ) => {
+	const errorPrefix = `Flag name ${stringify(flagName)}`;
+
+	if (flagName.length === 0) {
+		throw new Error(`${errorPrefix} cannot be empty`);
+	}
+
+	if (flagName.length === 1) {
+		throw new Error(`${errorPrefix} must be longer than a character`);
+	}
+
+	const hasReservedCharacter = flagName.match(reservedCharactersPattern);
+	if (hasReservedCharacter) {
+		throw new Error(`${errorPrefix} cannot contain the character ${stringify(hasReservedCharacter?.[0])}`);
+	}
+};
+
+export const createRegistry = (
+	schemas: Flags,
+) => {
+	const registry: FlagRegistry = {};
+	const flags: Record<string, unknown> = {};
+
+	const setFlag = (name: string, value: any) => {
+		if (hasOwn(registry, name)) {
+			throw new Error(`Duplicate flags named ${stringify(name)}`);
+		}
+
+		registry[name] = value;
+	};
+
 	// eslint-disable-next-line guard-for-in
 	for (const flagName in schemas) {
 		const schema = getOwn(schemas, flagName);
@@ -217,22 +122,52 @@ export const setDefaultFlagValues = (
 			continue;
 		}
 
-		const value = flags[flagName];
-		if (
-			value !== undefined
-			&& !(Array.isArray(value) && value.length === 0)
-		) {
-			continue;
+		validateFlagName(flagName);
+
+		const [parser, isArray] = parseFlagType(schema);
+		const values: unknown[] = [];
+		const asdf = [parser, values];
+
+		Object.defineProperty(flags, flagName, {
+			enumerable: true,
+			get() {
+				if (
+					values.length === 0
+					&& 'default' in schema
+				) {
+					let { default: defaultValue } = schema;
+					if (typeof defaultValue === 'function') {
+						defaultValue = defaultValue();
+					}
+					return defaultValue;
+				}
+
+				return isArray ? values : values.pop();
+			},
+		});
+
+		setFlag(flagName, asdf);
+
+		const kebabCasing = camelToKebab(flagName);
+		if (flagName !== kebabCasing) {
+			setFlag(kebabCasing, asdf);
 		}
 
-		if ('default' in schema) {
-			let defaultValue = schema.default;
+		if ('alias' in schema && typeof schema.alias === 'string') {
+			const { alias } = schema;
+			const errorPrefix = `Flag alias ${stringify(alias)} for flag ${stringify(flagName)}`;
 
-			if (typeof defaultValue === 'function') {
-				defaultValue = defaultValue();
+			if (alias.length === 0) {
+				throw new Error(`${errorPrefix} cannot be empty`);
 			}
 
-			flags[flagName] = defaultValue;
+			if (alias.length > 1) {
+				throw new Error(`${errorPrefix} must be a single character`);
+			}
+
+			setFlag(alias, asdf);
 		}
 	}
+
+	return [registry, flags] as const;
 };
