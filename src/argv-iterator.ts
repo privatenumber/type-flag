@@ -23,7 +23,7 @@ const valueDelimiterPattern = /[.:=]/;
 
 const isFlagPattern = /^-{1,2}[\da-z]/i;
 
-const parseFlagArgv = (
+export const parseFlagArgv = (
 	flagArgv: string,
 ): [
 	flagName: string,
