@@ -1,4 +1,4 @@
-import { DOUBLE_DASH } from './utils';
+import type { DOUBLE_DASH } from './argv-iterator';
 
 export type TypeFunction<ReturnType = any> = (value: any) => ReturnType;
 

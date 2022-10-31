@@ -1,6 +1,4 @@
-import {
-	DOUBLE_DASH,
-} from './utils';
+export const DOUBLE_DASH = '--';
 
 type BreakIteration = false;
 

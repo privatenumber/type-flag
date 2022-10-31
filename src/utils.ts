@@ -5,9 +5,6 @@ import type {
 } from './types';
 
 const { stringify } = JSON;
-
-export const DOUBLE_DASH = '--';
-
 const camelCasePattern = /\B([A-Z])/g;
 const camelToKebab = (string: string) => string.replace(camelCasePattern, '-$1').toLowerCase();
 

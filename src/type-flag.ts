@@ -4,13 +4,15 @@ import type {
 	TypeFlag,
 } from './types';
 import {
-	DOUBLE_DASH,
 	createRegistry,
 	normalizeBoolean,
 	applyParser,
 	hasOwn,
 } from './utils';
-import { argvIterator } from './argv-iterator';
+import {
+	argvIterator,
+	DOUBLE_DASH,
+} from './argv-iterator';
 
 /**
 type-flag: typed argv parser
