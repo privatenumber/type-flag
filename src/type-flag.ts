@@ -46,13 +46,20 @@ export const typeFlag = <Schemas extends Flags>(
 	const unknownFlags: ParsedFlags['unknownFlags'] = {};
 	const _ = [] as unknown as ParsedFlags['_'];
 	_[DOUBLE_DASH] = [];
+	const removeArgvs: number[] = [];
 
 	argvIterator(argv, {
-		onFlag(name, explicitValue, index) {
+		onFlag(name, explicitValue, flagIndex) {
 			if (hasOwn(flagRegistry, name)) {
 				const [parser, values] = flagRegistry[name];
 				const flagValue = normalizeBoolean(parser, explicitValue);
-				const getFollowingValue = (value?: string | boolean) => {
+				const getFollowingValue = (value?: string | boolean, valueIndex?: number) => {
+					// Remove elements from argv array
+					removeArgvs.push(flagIndex);
+					if (valueIndex) {
+						removeArgvs.push(valueIndex);
+					}
+
 					values.push(
 						applyParser(parser, value || ''),
 					);
@@ -64,7 +71,7 @@ export const typeFlag = <Schemas extends Flags>(
 						: getFollowingValue(flagValue)
 				);
 			} if (ignoreUnknown) {
-				_.push(argv[index]);
+				_.push(argv[flagIndex]);
 			} else {
 				if (!hasOwn(unknownFlags, name)) {
 					unknownFlags[name] = [];
@@ -74,16 +81,24 @@ export const typeFlag = <Schemas extends Flags>(
 					explicitValue === undefined ? true : explicitValue,
 				);
 			}
+			removeArgvs.push(flagIndex);
 		},
 
-		onArgument(args, _index, isEoF) {
+		onArgument(args, index, isEoF) {
 			_.push(...args);
 
 			if (isEoF) {
 				_[DOUBLE_DASH] = args;
+				argv.splice(index);
+			} else {
+				removeArgvs.push(index);
 			}
 		},
 	});
+
+	for (const i of removeArgvs.reverse()) {
+		argv.splice(i, 1);
+	}
 
 	type Result = TypeFlag<Schemas>;
 	return {

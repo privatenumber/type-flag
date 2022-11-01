@@ -22,6 +22,7 @@ export const getFlag = <Type extends FlagType>(
 	const [parser, gatherAll] = parseFlagType(flagType);
 	const results: any[] = [];
 	const removeArgvs: number[] = [];
+
 	argvIterator(argv, {
 		onFlag(name, explicitValue, flagIndex) {
 			if (!flags.includes(name)) {
