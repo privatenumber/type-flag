@@ -54,13 +54,13 @@ export const argvIterator = (
 		onArgument?: onArgument;
 	},
 ) => {
-	let onValueCallback: undefined | onValueCallbackType;
+	let onValueCallback: void | onValueCallbackType;
 
 	const triggerValueCallback = (
 		value?: string,
 		index?: number,
 	) => {
-		if (!onValueCallback) {
+		if (typeof onValueCallback !== 'function') {
 			return true;
 		}
 
@@ -91,29 +91,21 @@ export const argvIterator = (
 			const [flagName, flagValue, isAlias] = parsedFlag;
 
 			if (isAlias) {
+				// Alias group
 				for (let j = 0; j < flagName.length; j += 1) {
-					const alias = flagName[j];
-					const isLastAlias = j === flagName.length - 1;
-					const result = callbacks.onFlag(
-						alias,
-						isLastAlias ? flagValue : undefined,
+					onValueCallback = callbacks.onFlag(
+						flagName[j],
+						// Value only gets assigned to last alias
+						(j === flagName.length - 1) ? flagValue : undefined,
 						i,
 					);
-
-					if (typeof result === 'function') {
-						onValueCallback = result;
-					}
 				}
 			} else {
-				const result = callbacks.onFlag(
+				onValueCallback = callbacks.onFlag(
 					flagName,
 					flagValue,
 					i,
 				);
-
-				if (typeof result === 'function') {
-					onValueCallback = result;
-				}
 			}
 		} else {
 			const noCallback = triggerValueCallback(argvElement, i);
