@@ -20,13 +20,14 @@ npm i type-flag
 
 ## 🚦 Quick start
 
-### typeFlag
 _type-flag_ offers a simple API to parse command-line arguments.
 
 Let's say you want to create a script with the following usage:
 ```
 $ my-script --name John --age 20
 ```
+
+### typeFlag
 
 Here's how easy it is with _type-flag_:
 ```ts
@@ -70,13 +71,13 @@ console.log(age) // 20
 ```
 
 
-These are tiny demos but _type-flag_ can do so much more:
+These are quick demos but _type-flag_ can do so much more:
 - Accept multiple flag values
 - Flag operators (e.g. `=`) for explicitly passing in a value
 - Parse unknown flags
 - Parse alias groups (e.g. `-abc`)
 
-Keep reading to find out!
+Keep reading to learn more!
 
 ## 🧑‍💻 Usage
 ### Defining flags
