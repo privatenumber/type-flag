@@ -2,7 +2,9 @@ import type {
 	Flags,
 	ParsedFlags,
 	TypeFlag,
+	TypeFlagOptions,
 } from './types';
+import { ArgvType } from './types';
 import {
 	createRegistry,
 	normalizeBoolean,
@@ -13,25 +15,6 @@ import {
 	argvIterator,
 	DOUBLE_DASH,
 } from './argv-iterator';
-
-enum ArgvType {
-	KnownFlag = 'known-flag',
-	UnknownFlag = 'unknown-flag',
-	Argument = 'argument',
-}
-
-type IgnoreFunction = {
-	(
-		type: ArgvType.UnknownFlag | ArgvType.Argument,
-		argvElement: string,
-	): boolean | void;
-
-	(
-		type: ArgvType.KnownFlag,
-		flagName: string,
-		flagValue: string | undefined,
-	): boolean | void;
-};
 
 /**
 type-flag: typed argv parser
@@ -56,11 +39,8 @@ const parsed = typeFlag({
 export const typeFlag = <Schemas extends Flags>(
 	schemas: Schemas,
 	argv: string[] = process.argv.slice(2),
-	options: {
-		ignore?: IgnoreFunction;
-	} = {},
+	{ ignore }: TypeFlagOptions = {},
 ) => {
-	const { ignore } = options;
 	const [flagRegistry, flags] = createRegistry(schemas);
 	const unknownFlags: ParsedFlags['unknownFlags'] = {};
 	const _ = [] as unknown as ParsedFlags['_'];
