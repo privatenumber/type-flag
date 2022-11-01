@@ -42,6 +42,7 @@
 		"lint": "eslint --cache .",
 		"test": "tsx tests",
 		"test:dts": "tsd",
+		"type-check": "tsc --noEmit",
 		"dev": "tsx watch --conditions=development tests",
 		"prepack": "pnpm build && clean-pkg-json"
 	},
