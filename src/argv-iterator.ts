@@ -34,14 +34,13 @@ export const parseFlagArgv = (
 
 	const isAlias = !flagArgv.startsWith(DOUBLE_DASH);
 	let flagName = flagArgv.slice(isAlias ? 1 : 2);
-
 	let flagValue;
 
 	const hasValueDalimiter = flagName.match(valueDelimiterPattern);
 	if (hasValueDalimiter?.index) {
-		const equalIndex = hasValueDalimiter.index;
-		flagValue = flagName.slice(equalIndex + 1);
-		flagName = flagName.slice(0, equalIndex);
+		const { index } = hasValueDalimiter;
+		flagValue = flagName.slice(index + 1);
+		flagName = flagName.slice(0, index);
 	}
 
 	return [flagName, flagValue, isAlias];
