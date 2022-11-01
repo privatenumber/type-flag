@@ -12,9 +12,9 @@ import {
 	parseFlagArgv,
 } from './argv-iterator';
 
-export const getFlag = <Schema extends FlagType>(
+export const getFlag = <Type extends FlagType>(
 	flagNames: string,
-	flagType: Schema,
+	flagType: Type,
 	argv = process.argv.slice(2),
 ) => {
 	// eslint-disable-next-line unicorn/prefer-set-has
@@ -51,5 +51,5 @@ export const getFlag = <Schema extends FlagType>(
 		argv.splice(i, 1);
 	}
 
-	return (gatherAll ? results : results[0]) as InferFlagType<Schema>;
+	return (gatherAll ? results : results[0]) as InferFlagType<Type>;
 };
