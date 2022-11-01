@@ -107,11 +107,8 @@ export const argvIterator = (
 					i,
 				);
 			}
-		} else {
-			const noCallback = triggerValueCallback(argvElement, i);
-			if (noCallback) {
-				callbacks.onArgument?.([argvElement], i);
-			}
+		} else if (triggerValueCallback(argvElement, i)) { // if no callback was set
+			callbacks.onArgument?.([argvElement], i);
 		}
 	}
 
