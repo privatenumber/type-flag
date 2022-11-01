@@ -49,13 +49,15 @@ export const parseFlagArgv = (
 
 export const argvIterator = (
 	argv: string[],
-	callbacks: {
+	{
+		onFlag,
+		onArgument,
+	}: {
 		onFlag?: onFlag;
 		onArgument?: onArgument;
 	},
 ) => {
 	let onValueCallback: void | onValueCallbackType;
-
 	const triggerValueCallback = (
 		value?: string,
 		index?: number,
@@ -75,7 +77,7 @@ export const argvIterator = (
 			triggerValueCallback();
 
 			const remaining = argv.slice(i + 1);
-			callbacks.onArgument?.(remaining, i, true);
+			onArgument?.(remaining, i, true);
 			break;
 		}
 
@@ -84,7 +86,7 @@ export const argvIterator = (
 		if (parsedFlag) {
 			triggerValueCallback();
 
-			if (!callbacks.onFlag) {
+			if (!onFlag) {
 				continue;
 			}
 
@@ -93,7 +95,7 @@ export const argvIterator = (
 			if (isAlias) {
 				// Alias group
 				for (let j = 0; j < flagName.length; j += 1) {
-					onValueCallback = callbacks.onFlag(
+					onValueCallback = onFlag(
 						flagName[j],
 						// Value only gets assigned to last alias
 						(j === flagName.length - 1) ? flagValue : undefined,
@@ -101,14 +103,14 @@ export const argvIterator = (
 					);
 				}
 			} else {
-				onValueCallback = callbacks.onFlag(
+				onValueCallback = onFlag(
 					flagName,
 					flagValue,
 					i,
 				);
 			}
 		} else if (triggerValueCallback(argvElement, i)) { // if no callback was set
-			callbacks.onArgument?.([argvElement], i);
+			onArgument?.([argvElement], i);
 		}
 	}
 
