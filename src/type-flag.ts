@@ -124,6 +124,7 @@ export function typeFlag<Schemas extends Flags>(
 			let { flagName } = parsedFlag;
 
 			if (isAlias) {
+				let unknownAliases = '-';
 				for (let j = 0; j < flagName.length; j += 1) {
 					const alias = flagName[j];
 					const hasAlias = aliasesMap.get(alias);
@@ -136,10 +137,14 @@ export function typeFlag<Schemas extends Flags>(
 							isLast ? flagValue : true,
 						);
 					} else if (options?.ignoreUnknown) {
-						parsed._.push(argvElement);
+						unknownAliases += alias + ((isLast && flagValue) ? `=${flagValue}` : '');
 					} else {
 						setUnknown(alias, isLast ? flagValue : true);
 					}
+				}
+
+				if (unknownAliases.length > 1) {
+					parsed._.push(unknownAliases);
 				}
 				continue;
 			}

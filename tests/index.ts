@@ -344,7 +344,7 @@ describe('Parsing', ({ test }) => {
 			{
 				string: [String],
 			},
-			['--string', 'a', '--string=b', '--unknown', 'c', '--unknown=d', '-u'],
+			['--string', 'a', '--string=b', '--unknown', 'c', '--unknown=d', '-u', '-vvv=1'],
 			{ ignoreUnknown: true },
 		);
 
@@ -353,7 +353,7 @@ describe('Parsing', ({ test }) => {
 				string: ['a', 'b'],
 			},
 			unknownFlags: {},
-			_: Object.assign(['--unknown', 'c', '--unknown=d', '-u'], {
+			_: Object.assign(['--unknown', 'c', '--unknown=d', '-u', '-vvv=1'], {
 				'--': [],
 			}),
 		});
