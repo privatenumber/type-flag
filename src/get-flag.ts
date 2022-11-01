@@ -25,7 +25,10 @@ export const getFlag = <Type extends FlagType>(
 
 	argvIterator(argv, {
 		onFlag(name, explicitValue, flagIndex) {
-			if (!flags.includes(name)) {
+			if (
+				!flags.includes(name)
+				|| (!gatherAll && results.length > 0)
+			) {
 				return;
 			}
 
@@ -37,11 +40,6 @@ export const getFlag = <Type extends FlagType>(
 				removeArgvs.push(flagIndex);
 				if (valueIndex) {
 					removeArgvs.push(valueIndex);
-				}
-
-				if (!gatherAll) {
-					// Terminate iteration
-					return false;
 				}
 			};
 			return value === undefined ? add : add(value);

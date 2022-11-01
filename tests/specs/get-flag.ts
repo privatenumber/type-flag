@@ -5,11 +5,11 @@ export default testSuite(({ describe }) => {
 	describe('get-flag', ({ describe, test }) => {
 		describe('alias', ({ test }) => {
 			test('gets number', () => {
-				const argv = ['-n', '1234', '1212'];
+				const argv = ['-n', '1111', '2222', '-n', '3333'];
 				const flagValue = getFlag('-n', Number, argv);
 
-				expect<number | undefined>(flagValue).toBe(1234);
-				expect(argv).toStrictEqual(['1212']);
+				expect<number | undefined>(flagValue).toBe(1111);
+				expect(argv).toStrictEqual(['2222', '-n', '3333']);
 			});
 
 			test('expecting value but no value', () => {

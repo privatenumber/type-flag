@@ -1,23 +1,21 @@
 export const DOUBLE_DASH = '--';
 
-type BreakIteration = false;
-
 type onValueCallbackType = (
 	value?: string,
 	index?: number,
-) => void | BreakIteration;
+) => void;
 
 type onFlag = (
 	name: string,
 	value: string | undefined,
 	index: number,
-) => void | BreakIteration | onValueCallbackType;
+) => void | onValueCallbackType;
 
 type onArgument = (
 	args: string[],
 	index: number,
 	isEoF?: boolean,
-) => void | BreakIteration;
+) => void;
 
 const valueDelimiterPattern = /[.:=]/;
 
@@ -58,7 +56,7 @@ export const argvIterator = (
 ) => {
 	let onValueCallback: undefined | onValueCallbackType;
 
-	const triggerCallback = (
+	const triggerValueCallback = (
 		value?: string,
 		index?: number,
 	) => {
@@ -66,9 +64,8 @@ export const argvIterator = (
 			return true;
 		}
 
-		const result = onValueCallback(value, index);
+		onValueCallback(value, index);
 		onValueCallback = undefined;
-		return result;
 	};
 
 	ARGV_ITERATION:
@@ -76,9 +73,7 @@ export const argvIterator = (
 		const argvElement = argv[i];
 
 		if (argvElement === DOUBLE_DASH) {
-			if (triggerCallback() === false) {
-				break;
-			}
+			triggerValueCallback();
 
 			const remaining = argv.slice(i + 1);
 			callbacks.onArgument?.(remaining, i, true);
@@ -88,9 +83,7 @@ export const argvIterator = (
 		const parsedFlag = parseFlagArgv(argvElement);
 
 		if (parsedFlag) {
-			if (triggerCallback() === false) {
-				break;
-			}
+			triggerValueCallback();
 
 			if (!callbacks.onFlag) {
 				continue;
@@ -108,9 +101,7 @@ export const argvIterator = (
 						i,
 					);
 
-					if (result === false) {
-						break ARGV_ITERATION;
-					} else if (typeof result === 'function') {
+					if (typeof result === 'function') {
 						onValueCallback = result;
 					}
 				}
@@ -121,25 +112,17 @@ export const argvIterator = (
 					i,
 				);
 
-				if (result === false) {
-					break;
-				} else if (typeof result === 'function') {
+				if (typeof result === 'function') {
 					onValueCallback = result;
 				}
 			}
 		} else {
-			const result = triggerCallback(argvElement, i);
-			if (
-				result === false
-				|| (
-					result === true // no callback set
-					&& callbacks.onArgument?.([argvElement], i) === false
-				)
-			) {
-				break;
+			const noCallback = triggerValueCallback(argvElement, i);
+			if (noCallback) {
+				callbacks.onArgument?.([argvElement], i);
 			}
 		}
 	}
 
-	triggerCallback();
+	triggerValueCallback();
 };
