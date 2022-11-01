@@ -2,14 +2,6 @@
 
 Typed command-line arguments parser
 
-### Features
-- **Strongly typed** Parse argvs with confidence
-- **Custom types & validation** Pass in any parser function and the flag type will be inferred
-- **Array types** Accept multiple flag values
-- **Configurable defaults** Set better defaults to avoid checking whether a flag was passed in
-- **Tiny** 1.3 kB minified + gzipped
-
-
 → [Try it out online](https://stackblitz.com/edit/type-flag-demo?devtoolsheight=50&file=src/index.ts&view=editor)
 
 
@@ -28,69 +20,64 @@ npm i type-flag
 
 ## 🚦 Quick start
 
-Here's a simple example file `cli.ts`:
+_type-flag_ offers a simple API to parse command-line arguments.
+
+Let's say you want to create a script with the following usage:
+```
+$ my-script --name John --age 20
+```
+
+### typeFlag
+
+Here's how easy it is with _type-flag_:
 ```ts
 import { typeFlag } from 'type-flag'
 
-// Pass in flag schemas and automatically parse process.argv!
 const parsed = typeFlag({
-
-    // Define flags here...
-
-    someString: String,
-
-    someBoolean: {
-        type: Boolean,
-        alias: 'b'
-    },
-
-    someNumber: {
+    name: String,
+    age: {
         type: Number,
-        alias: 'n',
-        default: 2
-    },
-
-    // Wrap type with an array to accept multiple flags
-    stringArray: [String],
-
-    numberArray: {
-        type: [Number]
+        alias: 'a'
     }
 })
 
-console.log(parsed.flags)
+console.log(parsed.flags.name) // 'John'
+console.log(parsed.flags.age) // 20
 ```
 
-When you execute the file in the command-line, you can see the argvs parsed:
-```sh
-$ node ./cli --some-string 'hello' --some-boolean --some-number 3
-> {
-  someString: 'hello',
-  someBoolean: true,
-  someNumber: 3,
-  stringArray: [],
-  numberArray: []
-}
-```
-
-`parsed` will have the following type:
+You can also get unknown flags and arguments from the `parsed` object:
 ```ts
-type Parsed = {
-    flags: {
-        someString: string | undefined
-        someBoolean: boolean
-        someNumber: number
-        stringArray: string[]
-        numberArray: number[]
-    }
-    unknownFlags: {
-        [flagName: string]: (string | boolean)[]
-    }
-    _: string[] & {
-        '--': string[]
-    }
-}
+// object of unknown flags passed in
+console.log(parsed.unknownFlags)
+
+// arguments
+console.log(parsed._)
 ```
+
+### getFlag
+
+Want something even simpler?
+
+_type-flag_ also exports a `getFlag` function that returns a single flag value.
+
+```ts
+import { getFlag } from 'type-flag'
+
+const name = getFlag('--name', String)
+const age = getFlag('-a,--age', Number)
+
+console.log(name) // 'John'
+console.log(age) // 20
+```
+
+
+These are quick demos but _type-flag_ can do so much more:
+- Accept multiple flag values
+- Flag operators (e.g. `=`) for explicitly passing in a value
+- Parse unknown flags
+- Parse alias groups (e.g. `-abc`)
+
+Keep reading to learn more!
 
 ## 🧑‍💻 Usage
 ### Defining flags
@@ -100,7 +87,7 @@ The value can also be an object with the `type` property as the flag type.
 
 ```ts
 typeFlag({
-    // Short-hand: immediately set the type
+    // Short-hand
     stringFlag: String,
     numberFlag: Number,
     booleanFlag: Boolean,
@@ -122,10 +109,10 @@ const parsed = typeFlag({
 ```
 
 This allows usage like this:
-```sh
-$ node ./cli --string-flag A --string-flag B
+```ts
+// $ node ./cli --string-flag A --string-flag B
 
-# > parsed.flags.stringFlag = ['A', 'B']
+parsed.flags.stringFlag // => ['A', 'B']
 ```
 
 #### Aliases
@@ -141,10 +128,10 @@ typeFlag({
 ```
 
 This allows usage like this:
-```sh
-$ node ./cli -s A
+```ts
+// $ node ./cli -s A
 
-# > parsed.flags.stringFlag = 'A'
+parsed.flags.stringFlag // => 'A'
 ```
 
 #### Default values
@@ -440,3 +427,29 @@ type Options = {
     ignoreUnknown?: boolean
 }
 ```
+
+---
+
+### getFlag(flagNames, flagType, argv)
+
+#### flagNames
+Type: `string`
+
+A comma-separated list of flag names to parse.
+
+#### flagType
+Type:
+```ts
+type TypeFunction = (argvValue: any) => any
+
+type FlagType = TypeFunction | [TypeFunction]
+```
+
+A function to parse the flag value. Wrap the function in an array to retrieve all values.
+
+#### argv
+Type: `string[]`
+
+Default: `process.argv.slice(2)`
+
+The argv array to parse.
