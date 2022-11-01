@@ -381,27 +381,99 @@ export default testSuite(({ describe }) => {
 				expect(argv).toStrictEqual([]);
 			});
 
-			test('ignore unknown flags', () => {
-				const argv = ['--string', 'a', '--string=b', '--unknown', 'c', '--unknown=d', '-u'];
-				const parsed = typeFlag(
-					{
-						string: [String],
-					},
-					argv,
-					{ ignoreUnknown: true },
-				);
+			describe('ignore', ({ test }) => {
+				test('specific known flag', () => {
+					const argv = ['--string', 'a', '--string=b', '--unknown', 'c', '--unknown=d', '-u'];
+					const parsed = typeFlag(
+						{
+							string: [String],
+						},
+						argv,
+						{
+							ignore: (type, flagName) => (
+								type === 'known-flag'
+								&& flagName === 'string'
+							),
+						},
+					);
 
-				expect(parsed).toStrictEqual({
-					flags: {
-						string: ['a', 'b'],
-					},
-					unknownFlags: {},
-					_: Object.assign(
-						['--unknown', 'c', '--unknown=d', '-u'],
-						{ '--': [] },
-					),
+					expect(parsed).toStrictEqual({
+						flags: {
+							string: [],
+						},
+						unknownFlags: {
+							unknown: [true, 'd'],
+							u: [true],
+						},
+						_: Object.assign(
+							['a', 'c'],
+							{ '--': [] },
+						),
+					});
+					expect(argv).toStrictEqual(['--string', '--string=b']);
 				});
-				expect(argv).toStrictEqual([]);
+
+				test('unknown flags', () => {
+					const argv = ['--string', 'a', '--string=b', '--unknown', 'c', '--unknown=d', '-u'];
+					const parsed = typeFlag(
+						{
+							string: [String],
+						},
+						argv,
+						{
+							ignore: type => type === 'unknown-flag',
+						},
+					);
+
+					expect(parsed).toStrictEqual({
+						flags: {
+							string: ['a', 'b'],
+						},
+						unknownFlags: {},
+						_: Object.assign(
+							['c'],
+							{ '--': [] },
+						),
+					});
+					expect(argv).toStrictEqual(['--unknown', '--unknown=d', '-u']);
+				});
+
+				test('after first argument', () => {
+					const argv = ['--string', 'value', 'first-arg', '--string=b', '--string', 'c', '--unknown=d', '-u'];
+
+					let ignore = false;
+					const parsed = typeFlag(
+						{
+							string: [String],
+						},
+						argv,
+						{
+							ignore(type) {
+								if (ignore) {
+									return true;
+								}
+
+								const isArgument = type === 'argument';
+								if (isArgument) {
+									ignore = isArgument;
+									return isArgument;
+								}
+							},
+						},
+					);
+
+					expect(parsed).toStrictEqual({
+						flags: {
+							string: ['value'],
+						},
+						unknownFlags: {},
+						_: Object.assign(
+							[],
+							{ '--': [] },
+						),
+					});
+					expect(argv).toStrictEqual(['first-arg', '--string=b', '--string', 'c', '--unknown=d', '-u']);
+				});
 			});
 
 			test('custom type', () => {

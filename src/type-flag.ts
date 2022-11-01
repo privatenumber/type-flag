@@ -14,6 +14,25 @@ import {
 	DOUBLE_DASH,
 } from './argv-iterator';
 
+enum ArgvType {
+	KnownFlag = 'known-flag',
+	UnknownFlag = 'unknown-flag',
+	Argument = 'argument',
+}
+
+type IgnoreFunction = {
+	(
+		type: ArgvType.UnknownFlag | ArgvType.Argument,
+		argvElement: string,
+	): boolean | void;
+
+	(
+		type: ArgvType.KnownFlag,
+		flagName: string,
+		flagValue: string | undefined,
+	): boolean | void;
+};
+
 /**
 type-flag: typed argv parser
 
@@ -38,10 +57,10 @@ export const typeFlag = <Schemas extends Flags>(
 	schemas: Schemas,
 	argv: string[] = process.argv.slice(2),
 	options: {
-		ignoreUnknown?: boolean;
+		ignore?: IgnoreFunction;
 	} = {},
 ) => {
-	const { ignoreUnknown } = options;
+	const { ignore } = options;
 	const [flagRegistry, flags] = createRegistry(schemas);
 	const unknownFlags: ParsedFlags['unknownFlags'] = {};
 	const _ = [] as unknown as ParsedFlags['_'];
@@ -51,6 +70,10 @@ export const typeFlag = <Schemas extends Flags>(
 	argvIterator(argv, {
 		onFlag(name, explicitValue, flagIndex) {
 			if (hasOwn(flagRegistry, name)) {
+				if (ignore?.(ArgvType.KnownFlag, name, explicitValue)) {
+					return;
+				}
+
 				const [parser, values] = flagRegistry[name];
 				const flagValue = normalizeBoolean(parser, explicitValue);
 				const getFollowingValue = (value?: string | boolean, valueIndex?: number) => {
@@ -70,9 +93,9 @@ export const typeFlag = <Schemas extends Flags>(
 						? getFollowingValue
 						: getFollowingValue(flagValue)
 				);
-			} if (ignoreUnknown) {
-				_.push(argv[flagIndex]);
-			} else {
+			}
+
+			if (!ignore?.(ArgvType.UnknownFlag, argv[flagIndex])) {
 				if (!hasOwn(unknownFlags, name)) {
 					unknownFlags[name] = [];
 				}
@@ -80,11 +103,15 @@ export const typeFlag = <Schemas extends Flags>(
 				unknownFlags[name].push(
 					explicitValue === undefined ? true : explicitValue,
 				);
+				removeArgvs.push(flagIndex);
 			}
-			removeArgvs.push(flagIndex);
 		},
 
 		onArgument(args, index, isEoF) {
+			if (ignore?.(ArgvType.Argument, argv[index])) {
+				return;
+			}
+
 			_.push(...args);
 
 			if (isEoF) {
