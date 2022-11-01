@@ -87,7 +87,7 @@ The value can also be an object with the `type` property as the flag type.
 
 ```ts
 typeFlag({
-    // Short-hand: immediately set the type
+    // Short-hand
     stringFlag: String,
     numberFlag: Number,
     booleanFlag: Boolean,
@@ -109,10 +109,10 @@ const parsed = typeFlag({
 ```
 
 This allows usage like this:
-```sh
-$ node ./cli --string-flag A --string-flag B
+```ts
+// $ node ./cli --string-flag A --string-flag B
 
-# > parsed.flags.stringFlag = ['A', 'B']
+parsed.flags.stringFlag // => ['A', 'B']
 ```
 
 #### Aliases
@@ -128,10 +128,10 @@ typeFlag({
 ```
 
 This allows usage like this:
-```sh
-$ node ./cli -s A
+```ts
+// $ node ./cli -s A
 
-# > parsed.flags.stringFlag = 'A'
+parsed.flags.stringFlag // => 'A'
 ```
 
 #### Default values
@@ -427,6 +427,8 @@ type Options = {
     ignoreUnknown?: boolean
 }
 ```
+
+---
 
 ### getFlag(flagNames, flagType, argv)
 
