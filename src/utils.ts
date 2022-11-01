@@ -61,15 +61,6 @@ export const applyParser = (
 	return typeFunction(value);
 };
 
-type FlagParsingData = [
-	parser: TypeFunction,
-	values: unknown[],
-];
-
-type FlagRegistry = {
-	[flagName: string]: FlagParsingData;
-};
-
 const reservedCharactersPattern = /[\s.:=]/;
 
 const validateFlagName = (
@@ -91,18 +82,31 @@ const validateFlagName = (
 	}
 };
 
+type FlagParsingData = [
+	values: unknown[],
+	parser: TypeFunction,
+	isArray: boolean,
+	schema: FlagTypeOrSchema,
+];
+
+type FlagRegistry = {
+	[flagName: string]: FlagParsingData;
+};
+
 export const createRegistry = (
 	schemas: Flags,
 ) => {
 	const registry: FlagRegistry = {};
-	const flags: Record<string, unknown> = {};
 
-	const setFlag = (name: string, value: any) => {
-		if (hasOwn(registry, name)) {
-			throw new Error(`Duplicate flags named ${stringify(name)}`);
+	const setFlag = (
+		flagName: string,
+		data: FlagParsingData,
+	) => {
+		if (hasOwn(registry, flagName)) {
+			throw new Error(`Duplicate flags named ${stringify(flagName)}`);
 		}
 
-		registry[name] = value;
+		registry[flagName] = data;
 	};
 
 	for (const flagName in schemas) {
@@ -112,27 +116,11 @@ export const createRegistry = (
 		validateFlagName(flagName);
 
 		const schema = schemas[flagName];
-		const [parser, isArray] = parseFlagType(schema);
-		const values: unknown[] = [];
-		const flagData = [parser, values];
-
-		Object.defineProperty(flags, flagName, {
-			enumerable: true,
-			get() {
-				if (
-					values.length === 0
-					&& 'default' in schema
-				) {
-					let { default: defaultValue } = schema;
-					if (typeof defaultValue === 'function') {
-						defaultValue = defaultValue();
-					}
-					return defaultValue;
-				}
-
-				return isArray ? values : values.pop();
-			},
-		});
+		const flagData: FlagParsingData = [
+			[],
+			...parseFlagType(schema),
+			schema,
+		];
 
 		setFlag(flagName, flagData);
 
@@ -157,5 +145,34 @@ export const createRegistry = (
 		}
 	}
 
-	return [registry, flags] as const;
+	return registry;
+};
+
+export const finalizeFlags = (
+	schemas: Flags,
+	registry: FlagRegistry,
+) => {
+	const flags: Record<string, unknown> = {};
+
+	for (const flagName in schemas) {
+		if (!hasOwn(schemas, flagName)) {
+			continue;
+		}
+
+		const [values, , isArray, schema] = registry[flagName];
+		if (
+			values.length === 0
+			&& 'default' in schema
+		) {
+			let { default: defaultValue } = schema;
+			if (typeof defaultValue === 'function') {
+				defaultValue = defaultValue();
+			}
+			flags[flagName] = defaultValue;
+		} else {
+			flags[flagName] = isArray ? values : values.pop();
+		}
+	}
+
+	return flags;
 };

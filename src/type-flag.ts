@@ -4,10 +4,11 @@ import type {
 	TypeFlag,
 } from './types';
 import {
+	hasOwn,
 	createRegistry,
 	normalizeBoolean,
 	applyParser,
-	hasOwn,
+	finalizeFlags,
 } from './utils';
 import {
 	argvIterator,
@@ -42,7 +43,7 @@ export const typeFlag = <Schemas extends Flags>(
 	} = {},
 ) => {
 	const { ignoreUnknown } = options;
-	const [flagRegistry, flags] = createRegistry(schemas);
+	const flagRegistry = createRegistry(schemas);
 	const unknownFlags: ParsedFlags['unknownFlags'] = {};
 	const _ = [] as unknown as ParsedFlags['_'];
 	_[DOUBLE_DASH] = [];
@@ -50,7 +51,7 @@ export const typeFlag = <Schemas extends Flags>(
 	argvIterator(argv, {
 		onFlag(name, explicitValue, index) {
 			if (hasOwn(flagRegistry, name)) {
-				const [parser, values] = flagRegistry[name];
+				const [values, parser] = flagRegistry[name];
 				const flagValue = normalizeBoolean(parser, explicitValue);
 				const getFollowingValue = (value?: string | boolean) => {
 					values.push(
@@ -87,7 +88,7 @@ export const typeFlag = <Schemas extends Flags>(
 
 	type Result = TypeFlag<Schemas>;
 	return {
-		flags,
+		flags: finalizeFlags(schemas, flagRegistry),
 		unknownFlags,
 		_,
 	} as {
