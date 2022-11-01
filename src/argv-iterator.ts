@@ -68,7 +68,6 @@ export const argvIterator = (
 		onValueCallback = undefined;
 	};
 
-	ARGV_ITERATION:
 	for (let i = 0; i < argv.length; i += 1) {
 		const argvElement = argv[i];
 
