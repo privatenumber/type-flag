@@ -47,7 +47,7 @@ console.log(parsed.flags.age) // 20
 
 You can also get unknown flags and arguments from the `parsed` object:
 ```ts
-// object of uknown flags that were passed in
+// object of unknown flags passed in
 console.log(parsed.unknownFlags)
 
 // arguments
