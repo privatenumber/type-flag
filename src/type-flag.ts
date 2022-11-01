@@ -6,10 +6,11 @@ import type {
 } from './types';
 import { ArgvType } from './types';
 import {
+	hasOwn,
 	createRegistry,
 	normalizeBoolean,
 	applyParser,
-	hasOwn,
+	finalizeFlags,
 } from './utils';
 import {
 	argvIterator,
@@ -41,7 +42,7 @@ export const typeFlag = <Schemas extends Flags>(
 	argv: string[] = process.argv.slice(2),
 	{ ignore }: TypeFlagOptions = {},
 ) => {
-	const [flagRegistry, flags] = createRegistry(schemas);
+	const flagRegistry = createRegistry(schemas);
 	const unknownFlags: ParsedFlags['unknownFlags'] = {};
 	const _ = [] as unknown as ParsedFlags['_'];
 	_[DOUBLE_DASH] = [];
@@ -54,7 +55,7 @@ export const typeFlag = <Schemas extends Flags>(
 					return;
 				}
 
-				const [parser, values] = flagRegistry[name];
+				const [values, parser] = flagRegistry[name];
 				const flagValue = normalizeBoolean(parser, explicitValue);
 				const getFollowingValue = (value?: string | boolean, valueIndex?: number) => {
 					// Remove elements from argv array
@@ -109,7 +110,7 @@ export const typeFlag = <Schemas extends Flags>(
 
 	type Result = TypeFlag<Schemas>;
 	return {
-		flags,
+		flags: finalizeFlags(schemas, flagRegistry),
 		unknownFlags,
 		_,
 	} as {
