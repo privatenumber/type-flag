@@ -33,7 +33,15 @@ export default testSuite(({ describe }) => {
 				const flagValue = getFlag('-a', [Boolean], argv);
 
 				expect<boolean[]>(flagValue).toStrictEqual([true, true]);
-				expect(argv).toStrictEqual([]);
+				expect(argv).toStrictEqual(['-lises']);
+			});
+
+			test('alias group with value', () => {
+				const argv = ['-aliasesa=value'];
+				const flagValue = getFlag('-a', [String], argv);
+
+				expect<string[]>(flagValue).toStrictEqual(['', '', 'value']);
+				expect(argv).toStrictEqual(['-lises']);
 			});
 		});
 

@@ -10,6 +10,8 @@ import {
 import {
 	argvIterator,
 	parseFlagArgv,
+	spliceFromArgv,
+	type Index,
 } from './argv-iterator';
 
 export const getFlag = <Type extends FlagType>(
@@ -21,7 +23,7 @@ export const getFlag = <Type extends FlagType>(
 	const flags = flagNames.split(',').map(name => parseFlagArgv(name)?.[0]);
 	const [parser, gatherAll] = parseFlagType(flagType);
 	const results: any[] = [];
-	const removeArgvs: number[] = [];
+	const removeArgvs: Index[] = [];
 
 	argvIterator(argv, {
 		onFlag(name, explicitValue, flagIndex) {
@@ -32,23 +34,29 @@ export const getFlag = <Type extends FlagType>(
 				return;
 			}
 
-			const value = normalizeBoolean(parser, explicitValue);
-			const add = (implicitValue?: string | boolean, valueIndex?: number) => {
-				results.push(applyParser(parser, implicitValue));
-
+			const flagValue = normalizeBoolean(parser, explicitValue);
+			const getFollowingValue = (
+				implicitValue?: string | boolean,
+				valueIndex?: Index,
+			) => {
 				// Remove elements from argv array
 				removeArgvs.push(flagIndex);
 				if (valueIndex) {
 					removeArgvs.push(valueIndex);
 				}
+
+				results.push(applyParser(parser, implicitValue || ''));
 			};
-			return value === undefined ? add : add(value);
+
+			return (
+				flagValue === undefined
+					? getFollowingValue
+					: getFollowingValue(flagValue)
+			);
 		},
 	});
 
-	for (const i of removeArgvs.reverse()) {
-		argv.splice(i, 1);
-	}
+	spliceFromArgv(argv, removeArgvs);
 
 	return (gatherAll ? results : results[0]) as InferFlagType<Type>;
 };

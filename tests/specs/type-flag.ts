@@ -304,32 +304,66 @@ export default testSuite(({ describe }) => {
 				expect(argv).toStrictEqual([]);
 			});
 
-			test('aliases', () => {
-				const argv = ['-s', 'hello', '-b', 'world', '-s'];
-				const parsed = typeFlag(
-					{
-						string: {
-							type: String,
-							alias: 's',
+			describe('aliases', ({ test }) => {
+				test('aliases', () => {
+					const argv = ['-s', 'hello', '-b', 'world'];
+					const parsed = typeFlag(
+						{
+							string: {
+								type: String,
+								alias: 's',
+							},
+							boolean: {
+								type: Boolean,
+								alias: 'b',
+							},
 						},
-						boolean: {
-							type: Boolean,
-							alias: 'b',
-						},
-					},
-					argv,
-				);
+						argv,
+					);
 
-				expect<string | undefined>(parsed.flags.string).toBe('');
-				expect<boolean | undefined>(parsed.flags.boolean).toBe(true);
-				expect<string[]>(Object.keys(parsed.flags)).toStrictEqual(['string', 'boolean']);
-				expect<string[]>(parsed._).toStrictEqual(
-					Object.assign(
-						['world'],
-						{ '--': [] },
-					),
-				);
-				expect(argv).toStrictEqual([]);
+					expect<string | undefined>(parsed.flags.string).toBe('hello');
+					expect<boolean | undefined>(parsed.flags.boolean).toBe(true);
+					expect<string[]>(Object.keys(parsed.flags)).toStrictEqual(['string', 'boolean']);
+					expect<string[]>(parsed._).toStrictEqual(
+						Object.assign(
+							['world'],
+							{ '--': [] },
+						),
+					);
+					expect(argv).toStrictEqual([]);
+				});
+
+				test('alias with empty string', () => {
+					const argv = ['-a'];
+					const parsed = typeFlag(
+						{
+							alias: {
+								type: [String],
+								alias: 'a',
+							},
+						},
+						argv,
+					);
+
+					expect<string[]>(parsed.flags.alias).toStrictEqual(['']);
+					expect(argv).toStrictEqual([]);
+				});
+
+				test('alias group with value', () => {
+					const argv = ['-aliasesa=value'];
+					const parsed = typeFlag(
+						{
+							alias: {
+								type: [String],
+								alias: 'a',
+							},
+						},
+						argv,
+					);
+
+					expect<string[]>(parsed.flags.alias).toStrictEqual(['', '', 'value']);
+					expect(argv).toStrictEqual([]);
+				});
 			});
 
 			test('unknown flags', () => {
@@ -383,7 +417,7 @@ export default testSuite(({ describe }) => {
 
 			describe('ignore', ({ test }) => {
 				test('specific known flag', () => {
-					const argv = ['--string', 'a', '--string=b', '--unknown', 'c', '--unknown=d', '-u'];
+					const argv = ['--string', 'a', '--string=b', '--unknown', 'c', '--unknown=d', '-u', '-vvv=1'];
 					const parsed = typeFlag(
 						{
 							string: [String],
@@ -404,6 +438,7 @@ export default testSuite(({ describe }) => {
 						unknownFlags: {
 							unknown: [true, 'd'],
 							u: [true],
+							v: [true, true, '1'],
 						},
 						_: Object.assign(
 							['a', 'c'],
@@ -414,10 +449,17 @@ export default testSuite(({ describe }) => {
 				});
 
 				test('unknown flags', () => {
-					const argv = ['--string', 'a', '--string=b', '--unknown', 'c', '--unknown=d', '-u'];
+					const argv = ['--string', 'a', '--string=b', '--unknown', 'c', '--unknown=d', '-u', '-vbv=1', '-us=d'];
 					const parsed = typeFlag(
 						{
-							string: [String],
+							string: {
+								type: [String],
+								alias: 's',
+							},
+							boolean: {
+								type: Boolean,
+								alias: 'b',
+							},
 						},
 						argv,
 						{
@@ -427,7 +469,8 @@ export default testSuite(({ describe }) => {
 
 					expect(parsed).toStrictEqual({
 						flags: {
-							string: ['a', 'b'],
+							string: ['a', 'b', 'd'],
+							boolean: true,
 						},
 						unknownFlags: {},
 						_: Object.assign(
@@ -435,7 +478,7 @@ export default testSuite(({ describe }) => {
 							{ '--': [] },
 						),
 					});
-					expect(argv).toStrictEqual(['--unknown', '--unknown=d', '-u']);
+					expect(argv).toStrictEqual(['--unknown', '--unknown=d', '-u', '-vv=1', '-u']);
 				});
 
 				test('after first argument', () => {

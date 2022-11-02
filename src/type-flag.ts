@@ -13,8 +13,10 @@ import {
 	finalizeFlags,
 } from './utils';
 import {
-	argvIterator,
 	DOUBLE_DASH,
+	argvIterator,
+	spliceFromArgv,
+	type Index,
 } from './argv-iterator';
 
 /**
@@ -46,7 +48,7 @@ export const typeFlag = <Schemas extends Flags>(
 	const unknownFlags: ParsedFlags['unknownFlags'] = {};
 	const _ = [] as unknown as ParsedFlags['_'];
 	_[DOUBLE_DASH] = [];
-	const removeArgvs: number[] = [];
+	const removeArgvs: Index[] = [];
 
 	argvIterator(argv, {
 		onFlag(name, explicitValue, flagIndex) {
@@ -57,7 +59,10 @@ export const typeFlag = <Schemas extends Flags>(
 
 				const [values, parser] = flagRegistry[name];
 				const flagValue = normalizeBoolean(parser, explicitValue);
-				const getFollowingValue = (value?: string | boolean, valueIndex?: number) => {
+				const getFollowingValue = (
+					value?: string | boolean,
+					valueIndex?: Index,
+				) => {
 					// Remove elements from argv array
 					removeArgvs.push(flagIndex);
 					if (valueIndex) {
@@ -76,7 +81,7 @@ export const typeFlag = <Schemas extends Flags>(
 				);
 			}
 
-			if (!ignore?.(ArgvType.UnknownFlag, argv[flagIndex])) {
+			if (!ignore?.(ArgvType.UnknownFlag, name)) {
 				if (!hasOwn(unknownFlags, name)) {
 					unknownFlags[name] = [];
 				}
@@ -89,7 +94,7 @@ export const typeFlag = <Schemas extends Flags>(
 		},
 
 		onArgument(args, index, isEoF) {
-			if (ignore?.(ArgvType.Argument, argv[index])) {
+			if (ignore?.(ArgvType.Argument, argv[index[0]])) {
 				return;
 			}
 
@@ -97,16 +102,14 @@ export const typeFlag = <Schemas extends Flags>(
 
 			if (isEoF) {
 				_[DOUBLE_DASH] = args;
-				argv.splice(index);
+				argv.splice(index[0]);
 			} else {
 				removeArgvs.push(index);
 			}
 		},
 	});
 
-	for (const i of removeArgvs.reverse()) {
-		argv.splice(i, 1);
-	}
+	spliceFromArgv(argv, removeArgvs);
 
 	type Result = TypeFlag<Schemas>;
 	return {
