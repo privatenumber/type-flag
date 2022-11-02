@@ -58,7 +58,7 @@ console.log(parsed._)
 
 ### getFlag
 
-Want something even simpler?
+_Want something even simpler?_
 
 _type-flag_ also exports a `getFlag` function that returns a single flag value.
 
@@ -172,49 +172,21 @@ const parsed = typeFlag({})
 parsed.unknownFlags // => { 'some-flag': [true, '1234'] }
 ```
 
-#### Ignoring unknown flags
-Sometimes it may be undesirable to parse unknown flags. In these cases, you can ignore them so they're left in the `argv` array.
-
-```ts
-const argv = process.argv.slice(2)
-const parsed = typeFlag(
-    {
-        // ...
-    },
-    argv,
-    {
-        ignore: type => type === 'unknown-flag'
-    }
-)
-
-// $ node ./cli --unknown hello
-parsed._ // => ['hello']
-argv // => ['--unknown']
-
-// $ node ./cli --unknown=hello
-parsed._ // => []
-argv // => ['--unknown=hello']
-```
-
-
 ### Arguments
-All argument values are stored in the `_` property.
+Arguments are values passed in that are not associated with any flags. All arguments are stored in the `_` property.
 
-Everything after `--` (end-of-flags) is treated as arguments and will be stored in the `_['--']` property.
-
+Everything after `--` (end-of-flags) is treated as an argument (including flags) and will be stored in the `_['--']` property.
 
 ```ts
 const parsed = typeFlag({
     myFlag: [String]
 })
 
-// $ node ./cli --my-flag hello -- arg1 --my-flag world
-parsed.flags.myFlag // => ['hello']
+// $ node ./cli --my-flag value arg1 -- --my-flag world
+parsed.flags.myFlag // => ['value']
 parsed._ // => ['arg1', '--my-flag', 'world']
+parsed._['--'] // => ['--my-flag', 'world']
 ```
-
-
-Note: `value` after `--boolean` is parsed as an argument because the boolean flag doesn't accept a value.
 
 ### Flag value delimiters
 The characters `=`, `:` and `.` are reserved for delimiting the value from the flag.
@@ -224,6 +196,65 @@ $ node ./cli --flag=value --flag:value --flag.value
 ```
 
 This allows for usage like `--flag:key=value` or `--flag.property=value` to be possible.
+
+### Mutated argv array
+
+When `type-flag` iterates over the argv array, it removes the tokens it parses out via mutation.
+
+By default, `type-flag` works on a new copy of `process.argv.slice(2)` so this doesn't have any side-effects. But if you want to leverage this behavior to extract certain flags and arguments, you can pass in your own copy of `process.argv.slice(2)`.
+
+This may be useful for filtering out certain flags before passing down the `argv` to a child process.
+
+#### Ignoring unknown flags
+Sometimes it may be undesirable to parse unknown flags. In these cases, you can ignore them so they're left unparsed in the `argv` array.
+
+```ts
+const argv = process.argv.slice(2)
+const parsed = typeFlag(
+    {},
+    argv,
+    {
+        ignore: type => type === 'unknown-flag'
+    }
+)
+
+// $ node ./cli --unknown=hello
+parsed._ // => []
+argv // => ['--unknown=hello']
+```
+
+#### Ignoring everything after the first argument
+
+Similarly to how Node.js only reads flags passed in before the first argument, _type-flag_ can be configured to ignore everything after the first argument.
+
+```ts
+const argv = process.argv.slice(2)
+
+let stopParsing = false
+const parsed = typeFlag(
+    {
+        myFlag: [Boolean]
+    },
+    argv,
+    {
+        ignore(type) {
+            if (stopParsing) {
+                return true
+            }
+            const isArgument = type === 'argument'
+            if (isArgument) {
+                stopParsing = isArgument
+                return stopParsing
+            }
+        }
+    }
+)
+
+// $ node ./cli --my-flag ./file.js --my-flag
+parsed.flags.myFlag // => [true]
+argv // => ['./file.js', '--my-flag']
+```
+
 
 ## 👨🏻‍🏫 Examples
 
@@ -409,7 +440,7 @@ The argv array to parse. The array is mutated to remove the parsed flags.
 Type:
 ```ts
 type Options = {
-    // Whether to skip parsing on certain argv elements
+    // Callback to skip parsing on certain argv tokens
     ignore?: (
         type: 'known-flag' | 'unknown-flag' | 'argument',
         flagOrArgv: string,
