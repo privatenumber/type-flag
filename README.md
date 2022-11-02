@@ -319,16 +319,13 @@ parsed.flags.string // => 'hello'
 ### Accepting flag values with `=` in it
 In use-cases where flag values contain `=`, you can use `:` instead. This allows flags like `--define:K=V`.
 
-```sh
-$ node ./cli --define:key=value
-```
-
 ```ts
 const parsed = typeFlag({
     define: String
 })
 
-console.log(parsed.flags.define) // => 'key=value'
+// $ node ./cli --define:key=value
+parsed.flags.define // => 'key=value'
 ```
 
 ### Dot-nested flags
