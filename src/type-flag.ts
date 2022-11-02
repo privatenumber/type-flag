@@ -4,7 +4,11 @@ import type {
 	TypeFlag,
 	TypeFlagOptions,
 } from './types';
-import { ArgvType } from './types';
+import {
+	KNOWN_FLAG,
+	UNKNOWN_FLAG,
+	ARGUMENT,
+ } from './types';
 import {
 	hasOwn,
 	createRegistry,
@@ -44,18 +48,18 @@ export const typeFlag = <Schemas extends Flags>(
 	argv: string[] = process.argv.slice(2),
 	{ ignore }: TypeFlagOptions = {},
 ) => {
+	const removeArgvs: Index[] = [];
 	const flagRegistry = createRegistry(schemas);
 	const unknownFlags: ParsedFlags['unknownFlags'] = {};
 	const _ = [] as unknown as ParsedFlags['_'];
 	_[DOUBLE_DASH] = [];
-	const removeArgvs: Index[] = [];
 
 	argvIterator(argv, {
 		onFlag(name, explicitValue, flagIndex) {
 			const isKnownFlag = hasOwn(flagRegistry, name);
 			if (
 				ignore?.(
-					isKnownFlag ? ArgvType.KnownFlag : ArgvType.UnknownFlag,
+					isKnownFlag ? KNOWN_FLAG : UNKNOWN_FLAG,
 					name,
 					explicitValue,
 				)
@@ -99,7 +103,7 @@ export const typeFlag = <Schemas extends Flags>(
 		},
 
 		onArgument(args, index, isEoF) {
-			if (ignore?.(ArgvType.Argument, argv[index[0]])) {
+			if (ignore?.(ARGUMENT, argv[index[0]])) {
 				return;
 			}
 

@@ -41,9 +41,9 @@ export const parseFlagArgv = (
 	let flagValue;
 
 	const hasValueDalimiter = flagName.match(valueDelimiterPattern);
-	if (hasValueDalimiter?.index) {
+	if (hasValueDalimiter) {
 		const { index } = hasValueDalimiter;
-		flagValue = flagName.slice(index + 1);
+		flagValue = flagName.slice(index! + 1);
 		flagName = flagName.slice(0, index);
 	}
 
