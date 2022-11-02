@@ -105,7 +105,6 @@ export type TypeFlag<Schemas extends Flags> = ParsedFlags<{
 	[flag in keyof Schemas]: InferFlagType<Schemas[flag]>;
 }>;
 
-
 export const KNOWN_FLAG = 'known-flag';
 export const UNKNOWN_FLAG = 'unknown-flag';
 export const ARGUMENT = 'argument';

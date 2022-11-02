@@ -8,7 +8,7 @@ import {
 	KNOWN_FLAG,
 	UNKNOWN_FLAG,
 	ARGUMENT,
- } from './types';
+} from './types';
 import {
 	hasOwn,
 	createRegistry,
