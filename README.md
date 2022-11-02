@@ -5,9 +5,11 @@ Typed command-line arguments parser
 → [Try it out online](https://stackblitz.com/edit/type-flag-demo?devtoolsheight=50&file=src/index.ts&view=editor)
 
 
-> 🔥 Looking for something more robust?
+> _Looking for something more robust?_ 👀
 >
-> Checkout [_Cleye_](https://github.com/privatenumber/cleye), a CLI development tool powered by type-flag. It comes with argument parsing and a beautiful `--help` documentation generator.
+> Try [**Cleye**](https://github.com/privatenumber/cleye)—a CLI development tool powered by _type-flag_.
+>
+> In addition to flag parsing, it supports argument parsing and has a beautiful `--help` documentation generator.
 
 
 <sub>Support this project by ⭐️ starring and sharing it. [Follow me](https://github.com/privatenumber) to see what other cool projects I'm working on! ❤️</sub>
@@ -100,19 +102,15 @@ typeFlag({
 ```
 
 #### Array type
-To accept multiple values of a flag, use an array type by simply wrapping the type in an array:
+To accept multiple values of a flag, wrap the type with an array:
 
 ```ts
 const parsed = typeFlag({
-    stringFlag: [String]
+    myFlag: [String]
 })
-```
 
-This allows usage like this:
-```ts
-// $ node ./cli --string-flag A --string-flag B
-
-parsed.flags.stringFlag // => ['A', 'B']
+// $ node ./cli --my-flag A --my-flag B
+parsed.flags.myFlag // => ['A', 'B']
 ```
 
 #### Aliases
@@ -120,22 +118,18 @@ Flags are often given single-character aliases for shorthand usage (eg. `--help`
 
 ```ts
 typeFlag({
-    stringFlag: {
+    myFlag: {
         type: String,
-        alias: 's'
+        alias: 'm'
     }
 })
-```
 
-This allows usage like this:
-```ts
-// $ node ./cli -s A
-
-parsed.flags.stringFlag // => 'A'
+// $ node ./cli -m hello
+parsed.flags.myFlag // => 'hello'
 ```
 
 #### Default values
-Flags that are not passed in will default to being `undefined`. To set a different default value, use the object syntax and pass in a value as the `default` property. When a default is provided, the flag type will include that instead of `undefined`.
+Flags that are not passed in will default to being `undefined`. To set a different default value, use the object syntax and pass in a value as the `default` property. When a default is provided, the return type will reflect that instead of `undefined`.
 
 When using mutable values (eg. objects/arrays) as a default, pass in a function that creates it to avoid mutation-related bugs.
 
@@ -159,40 +153,47 @@ To get `undefined` in the parsed flag type, make sure [`strict`](https://www.typ
 
 ### kebab-case flags mapped to camelCase
 When passing in the flags, they can be in kebab-case and will automatically map to the camelCase equivalent.
-```sh
-# These two map to the same flag
-$ node ./cli --someString hello --some-string world
+```ts
+const parsed = typeFlag({
+    someString: [String]
+})
+
+// $ node ./cli --someString hello --some-string world
+parsed.flags.someString // => ['hello', 'world']
 ```
 
 ### Unknown flags
 When unrecognized flags are passed in, they are interpreted as a boolean, or a string if explicitly passed in. Unknown flags are not converted to camelCase to allow for accurate error handling.
 
-```sh
-$ node ./cli --unknown-flag --unknown-flag=2
-```
+```ts
+const parsed = typeFlag({})
 
-This outputs the following:
-```json5
-{
-    unknownFlags: {
-        'unknown-flag': [true, '2']
-    },
-    // ...
-}
+// $ node ./cli --some-flag --some-flag=1234
+parsed.unknownFlags // => { 'some-flag': [true, '1234'] }
 ```
 
 #### Ignoring unknown flags
-Sometimes it may be undesirable to parse out unknown flags. For example, when an argument follows an unknown boolean flag, type-flag may assume that the argument was passed into the flag.
-
-In these cases, you can ignore them so they're treated as arguments.
+Sometimes it may be undesirable to parse unknown flags. In these cases, you can ignore them so they're left in the `argv` array.
 
 ```ts
-const parsed = typeFlag({}, {
-    ignoreUnknown: true
-})
+const argv = process.argv.slice(2);
+const parsed = typeFlag(
+    {
+        // ...
+    },
+    argv,
+    {
+        ignore: type => type === 'unknown-flag',
+    },
+)
 
 // $ node ./cli --unknown hello
-console.log(parsed._) // => ['--unknown', 'hello]
+parsed._ // => ['hello']
+argv // => ['--unknown']
+
+// $ node ./cli --unknown=hello
+parsed._ // => []
+argv // => ['--unknown=hello']
 ```
 
 
@@ -201,27 +202,17 @@ All argument values are stored in the `_` property.
 
 Everything after `--` (end-of-flags) is treated as arguments and will be stored in the `_['--']` property.
 
-```sh
-$ node ./cli --boolean value --string "hello world" "another value" -- --string "goodbye world"
+
+```ts
+const parsed = typeFlag({
+    myFlag: [String]
+})
+
+// $ node ./cli --my-flag hello -- arg1 --my-flag world
+parsed.flags.myFlag // => ['hello']
+parsed._ // => ['arg1', '--my-flag', 'world']
 ```
 
-This outputs the following:
-<!-- eslint-skip -->
-```json5
-{
-    _: [
-        'value',
-        'another value',
-        '--string',
-        'goodbye world',
-        '--': [
-            '--string',
-            'goodbye world'
-        ]
-    ]
-    // ...
-}
-```
 
 Note: `value` after `--boolean` is parsed as an argument because the boolean flag doesn't accept a value.
 
@@ -271,7 +262,8 @@ type Parsed = {
 ```
 
 ### Optional value flag
-It's common to have flags that act as a boolean when no value is passed in. This can be done by creating a custom type that returns both types.
+
+To create a string flag that acts as a boolean when nothing is passed in, create a custom type that returns both types.
 
 ```ts
 function OptionalString(value: string) {
@@ -283,16 +275,14 @@ function OptionalString(value: string) {
 }
 
 const parsed = typeFlag({
-    optionalString: OptionalString
+    string: OptionalString
 })
-```
 
-```ts
-// $ node ./cli --optional-string
-parsed.flags.optionalString // => true
+// $ node ./cli --string
+parsed.flags.string // => true
 
-// $ node ./cli --optional-string hello
-parsed.flags.optionalString // => 'hello'
+// $ node ./cli --string hello
+parsed.flags.string // => 'hello'
 ```
 
 ### Accepting flag values with `=` in it
@@ -311,10 +301,6 @@ console.log(parsed.flags.define) // => 'key=value'
 ```
 
 ### Dot-nested flags
-```sh
-$ node ./cli --env.TOKEN=123 --env.CI
-```
-
 ```ts
 type Environment = {
     TOKEN?: string
@@ -332,31 +318,34 @@ const parsed = typeFlag({
     env: [EnvironmentObject]
 })
 
-const environment = parsed.flags.env.reduce((agg, next) => Object.assign(agg, next), {})
+const env = parsed.flags.env.reduce(
+    (agg, next) => Object.assign(agg, next),
+    {}
+)
 
-console.log(environment) // { TOKEN: 123, CI: true }
+// $ node ./cli --env.TOKEN=123 --env.CI
+env // => { TOKEN: 123, CI: true }
 ```
 
 ### Inverting a boolean
 To invert a boolean flag, `false` must be passed in with the `=` operator (or any other value delimiters).
 
-```sh
-$ node ./cli --boolean-flag=false
+
+```ts
+const parsed = typeFlag({
+    booleanFlag: Boolean
+})
+
+// $ node ./cli --boolean-flag=false
+parsed.flags.booleanFlag // => false
 ```
 
-Note, without the `=`, the `false` will be parsed as a separate argument.
+Without explicitly specfying the flag value via `=`, the `false` will be parsed as a separate argument.
 
-```sh
-$ node ./cli --boolean-flag false
-```
-
-```json5
-{
-    flags: {
-        booleanFlag: true
-    },
-    _: ['false']
-}
+```ts
+// $ node ./cli --boolean-flag false
+parsed.flags.booleanFlag // => true
+parsed._ // => ['false']
 ```
 
 ### Counting flags
@@ -370,11 +359,8 @@ const parsed = typeFlag({
     }
 })
 
-console.log(parsed.flags.verbose.length)
-```
-
-```sh
-$ node ./cli -vvv # logs 3
+// $ node ./cli -vvv
+parsed.flags.verbose.length // => 3
 ```
 
 ## ⚙️ API
@@ -416,15 +402,19 @@ Type: `string[]`
 
 Default: `process.argv.slice(2)`
 
-The argv array to parse.
+The argv array to parse. The array is mutated to remove the parsed flags.
 
 #### options
 
 Type:
 ```ts
 type Options = {
-    // Whether not to parse unknown flags (treat as arguments)
-    ignoreUnknown?: boolean
+    // Whether to skip parsing on certain argv elements
+    ignore?: (
+        type: 'known-flag' | 'unknown-flag' | 'argument',
+        flagOrArgv: string,
+        value: string | undefined,
+    ): boolean | void
 }
 ```
 
@@ -452,4 +442,4 @@ Type: `string[]`
 
 Default: `process.argv.slice(2)`
 
-The argv array to parse.
+The argv array to parse. The array is mutated to remove the parsed flags.
