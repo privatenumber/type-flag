@@ -1,23 +1,25 @@
 export const DOUBLE_DASH = '--';
 
-type BreakIteration = false;
+export type Index =
+	| [index: number]
+	| [index: number, aliasIndex: number, isLast: boolean];
 
 type onValueCallbackType = (
 	value?: string,
-	index?: number,
-) => void | BreakIteration;
+	index?: Index,
+) => void;
 
 type onFlag = (
 	name: string,
 	value: string | undefined,
-	index: number,
-) => void | BreakIteration | onValueCallbackType;
+	index: Index,
+) => void | onValueCallbackType;
 
 type onArgument = (
 	args: string[],
-	index: number,
+	index: Index,
 	isEoF?: boolean,
-) => void | BreakIteration;
+) => void;
 
 const valueDelimiterPattern = /[.:=]/;
 
@@ -36,14 +38,13 @@ export const parseFlagArgv = (
 
 	const isAlias = !flagArgv.startsWith(DOUBLE_DASH);
 	let flagName = flagArgv.slice(isAlias ? 1 : 2);
-
 	let flagValue;
 
 	const hasValueDalimiter = flagName.match(valueDelimiterPattern);
-	if (hasValueDalimiter?.index) {
-		const equalIndex = hasValueDalimiter.index;
-		flagValue = flagName.slice(equalIndex + 1);
-		flagName = flagName.slice(0, equalIndex);
+	if (hasValueDalimiter) {
+		const { index } = hasValueDalimiter;
+		flagValue = flagName.slice(index! + 1);
+		flagName = flagName.slice(0, index);
 	}
 
 	return [flagName, flagValue, isAlias];
@@ -51,95 +52,94 @@ export const parseFlagArgv = (
 
 export const argvIterator = (
 	argv: string[],
-	callbacks: {
+	{
+		onFlag,
+		onArgument,
+	}: {
 		onFlag?: onFlag;
 		onArgument?: onArgument;
 	},
 ) => {
-	let onValueCallback: undefined | onValueCallbackType;
-
-	const triggerCallback = (
+	let onValueCallback: void | onValueCallbackType;
+	const triggerValueCallback = (
 		value?: string,
-		index?: number,
+		index?: Index,
 	) => {
-		if (!onValueCallback) {
+		if (typeof onValueCallback !== 'function') {
 			return true;
 		}
 
-		const result = onValueCallback(value, index);
+		onValueCallback(value, index);
 		onValueCallback = undefined;
-		return result;
 	};
 
-	ARGV_ITERATION:
 	for (let i = 0; i < argv.length; i += 1) {
 		const argvElement = argv[i];
 
 		if (argvElement === DOUBLE_DASH) {
-			if (triggerCallback() === false) {
-				break;
-			}
+			triggerValueCallback();
 
 			const remaining = argv.slice(i + 1);
-			callbacks.onArgument?.(remaining, i, true);
+			onArgument?.(remaining, [i], true);
 			break;
 		}
 
 		const parsedFlag = parseFlagArgv(argvElement);
 
 		if (parsedFlag) {
-			if (triggerCallback() === false) {
-				break;
-			}
+			triggerValueCallback();
 
-			if (!callbacks.onFlag) {
+			if (!onFlag) {
 				continue;
 			}
 
 			const [flagName, flagValue, isAlias] = parsedFlag;
 
 			if (isAlias) {
+				// Alias group
 				for (let j = 0; j < flagName.length; j += 1) {
-					const alias = flagName[j];
-					const isLastAlias = j === flagName.length - 1;
-					const result = callbacks.onFlag(
-						alias,
-						isLastAlias ? flagValue : undefined,
-						i,
-					);
+					triggerValueCallback();
 
-					if (result === false) {
-						break ARGV_ITERATION;
-					} else if (typeof result === 'function') {
-						onValueCallback = result;
-					}
+					const isLastAlias = j === flagName.length - 1;
+					onValueCallback = onFlag(
+						flagName[j],
+						isLastAlias ? flagValue : undefined,
+						[i, j + 1, isLastAlias],
+					);
 				}
 			} else {
-				const result = callbacks.onFlag(
+				onValueCallback = onFlag(
 					flagName,
 					flagValue,
-					i,
+					[i],
 				);
-
-				if (result === false) {
-					break;
-				} else if (typeof result === 'function') {
-					onValueCallback = result;
-				}
 			}
-		} else {
-			const result = triggerCallback(argvElement, i);
-			if (
-				result === false
-				|| (
-					result === true // no callback set
-					&& callbacks.onArgument?.([argvElement], i) === false
-				)
-			) {
-				break;
-			}
+		} else if (triggerValueCallback(argvElement, [i])) { // if no callback was set
+			onArgument?.([argvElement], [i]);
 		}
 	}
 
-	triggerCallback();
+	triggerValueCallback();
+};
+
+export const spliceFromArgv = (
+	argv: string[],
+	removeArgvs: Index[],
+) => {
+	for (const [index, aliasIndex, isLast] of removeArgvs.reverse()) {
+		if (aliasIndex) {
+			const element = argv[index];
+			let newValue = element.slice(0, aliasIndex);
+			if (!isLast) {
+				newValue += element.slice(aliasIndex + 1);
+			}
+
+			if (newValue !== '-') {
+				argv[index] = newValue;
+				continue;
+			}
+		}
+
+		argv.splice(index, 1);
+	}
 };
