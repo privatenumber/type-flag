@@ -442,7 +442,7 @@ type Options = {
         type: 'known-flag' | 'unknown-flag' | 'argument',
         flagOrArgv: string,
         value: string | undefined,
-    ): boolean | void
+    ) => boolean | void
 }
 ```
 
