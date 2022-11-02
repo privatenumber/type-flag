@@ -113,12 +113,12 @@ export enum ArgvType {
 
 type IgnoreFunction = {
 	(
-		type: ArgvType.UnknownFlag | ArgvType.Argument,
+		type: ArgvType.Argument,
 		argvElement: string,
 	): boolean | void;
 
 	(
-		type: ArgvType.KnownFlag,
+		type: ArgvType.KnownFlag | ArgvType.UnknownFlag,
 		flagName: string,
 		flagValue: string | undefined,
 	): boolean | void;

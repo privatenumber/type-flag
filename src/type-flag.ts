@@ -52,11 +52,18 @@ export const typeFlag = <Schemas extends Flags>(
 
 	argvIterator(argv, {
 		onFlag(name, explicitValue, flagIndex) {
-			if (hasOwn(flagRegistry, name)) {
-				if (ignore?.(ArgvType.KnownFlag, name, explicitValue)) {
-					return;
-				}
+			const isKnownFlag = hasOwn(flagRegistry, name);
+			if (
+				ignore?.(
+					isKnownFlag ? ArgvType.KnownFlag : ArgvType.UnknownFlag,
+					name,
+					explicitValue,
+				)
+			) {
+				return;
+			}
 
+			if (isKnownFlag) {
 				const [values, parser] = flagRegistry[name];
 				const flagValue = normalizeBoolean(parser, explicitValue);
 				const getFollowingValue = (
@@ -81,16 +88,14 @@ export const typeFlag = <Schemas extends Flags>(
 				);
 			}
 
-			if (!ignore?.(ArgvType.UnknownFlag, name)) {
-				if (!hasOwn(unknownFlags, name)) {
-					unknownFlags[name] = [];
-				}
-
-				unknownFlags[name].push(
-					explicitValue === undefined ? true : explicitValue,
-				);
-				removeArgvs.push(flagIndex);
+			if (!hasOwn(unknownFlags, name)) {
+				unknownFlags[name] = [];
 			}
+
+			unknownFlags[name].push(
+				explicitValue === undefined ? true : explicitValue,
+			);
+			removeArgvs.push(flagIndex);
 		},
 
 		onArgument(args, index, isEoF) {
