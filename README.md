@@ -176,15 +176,15 @@ parsed.unknownFlags // => { 'some-flag': [true, '1234'] }
 Sometimes it may be undesirable to parse unknown flags. In these cases, you can ignore them so they're left in the `argv` array.
 
 ```ts
-const argv = process.argv.slice(2);
+const argv = process.argv.slice(2)
 const parsed = typeFlag(
     {
         // ...
     },
     argv,
     {
-        ignore: type => type === 'unknown-flag',
-    },
+        ignore: type => type === 'unknown-flag'
+    }
 )
 
 // $ node ./cli --unknown hello
