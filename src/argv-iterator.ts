@@ -23,7 +23,7 @@ type onArgument = (
 
 const valueDelimiterPattern = /[.:=]/;
 
-const isFlagPattern = /^-{1,2}[\da-z]/i;
+const isFlagPattern = /^-{1,2}\w/;
 
 export const parseFlagArgv = (
 	flagArgv: string,

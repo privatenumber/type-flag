@@ -151,6 +151,43 @@ export default testSuite(({ describe }) => {
 					});
 				});
 
+				test('string to boolean', () => {
+					const parsed = typeFlag({
+						boolean: Boolean,
+					}, ['--boolean=value']);
+
+					expect(parsed.flags).toStrictEqual({
+						boolean: true,
+					});
+				});
+
+				test('end of flags', () => {
+					const parsed = typeFlag({
+						string: String,
+					}, ['--string', '--', 'value']);
+
+					expect(parsed.flags).toStrictEqual({
+						string: '',
+					});
+
+					expect<string[]>(parsed._).toStrictEqual(
+						Object.assign(
+							['value'],
+							{ '--': ['value'] },
+						),
+					);
+				});
+
+				test('Flag can start with _', () => {
+					const parsed = typeFlag({
+						_flag: Boolean,
+					}, ['--_flag']);
+
+					expect(parsed.flags).toStrictEqual({
+						_flag: true,
+					});
+				});
+
 				test('invalid consolidated aliases', () => {
 					const parsed = typeFlag(
 						{}, ['-invalidAlias'],
@@ -306,7 +343,7 @@ export default testSuite(({ describe }) => {
 
 			describe('aliases', ({ test }) => {
 				test('aliases', () => {
-					const argv = ['-s', 'hello', '-b', 'world'];
+					const argv = ['-s', 'hello', '-b', 'world', '-1', 'goodbye'];
 					const parsed = typeFlag(
 						{
 							string: {
@@ -317,13 +354,18 @@ export default testSuite(({ describe }) => {
 								type: Boolean,
 								alias: 'b',
 							},
+							numberAlias: {
+								type: String,
+								alias: '1',
+							},
 						},
 						argv,
 					);
 
 					expect<string | undefined>(parsed.flags.string).toBe('hello');
 					expect<boolean | undefined>(parsed.flags.boolean).toBe(true);
-					expect<string[]>(Object.keys(parsed.flags)).toStrictEqual(['string', 'boolean']);
+					expect<string | undefined>(parsed.flags.numberAlias).toBe('goodbye');
+					expect<string[]>(Object.keys(parsed.flags)).toStrictEqual(['string', 'boolean', 'numberAlias']);
 					expect<string[]>(parsed._).toStrictEqual(
 						Object.assign(
 							['world'],
