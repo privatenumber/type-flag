@@ -1,6 +1,6 @@
 # type-flag <a href="https://npm.im/type-flag"><img src="https://badgen.net/npm/v/type-flag"></a>
 
-Typed command-line arguments parser
+Typed command-line arguments parser. Only 1.4 kB.
 
 → [Try it out online](https://stackblitz.com/edit/type-flag-demo?devtoolsheight=50&file=src/index.ts&view=editor)
 
