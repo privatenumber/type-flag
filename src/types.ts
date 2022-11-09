@@ -123,5 +123,8 @@ type IgnoreFunction = {
 };
 
 export type TypeFlagOptions = {
+	/**
+	 * Which argv elements to ignore from parsing
+	 */
 	ignore?: IgnoreFunction;
 };
