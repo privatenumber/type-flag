@@ -11,8 +11,7 @@ Typed command-line arguments parser. Only 1.4 kB.
 >
 > In addition to flag parsing, it supports argument parsing and has a beautiful `--help` documentation generator.
 
-
-<sub>Support this project by ⭐️ starring and sharing it. [Follow me](https://github.com/privatenumber) to see what other cool projects I'm working on! ❤️</sub>
+<sub>Found this package useful? Show your support & appreciation by [sponsoring](https://github.com/sponsors/privatenumber)! ❤️</sub>
 
 ## 🚀 Install
 
@@ -471,3 +470,11 @@ Type: `string[]`
 Default: `process.argv.slice(2)`
 
 The argv array to parse. The array is mutated to remove the parsed flags.
+
+
+## Sponsors
+<p align="center">
+	<a href="https://github.com/sponsors/privatenumber">
+		<img src="https://cdn.jsdelivr.net/gh/privatenumber/sponsors/sponsorkit/sponsors.svg">
+	</a>
+</p>
