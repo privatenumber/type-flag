@@ -5,13 +5,22 @@ Typed command-line arguments parser. Only 1.4 kB.
 → [Try it out online](https://stackblitz.com/edit/type-flag-demo?devtoolsheight=50&file=src/type-flag.ts&view=editor)
 
 
-> _Looking for something more robust?_ 👀
+> [!TIP]
+> **Looking for something more robust? 👀**
 >
 > Try [**Cleye**](https://github.com/privatenumber/cleye)—a CLI development tool powered by _type-flag_.
 >
 > In addition to flag parsing, it supports argument parsing and has a beautiful `--help` documentation generator.
 
-<sub>Found this package useful? Show your support & appreciation by [sponsoring](https://github.com/sponsors/privatenumber)! ❤️</sub>
+<p align="center">
+	<a href="https://privatenumber-sponsors.vercel.app/api/sponsor?tier=platinum">
+		<picture>
+			<source width="830" media="(prefers-color-scheme: dark)" srcset="https://privatenumber-sponsors.vercel.app/api/sponsor?tier=platinum&image=dark">
+			<source width="830" media="(prefers-color-scheme: light)" srcset="https://privatenumber-sponsors.vercel.app/api/sponsor?tier=platinum&image">
+			<img width="830" src="https://privatenumber-sponsors.vercel.app/api/sponsor?tier=platinum&image" alt="Premium sponsor banner">
+		</picture>
+	</a>
+</p>
 
 ## 🚀 Install
 
