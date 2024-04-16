@@ -1,8 +1,10 @@
 {
 	"compilerOptions": {
+		"skipLibCheck": true,
+		"noEmit": true,
 		"isolatedModules": true,
 		"esModuleInterop": true,
 		"strict": true,
-		"module": "Node16"
+		"module": "Preserve"
 	}
 }
