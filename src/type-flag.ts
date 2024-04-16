@@ -5,9 +5,7 @@ import type {
 	TypeFlagOptions,
 } from './types';
 import {
-	KNOWN_FLAG,
-	UNKNOWN_FLAG,
-	ARGUMENT,
+	TokenType
 } from './types';
 import {
 	hasOwn,
@@ -59,7 +57,7 @@ export const typeFlag = <Schemas extends Flags>(
 			const isKnownFlag = hasOwn(flagRegistry, name);
 			if (
 				ignore?.(
-					isKnownFlag ? KNOWN_FLAG : UNKNOWN_FLAG,
+					isKnownFlag ? TokenType.KnownFlag : TokenType.UnknownFlag,
 					name,
 					explicitValue,
 				)
@@ -103,7 +101,7 @@ export const typeFlag = <Schemas extends Flags>(
 		},
 
 		onArgument: (args, index, isEoF) => {
-			if (ignore?.(ARGUMENT, argv[index[0]])) {
+			if (ignore?.(TokenType.Argument, argv[index[0]])) {
 				return;
 			}
 

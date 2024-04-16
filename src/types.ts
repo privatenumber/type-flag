@@ -110,18 +110,20 @@ export type TypeFlag<Schemas extends Flags> = ParsedFlags<{
 	[flag in keyof Schemas]: InferFlagType<Schemas[flag]>;
 }>;
 
-export const KNOWN_FLAG = 'known-flag';
-export const UNKNOWN_FLAG = 'unknown-flag';
-export const ARGUMENT = 'argument';
+export enum TokenType {
+	KnownFlag,
+	UnknownFlag,
+	Argument,
+};
 
 type IgnoreFunction = {
 	(
-		type: typeof ARGUMENT,
+		type: TokenType.Argument,
 		argvElement: string,
 	): boolean | void;
 
 	(
-		type: typeof KNOWN_FLAG | typeof UNKNOWN_FLAG,
+		type: TokenType.KnownFlag | TokenType.UnknownFlag,
 		flagName: string,
 		flagValue: string | undefined,
 	): boolean | void;

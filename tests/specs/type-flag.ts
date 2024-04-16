@@ -1,5 +1,5 @@
 import { testSuite, expect } from 'manten';
-import { typeFlag, type Flags } from '#type-flag';
+import { typeFlag, TokenType, type Flags } from '#type-flag';
 
 export default testSuite(({ describe }) => {
 	describe('type-flag', ({ describe }) => {
@@ -467,7 +467,7 @@ export default testSuite(({ describe }) => {
 						argv,
 						{
 							ignore: (type, flagName) => (
-								type === 'known-flag'
+								type === TokenType.KnownFlag
 								&& flagName === 'string'
 							),
 						},
@@ -505,7 +505,7 @@ export default testSuite(({ describe }) => {
 						},
 						argv,
 						{
-							ignore: type => type === 'unknown-flag',
+							ignore: type => type === TokenType.UnknownFlag,
 						},
 					);
 
@@ -538,7 +538,7 @@ export default testSuite(({ describe }) => {
 									return true;
 								}
 
-								const isArgument = type === 'argument';
+								const isArgument = type === TokenType.Argument;
 								if (isArgument) {
 									ignore = isArgument;
 									return isArgument;
@@ -575,7 +575,7 @@ export default testSuite(({ describe }) => {
 						},
 						argv,
 						{
-							ignore: (type, value) => (type === 'argument' && value === '--'),
+							ignore: (type, value) => (type === TokenType.Argument && value === '--'),
 						},
 					);
 

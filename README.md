@@ -249,7 +249,7 @@ const parsed = typeFlag(
             if (stopParsing) {
                 return true
             }
-            const isArgument = type === 'argument'
+            const isArgument = type === TokenType.Argument
             if (isArgument) {
                 stopParsing = isArgument
                 return stopParsing
@@ -447,7 +447,7 @@ Type:
 type Options = {
     // Callback to skip parsing on certain argv tokens
     ignore?: (
-        type: 'known-flag' | 'unknown-flag' | 'argument',
+        type: TokenType,
         flagOrArgv: string,
         value: string | undefined,
     ) => boolean | void
