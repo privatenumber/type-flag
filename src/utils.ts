@@ -9,7 +9,10 @@ const camelCasePattern = /\B([A-Z])/g;
 const camelToKebab = (string: string) => string.replaceAll(camelCasePattern, '-$1').toLowerCase();
 
 const { hasOwnProperty } = Object.prototype;
-export const hasOwn = (object: any, property: PropertyKey) => hasOwnProperty.call(object, property);
+export const hasOwn = (
+	object: unknown,
+	property: PropertyKey,
+) => hasOwnProperty.call(object, property);
 
 /**
  * Default Array.isArray doesn't support type-narrowing
@@ -18,7 +21,7 @@ export const hasOwn = (object: any, property: PropertyKey) => hasOwnProperty.cal
  * https://stackoverflow.com/a/56249765/911407
  */
 const isReadonlyArray = (
-	array: readonly any[] | any,
+	array: readonly unknown[] | unknown,
 ): array is readonly unknown[] => Array.isArray(array);
 
 export const parseFlagType = (
@@ -48,7 +51,7 @@ export const normalizeBoolean = <T>(
 
 export const applyParser = (
 	typeFunction: TypeFunction,
-	value: any,
+	value: unknown,
 ) => {
 	if (typeof value === 'boolean') {
 		return value;

@@ -419,13 +419,13 @@ type Parsed = {
 #### flagSchema
 Type:
 ```ts
-type TypeFunction = (argvValue: any) => any
+type TypeFunction = (...args: any[]) => unknown
 
 type FlagSchema = {
     [flagName: string]: TypeFunction | [TypeFunction] | {
         type: TypeFunction | [TypeFunction]
         alias?: string
-        default?: any
+        default?: unknown
     }
 }
 ```
@@ -466,7 +466,7 @@ A comma-separated list of flag names to parse.
 #### flagType
 Type:
 ```ts
-type TypeFunction = (argvValue: any) => any
+type TypeFunction = (...args: any[]) => unknown
 
 type FlagType = TypeFunction | [TypeFunction]
 ```

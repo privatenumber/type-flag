@@ -39,7 +39,7 @@
 	},
 	"scripts": {
 		"build": "pkgroll --minify",
-		"lint": "eslint --cache .",
+		"lint": "lint --cache .",
 		"test": "tsx tests",
 		"test:dts": "tsd",
 		"type-check": "tsc --noEmit",
@@ -47,10 +47,10 @@
 		"prepack": "pnpm build && clean-pkg-json"
 	},
 	"devDependencies": {
-		"@pvtnbr/eslint-config": "^0.33.0",
+		"@pvtnbr/eslint-config": "^1.2.1",
 		"@types/node": "^20.12.7",
 		"clean-pkg-json": "^1.2.0",
-		"eslint": "^8.26.0",
+		"eslint": "^8.57.0",
 		"manten": "^1.2.0",
 		"pkgroll": "^2.0.2",
 		"tsd": "^0.31.0",

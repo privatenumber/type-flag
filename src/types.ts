@@ -1,10 +1,13 @@
 import type { DOUBLE_DASH } from './argv-iterator';
 
-export type TypeFunction<ReturnType = any> = (value: any) => ReturnType;
+export type TypeFunction<ReturnType = unknown> = (...args: any[]) => ReturnType;
 
 type TypeFunctionArray<ReturnType> = readonly [TypeFunction<ReturnType>];
 
-export type FlagType<ReturnType = any> = TypeFunction<ReturnType> | TypeFunctionArray<ReturnType>;
+export type FlagType<ReturnType = unknown> = (
+	TypeFunction<ReturnType>
+	| TypeFunctionArray<ReturnType>
+);
 
 type FlagSchemaBase<TF> = {
 
@@ -41,7 +44,7 @@ type FlagSchemaBase<TF> = {
 	alias?: string;
 } & Record<PropertyKey, unknown>;
 
-type FlagSchemaDefault<TF, DefaultType = any> = FlagSchemaBase<TF> & {
+type FlagSchemaDefault<TF, DefaultType = unknown> = FlagSchemaBase<TF> & {
 
 	/**
 	Default value of the flag. Also accepts a function that returns the default value.

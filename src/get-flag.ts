@@ -22,7 +22,7 @@ export const getFlag = <Type extends FlagType>(
 	// eslint-disable-next-line unicorn/prefer-set-has
 	const flags = flagNames.split(',').map(name => parseFlagArgv(name)?.[0]);
 	const [parser, gatherAll] = parseFlagType(flagType);
-	const results: any[] = [];
+	const results: unknown[] = [];
 	const removeArgvs: Index[] = [];
 
 	argvIterator(argv, {
