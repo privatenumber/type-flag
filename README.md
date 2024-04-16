@@ -1,8 +1,17 @@
-# type-flag <a href="https://npm.im/type-flag"><img src="https://badgen.net/npm/v/type-flag"></a> <a href="https://npm.im/type-flag"><img src="https://badgen.net/npm/dm/type-flag"></a>
+<p align="center">
+	<img width="100" src=".github/logo.webp">
+</p>
+<h1 align="center">
+	type-flag
+	<br>
+	<a href="https://npm.im/type-flag"><img src="https://badgen.net/npm/v/type-flag"></a> <a href="https://npm.im/type-flag"><img src="https://badgen.net/npm/dm/type-flag"></a>	
+</h1>
 
-Typed command-line arguments parser. Only 1.4 kB.
+Strongly typed command-line arguments parser. Tree-shakable (Max 1.4 kB)
 
 → [Try it out online](https://stackblitz.com/edit/type-flag-demo?devtoolsheight=50&file=src/type-flag.ts&view=editor)
+</div>
+
 
 
 > [!TIP]
@@ -29,8 +38,6 @@ npm i type-flag
 ```
 
 ## 🚦 Quick start
-
-_type-flag_ offers a simple API to parse command-line arguments.
 
 Let's say you want to create a script with the following usage:
 ```
