@@ -38,7 +38,6 @@
 		}
 	},
 	"scripts": {
-		"prepare": "simple-git-hooks",
 		"build": "pkgroll --minify",
 		"lint": "eslint --cache .",
 		"test": "tsx tests",
@@ -47,21 +46,13 @@
 		"dev": "tsx watch --conditions=development tests",
 		"prepack": "pnpm build && clean-pkg-json"
 	},
-	"simple-git-hooks": {
-		"pre-commit": "pnpm lint-staged"
-	},
-	"lint-staged": {
-		"*.ts": "pnpm lint"
-	},
 	"devDependencies": {
 		"@pvtnbr/eslint-config": "^0.33.0",
 		"@types/node": "^18.0.0",
 		"clean-pkg-json": "^1.2.0",
 		"eslint": "^8.26.0",
-		"lint-staged": "^13.0.3",
 		"manten": "^0.5.0",
 		"pkgroll": "^1.4.0",
-		"simple-git-hooks": "^2.8.1",
 		"tsd": "^0.24.1",
 		"tsx": "^4.7.2",
 		"typescript": "^4.8.4"
