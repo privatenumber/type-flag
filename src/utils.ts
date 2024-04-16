@@ -6,7 +6,7 @@ import type {
 
 const { stringify } = JSON;
 const camelCasePattern = /\B([A-Z])/g;
-const camelToKebab = (string: string) => string.replace(camelCasePattern, '-$1').toLowerCase();
+const camelToKebab = (string: string) => string.replaceAll(camelCasePattern, '-$1').toLowerCase();
 
 const { hasOwnProperty } = Object.prototype;
 export const hasOwn = (object: any, property: PropertyKey) => hasOwnProperty.call(object, property);
@@ -86,7 +86,7 @@ type FlagParsingData = [
 	values: unknown[],
 	parser: TypeFunction,
 	isArray: boolean,
-	schema: FlagTypeOrSchema,
+	schema: FlagTypeOrSchema
 ];
 
 type FlagRegistry = {

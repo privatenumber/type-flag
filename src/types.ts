@@ -7,6 +7,7 @@ type TypeFunctionArray<ReturnType> = readonly [TypeFunction<ReturnType>];
 export type FlagType<ReturnType = any> = TypeFunction<ReturnType> | TypeFunctionArray<ReturnType>;
 
 type FlagSchemaBase<TF> = {
+
 	/**
 	Type of the flag as a function that parses the argv string and returns the parsed value.
 
@@ -41,6 +42,7 @@ type FlagSchemaBase<TF> = {
 } & Record<PropertyKey, unknown>;
 
 type FlagSchemaDefault<TF, DefaultType = any> = FlagSchemaBase<TF> & {
+
 	/**
 	Default value of the flag. Also accepts a function that returns the default value.
 	[Default: undefined]
@@ -123,6 +125,7 @@ type IgnoreFunction = {
 };
 
 export type TypeFlagOptions = {
+
 	/**
 	 * Which argv elements to ignore from parsing
 	 */

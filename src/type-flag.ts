@@ -102,7 +102,7 @@ export const typeFlag = <Schemas extends Flags>(
 			removeArgvs.push(flagIndex);
 		},
 
-		onArgument(args, index, isEoF) {
+		onArgument: (args, index, isEoF) => {
 			if (ignore?.(ARGUMENT, argv[index[0]])) {
 				return;
 			}

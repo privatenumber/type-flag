@@ -36,7 +36,7 @@ type ExpectedType = {
 		extraOptions: boolean;
 	};
 	unknownFlags: {
-		[flag: string]:(string | boolean)[];
+		[flag: string]: (string | boolean)[];
 	};
 	_: string[] & { '--': string[] };
 };

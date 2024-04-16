@@ -245,7 +245,7 @@ const parsed = typeFlag(
     },
     argv,
     {
-        ignore(type) {
+        ignore: (type) => {
             if (stopParsing) {
                 return true
             }
@@ -277,7 +277,7 @@ const possibleSizes = ['small', 'medium', 'large'] as const
 
 type Sizes = typeof possibleSizes[number]
 
-function Size(size: Sizes) {
+const Size = (size: Sizes) => {
     if (!possibleSizes.includes(size)) {
         throw new Error(`Invalid size: "${size}"`)
     }
@@ -305,7 +305,7 @@ type Parsed = {
 To create a string flag that acts as a boolean when nothing is passed in, create a custom type that returns both types.
 
 ```ts
-function OptionalString(value: string) {
+const OptionalString = (value: string) => {
     if (!value) {
         return true
     }
@@ -343,7 +343,7 @@ type Environment = {
     CI?: boolean
 }
 
-function EnvironmentObject(value: string): Environment {
+const EnvironmentObject = (value: string): Environment => {
     const [propertyName, propertyValue] = value.split('=')
     return {
         [propertyName]: propertyValue || true

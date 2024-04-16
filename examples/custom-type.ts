@@ -11,13 +11,13 @@ const possibleSizes = ['small', 'medium', 'large'] as const;
 
 type Sizes = typeof possibleSizes[number];
 
-function Size(size: Sizes) {
+const Size = (size: Sizes) => {
 	if (!possibleSizes.includes(size)) {
 		throw new Error(`Invalid size: "${size}"`);
 	}
 
 	return size;
-}
+};
 
 const parsed = typeFlag({
 	size: {

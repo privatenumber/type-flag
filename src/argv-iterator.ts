@@ -30,7 +30,7 @@ export const parseFlagArgv = (
 ): [
 	flagName: string,
 	flagValue: string | undefined,
-	isAlias: boolean,
+	isAlias: boolean
 ] | undefined => {
 	if (!isFlagPattern.test(flagArgv)) {
 		return;

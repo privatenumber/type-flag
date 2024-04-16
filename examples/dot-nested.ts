@@ -12,12 +12,12 @@ type Environment = {
 	CI?: boolean;
 };
 
-function EnvironmentObject(value: string): Environment {
+const EnvironmentObject = (value: string): Environment => {
 	const [propertyName, propertyValue] = value.split('=');
 	return {
 		[propertyName]: propertyValue || true,
 	};
-}
+};
 
 const parsed = typeFlag({
 	env: [EnvironmentObject],

@@ -435,7 +435,7 @@ export default testSuite(({ describe }) => {
 				}>(parsed.flags).toStrictEqual({});
 
 				type UnknownFlags = {
-					[flag: string]: (boolean|string)[];
+					[flag: string]: (boolean | string)[];
 				};
 
 				expect<UnknownFlags>(parsed.unknownFlags).toStrictEqual({
@@ -533,7 +533,7 @@ export default testSuite(({ describe }) => {
 						},
 						argv,
 						{
-							ignore(type) {
+							ignore: (type) => {
 								if (ignore) {
 									return true;
 								}

@@ -1,10 +1,10 @@
 {
 	"compilerOptions": {
-		"skipLibCheck": true,
-		"noEmit": true,
-		"isolatedModules": true,
-		"esModuleInterop": true,
+		"module": "Preserve",
 		"strict": true,
-		"module": "Preserve"
+		"noEmit": true,
+		"esModuleInterop": true,
+		"isolatedModules": true,
+		"skipLibCheck": true
 	}
 }
