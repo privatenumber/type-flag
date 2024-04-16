@@ -35,7 +35,7 @@ jobs:
       - name: Test
         run: |
           pnpm test
-          pnpm --use-node-version=12.22.12 test
+          pnpm --use-node-version=18.0.0 test
 
       - name: Test DTS
         run: pnpm test:dts
