@@ -7,7 +7,9 @@
 	<a href="https://npm.im/type-flag"><img src="https://badgen.net/npm/v/type-flag"></a> <a href="https://npm.im/type-flag"><img src="https://badgen.net/npm/dm/type-flag"></a>	
 </h1>
 
-Strongly typed command-line arguments parser. Tree-shakable (Max 1.4 kB)
+Strongly typed command-line arguments parser.
+
+No dependencies & tree-shakable (Max 1.4 kB).
 
 → [Try it out online](https://stackblitz.com/edit/type-flag-demo?devtoolsheight=50&file=src/type-flag.ts&view=editor)
 </div>
