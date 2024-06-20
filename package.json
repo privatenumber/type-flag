@@ -1,60 +1,40 @@
 {
-	"name": "type-flag",
-	"version": "0.0.0-semantic-release",
-	"description": "Typed command-line arguments parser",
-	"keywords": [
-		"cli",
-		"command-line",
-		"flag",
-		"argv",
-		"arguments",
-		"parser",
-		"typed",
-		"typescript"
-	],
-	"license": "MIT",
-	"repository": "privatenumber/type-flag",
-	"funding": "https://github.com/privatenumber/type-flag?sponsor=1",
-	"author": {
-		"name": "Hiroki Osame",
-		"email": "hiroki.osame@gmail.com"
-	},
-	"files": [
-		"dist"
-	],
-	"main": "./dist/index.js",
-	"module": "./dist/index.mjs",
-	"types": "./dist/index.d.ts",
-	"exports": {
-		"require": "./dist/index.js",
-		"import": "./dist/index.mjs",
-		"types": "./dist/index.d.ts"
-	},
-	"imports": {
-		"#type-flag": {
-			"types": "./src/index.ts",
-			"development": "./src/index.ts",
-			"default": "./dist/index.mjs"
-		}
-	},
-	"scripts": {
-		"build": "pkgroll --minify",
-		"lint": "lintroll --cache .",
-		"test": "tsx tests",
-		"test:dts": "tsd",
-		"type-check": "tsc --noEmit",
-		"dev": "tsx watch --conditions=development tests",
-		"prepack": "pnpm build && clean-pkg-json"
-	},
-	"devDependencies": {
-		"@types/node": "^20.14.6",
-		"clean-pkg-json": "^1.2.0",
-		"lintroll": "^1.6.1",
-		"manten": "^1.3.0",
-		"pkgroll": "^2.1.1",
-		"tsd": "^0.31.1",
-		"tsx": "^4.15.6",
-		"typescript": "^5.4.5"
-	},
-	"packageManager": "pnpm@9.2.0"
+  "name": "type-flag",
+  "version": "0.0.0-semantic-release",
+  "description": "Typed command-line arguments parser",
+  "keywords": [
+    "cli",
+    "command-line",
+    "flag",
+    "argv",
+    "arguments",
+    "parser",
+    "typed",
+    "typescript"
+  ],
+  "license": "MIT",
+  "repository": "privatenumber/type-flag",
+  "funding": "https://github.com/privatenumber/type-flag?sponsor=1",
+  "author": {
+    "name": "Hiroki Osame",
+    "email": "hiroki.osame@gmail.com"
+  },
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    "require": "./dist/index.js",
+    "import": "./dist/index.mjs",
+    "types": "./dist/index.d.ts"
+  },
+  "imports": {
+    "#type-flag": {
+      "types": "./src/index.ts",
+      "development": "./src/index.ts",
+      "default": "./dist/index.mjs"
+    }
+  }
 }
