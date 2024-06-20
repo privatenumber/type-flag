@@ -67,10 +67,13 @@ export default testSuite(({ describe }) => {
 						typeFlag({
 							a: {
 								type: String,
-								alias: 'a',
+								alias: 'b',
 							},
 						}, []);
-					}).toThrow(/* must not be defined for a single-character flag */);
+					}).toThrow(
+
+						/* Flag alias "b" for flag "a" cannot be defined for a single-character flag */
+					);
 				});
 
 				test('Multi-character alias', () => {

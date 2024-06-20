@@ -23,6 +23,7 @@ const parsed = typeFlag({
 		default: false,
 		description: 'Some description',
 	},
+	a: String,
 });
 
 type ExpectedType = {
@@ -34,6 +35,7 @@ type ExpectedType = {
 		numberFlag: number | undefined;
 		numberFlagDefault: number;
 		extraOptions: boolean;
+		a: string | undefined;
 	};
 	unknownFlags: {
 		[flag: string]: (string | boolean)[];
