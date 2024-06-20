@@ -346,7 +346,15 @@ export default testSuite(({ describe }) => {
 
 			describe('aliases', ({ test }) => {
 				test('aliases', () => {
-					const argv = ['-s', 'hello', '-b', 'world', '-1', 'goodbye'];
+					const argv = [
+						// This is actually valid (e.g. `git commit -a --m message` works)
+						'--s',
+						'hello',
+						'-b',
+						'world',
+						'-1',
+						'goodbye',
+					];
 					const parsed = typeFlag(
 						{
 							string: {
