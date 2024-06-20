@@ -56,7 +56,9 @@ export const typeFlag = <Schemas extends Flags>(
 
 	argvIterator(argv, {
 		onFlag(name, explicitValue, flagIndex) {
-			const isKnownFlag = hasOwn(flagRegistry, name);
+			const isAlias = flagIndex.length === 3;
+			const isValid = isAlias || name.length > 1;
+			const isKnownFlag = isValid && hasOwn(flagRegistry, name);
 			if (
 				ignore?.(
 					isKnownFlag ? KNOWN_FLAG : UNKNOWN_FLAG,

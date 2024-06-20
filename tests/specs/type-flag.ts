@@ -406,6 +406,23 @@ export default testSuite(({ describe }) => {
 					expect<string[]>(parsed.flags.alias).toStrictEqual(['', '', 'value']);
 					expect(argv).toStrictEqual([]);
 				});
+
+				test('should not accept aliases with --', () => {
+					const argv = ['--a'];
+					const parsed = typeFlag(
+						{
+							alias: {
+								type: Boolean,
+								alias: 'a',
+							},
+						},
+						argv,
+					);
+
+					expect<boolean | undefined>(parsed.flags.alias).toBe(undefined);
+					expect<(string | boolean)[]>(parsed.unknownFlags.a).toStrictEqual([true]);
+					expect(argv).toStrictEqual([]);
+				});
 			});
 
 			test('unknown flags', () => {
