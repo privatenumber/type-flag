@@ -39,7 +39,7 @@
 	},
 	"scripts": {
 		"build": "pkgroll --minify",
-		"lint": "lint --cache .",
+		"lint": "lintroll --cache .",
 		"test": "tsx tests",
 		"test:dts": "tsd",
 		"type-check": "tsc --noEmit",
@@ -47,17 +47,14 @@
 		"prepack": "pnpm build && clean-pkg-json"
 	},
 	"devDependencies": {
-		"@pvtnbr/eslint-config": "^1.2.1",
-		"@types/node": "^20.12.7",
+		"@types/node": "^20.14.6",
 		"clean-pkg-json": "^1.2.0",
-		"eslint": "^8.57.0",
-		"manten": "^1.2.0",
-		"pkgroll": "^2.0.2",
-		"tsd": "^0.31.0",
-		"tsx": "^4.7.2",
+		"lintroll": "^1.6.1",
+		"manten": "^1.3.0",
+		"pkgroll": "^2.1.1",
+		"tsd": "^0.31.1",
+		"tsx": "^4.15.6",
 		"typescript": "^5.4.5"
 	},
-	"eslintConfig": {
-		"extends": "@pvtnbr"
-	}
+	"packageManager": "pnpm@9.2.0"
 }
