@@ -410,6 +410,22 @@ export default testSuite(({ describe }) => {
 					expect(argv).toStrictEqual([]);
 				});
 
+				test('should not accept aliases with --', () => {
+					const argv = ['--a'];
+					const parsed = typeFlag(
+						{
+							alias: {
+								type: Boolean,
+								alias: 'a',
+							},
+						},
+						argv,
+					);
+					expect<boolean | undefined>(parsed.flags.alias).toBe(undefined);
+					expect<(string | boolean)[]>(parsed.unknownFlags.a).toStrictEqual([true]);
+					expect(argv).toStrictEqual([]);
+				});
+
 				test('single-character alias', () => {
 					const argv = ['-x', '1', '-y', '2'];
 					const parsed = typeFlag(
