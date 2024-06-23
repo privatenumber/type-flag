@@ -1,18 +1,33 @@
-# type-flag <a href="https://npm.im/type-flag"><img src="https://badgen.net/npm/v/type-flag"></a>
+<p align="center">
+	<img width="100" src=".github/logo.webp">
+</p>
+<h1 align="center">
+	type-flag
+	<br>
+	<a href="https://npm.im/type-flag"><img src="https://badgen.net/npm/v/type-flag"></a> <a href="https://npm.im/type-flag"><img src="https://badgen.net/npm/dm/type-flag"></a>	
+</h1>
 
-Typed command-line arguments parser
+Strongly typed command-line arguments parser.
 
-→ [Try it out online](https://stackblitz.com/edit/type-flag-demo?devtoolsheight=50&file=src/index.ts&view=editor)
+No dependencies & tree-shakable (Max 1.4 kB).
+
+→ [Try it out online](https://stackblitz.com/edit/type-flag-demo?devtoolsheight=50&file=src/type-flag.ts&view=editor)
+</div>
 
 
-> _Looking for something more robust?_ 👀
+
+> [!TIP]
+> **Looking for something more robust? 👀**
 >
 > Try [**Cleye**](https://github.com/privatenumber/cleye)—a CLI development tool powered by _type-flag_.
 >
 > In addition to flag parsing, it supports argument parsing and has a beautiful `--help` documentation generator.
 
-
-<sub>Support this project by ⭐️ starring and sharing it. [Follow me](https://github.com/privatenumber) to see what other cool projects I'm working on! ❤️</sub>
+<p align="center">
+	<a href="https://github.com/sponsors/privatenumber/sponsorships?tier_id=398771"><img width="412" src="https://raw.githubusercontent.com/privatenumber/sponsors/master/banners/assets/donate.webp"></a>
+	<a href="https://github.com/sponsors/privatenumber/sponsorships?tier_id=397608"><img width="412" src="https://raw.githubusercontent.com/privatenumber/sponsors/master/banners/assets/sponsor.webp"></a>
+</p>
+<p align="center"><sup><i>Already a sponsor?</i> Join the discussion in the <a href="https://github.com/pvtnbr/tsx">Development repo</a>!</sup></p>
 
 ## 🚀 Install
 
@@ -21,8 +36,6 @@ npm i type-flag
 ```
 
 ## 🚦 Quick start
-
-_type-flag_ offers a simple API to parse command-line arguments.
 
 Let's say you want to create a script with the following usage:
 ```
@@ -237,7 +250,7 @@ const parsed = typeFlag(
     },
     argv,
     {
-        ignore(type) {
+        ignore: (type) => {
             if (stopParsing) {
                 return true
             }
@@ -269,7 +282,7 @@ const possibleSizes = ['small', 'medium', 'large'] as const
 
 type Sizes = typeof possibleSizes[number]
 
-function Size(size: Sizes) {
+const Size = (size: Sizes) => {
     if (!possibleSizes.includes(size)) {
         throw new Error(`Invalid size: "${size}"`)
     }
@@ -297,7 +310,7 @@ type Parsed = {
 To create a string flag that acts as a boolean when nothing is passed in, create a custom type that returns both types.
 
 ```ts
-function OptionalString(value: string) {
+const OptionalString = (value: string) => {
     if (!value) {
         return true
     }
@@ -335,7 +348,7 @@ type Environment = {
     CI?: boolean
 }
 
-function EnvironmentObject(value: string): Environment {
+const EnvironmentObject = (value: string): Environment => {
     const [propertyName, propertyValue] = value.split('=')
     return {
         [propertyName]: propertyValue || true
@@ -411,13 +424,13 @@ type Parsed = {
 #### flagSchema
 Type:
 ```ts
-type TypeFunction = (argvValue: any) => any
+type TypeFunction = (...args: any[]) => unknown
 
 type FlagSchema = {
     [flagName: string]: TypeFunction | [TypeFunction] | {
         type: TypeFunction | [TypeFunction]
         alias?: string
-        default?: any
+        default?: unknown
     }
 }
 ```
@@ -458,7 +471,7 @@ A comma-separated list of flag names to parse.
 #### flagType
 Type:
 ```ts
-type TypeFunction = (argvValue: any) => any
+type TypeFunction = (...args: any[]) => unknown
 
 type FlagType = TypeFunction | [TypeFunction]
 ```
@@ -471,3 +484,11 @@ Type: `string[]`
 Default: `process.argv.slice(2)`
 
 The argv array to parse. The array is mutated to remove the parsed flags.
+
+
+## Sponsors
+<p align="center">
+	<a href="https://github.com/sponsors/privatenumber">
+		<img src="https://cdn.jsdelivr.net/gh/privatenumber/sponsors/sponsorkit/sponsors.svg">
+	</a>
+</p>

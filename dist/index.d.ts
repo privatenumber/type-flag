@@ -1,9 +1,9 @@
 declare const DOUBLE_DASH = "--";
 
-declare type TypeFunction<ReturnType = any> = (value: any) => ReturnType;
-declare type TypeFunctionArray<ReturnType> = readonly [TypeFunction<ReturnType>];
-declare type FlagType<ReturnType = any> = TypeFunction<ReturnType> | TypeFunctionArray<ReturnType>;
-declare type FlagSchemaBase<TF> = {
+type TypeFunction<ReturnType = unknown> = (...args: any[]) => ReturnType;
+type TypeFunctionArray<ReturnType> = readonly [TypeFunction<ReturnType>];
+type FlagType<ReturnType = unknown> = (TypeFunction<ReturnType> | TypeFunctionArray<ReturnType>);
+type FlagSchemaBase<TF> = {
     /**
     Type of the flag as a function that parses the argv string and returns the parsed value.
 
@@ -35,7 +35,7 @@ declare type FlagSchemaBase<TF> = {
     */
     alias?: string;
 } & Record<PropertyKey, unknown>;
-declare type FlagSchemaDefault<TF, DefaultType = any> = FlagSchemaBase<TF> & {
+type FlagSchemaDefault<TF, DefaultType = unknown> = FlagSchemaBase<TF> & {
     /**
     Default value of the flag. Also accepts a function that returns the default value.
     [Default: undefined]
@@ -52,13 +52,13 @@ declare type FlagSchemaDefault<TF, DefaultType = any> = FlagSchemaBase<TF> & {
     */
     default: DefaultType | (() => DefaultType);
 };
-declare type FlagSchema<TF = FlagType> = (FlagSchemaBase<TF> | FlagSchemaDefault<TF>);
-declare type FlagTypeOrSchema<ExtraOptions = Record<string, unknown>> = FlagType | (FlagSchema & ExtraOptions);
-declare type Flags<ExtraOptions = Record<string, unknown>> = {
+type FlagSchema<TF = FlagType> = (FlagSchemaBase<TF> | FlagSchemaDefault<TF>);
+type FlagTypeOrSchema<ExtraOptions = Record<string, unknown>> = FlagType | (FlagSchema & ExtraOptions);
+type Flags<ExtraOptions = Record<string, unknown>> = {
     [flagName: string]: FlagTypeOrSchema<ExtraOptions>;
 };
-declare type InferFlagType<Flag extends FlagTypeOrSchema> = (Flag extends (TypeFunctionArray<infer T> | FlagSchema<TypeFunctionArray<infer T>>) ? (Flag extends FlagSchemaDefault<TypeFunctionArray<T>, infer D> ? T[] | D : T[]) : (Flag extends TypeFunction<infer T> | FlagSchema<TypeFunction<infer T>> ? (Flag extends FlagSchemaDefault<TypeFunction<T>, infer D> ? T | D : T | undefined) : never));
-declare type ParsedFlags<Schemas = Record<string, unknown>> = {
+type InferFlagType<Flag extends FlagTypeOrSchema> = (Flag extends (TypeFunctionArray<infer T> | FlagSchema<TypeFunctionArray<infer T>>) ? (Flag extends FlagSchemaDefault<TypeFunctionArray<T>, infer D> ? T[] | D : T[]) : (Flag extends TypeFunction<infer T> | FlagSchema<TypeFunction<infer T>> ? (Flag extends FlagSchemaDefault<TypeFunction<T>, infer D> ? T | D : T | undefined) : never));
+type ParsedFlags<Schemas = Record<string, unknown>> = {
     flags: Schemas;
     unknownFlags: {
         [flagName: string]: (string | boolean)[];
@@ -67,17 +67,20 @@ declare type ParsedFlags<Schemas = Record<string, unknown>> = {
         [DOUBLE_DASH]: string[];
     };
 };
-declare type TypeFlag<Schemas extends Flags> = ParsedFlags<{
+type TypeFlag<Schemas extends Flags> = ParsedFlags<{
     [flag in keyof Schemas]: InferFlagType<Schemas[flag]>;
 }>;
 declare const KNOWN_FLAG = "known-flag";
 declare const UNKNOWN_FLAG = "unknown-flag";
 declare const ARGUMENT = "argument";
-declare type IgnoreFunction = {
+type IgnoreFunction = {
     (type: typeof ARGUMENT, argvElement: string): boolean | void;
     (type: typeof KNOWN_FLAG | typeof UNKNOWN_FLAG, flagName: string, flagValue: string | undefined): boolean | void;
 };
-declare type TypeFlagOptions = {
+type TypeFlagOptions = {
+    /**
+     * Which argv elements to ignore from parsing
+     */
     ignore?: IgnoreFunction;
 };
 
@@ -101,7 +104,7 @@ const parsed = typeFlag({
 })
 ```
 */
-declare const typeFlag: <Schemas extends Flags<Record<string, unknown>>>(schemas: Schemas, argv?: string[], { ignore }?: TypeFlagOptions) => {
+declare const typeFlag: <Schemas extends Flags>(schemas: Schemas, argv?: string[], { ignore }?: TypeFlagOptions) => {
     flags: { [flag in keyof Schemas]: InferFlagType<Schemas[flag]>; };
     unknownFlags: {
         [flagName: string]: (string | boolean)[];
@@ -111,6 +114,6 @@ declare const typeFlag: <Schemas extends Flags<Record<string, unknown>>>(schemas
     };
 };
 
-declare const getFlag: <Type extends FlagType<any>>(flagNames: string, flagType: Type, argv?: string[]) => InferFlagType<Type>;
+declare const getFlag: <Type extends FlagType>(flagNames: string, flagType: Type, argv?: string[]) => InferFlagType<Type>;
 
-export { Flags, TypeFlag, TypeFlagOptions, getFlag, typeFlag };
+export { type Flags, type TypeFlag, type TypeFlagOptions, getFlag, typeFlag };
