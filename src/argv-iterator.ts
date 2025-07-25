@@ -159,20 +159,49 @@ export const spliceFromArgv = (
 	argv: string[],
 	removeArgvs: Index[],
 ) => {
-	for (const [index, aliasIndex, isLast] of removeArgvs.reverse()) {
-		if (aliasIndex) {
-			const element = argv[index];
-			let newValue = element.slice(0, aliasIndex);
-			if (!isLast) {
-				newValue += element.slice(aliasIndex + 1);
-			}
+	if (removeArgvs.length === 0) {
+		return;
+	}
 
-			if (newValue !== '-') {
-				argv[index] = newValue;
-				continue;
-			}
+	const indicesToSplice = new Set<number>();
+	const aliasRemoveInstructions: [number, number, boolean][] = [];
+
+	// Separate full removals from alias group modifications
+	for (const instruction of removeArgvs) {
+		if (instruction[1]) {
+			aliasRemoveInstructions.push(instruction as [number, number, boolean]);
+		} else {
+			indicesToSplice.add(instruction[0]);
+		}
+	}
+
+	// Process alias modifications first. These mutate strings in-place in the argv.
+	// The array is reversed to process aliases from right-to-left,
+	// which correctly handles modifications on the same string.
+	for (const [index, aliasIndex, isLast] of aliasRemoveInstructions.reverse()) {
+		const element = argv[index];
+		let newValue = element.slice(0, aliasIndex);
+		if (!isLast) {
+			newValue += element.slice(aliasIndex + 1);
 		}
 
-		argv.splice(index, 1);
+		if (newValue !== '-') {
+			argv[index] = newValue;
+		} else {
+			// The alias group is now empty (e.g., only '-') so it should be removed entirely
+			indicesToSplice.add(index);
+		}
+	}
+
+	// Perform all removals in a single, efficient pass
+	if (indicesToSplice.size > 0) {
+		let writeIndex = 0;
+		for (let readIndex = 0; readIndex < argv.length; readIndex += 1) {
+			if (!indicesToSplice.has(readIndex)) {
+				argv[writeIndex] = argv[readIndex];
+				writeIndex += 1;
+			}
+		}
+		argv.length = writeIndex;
 	}
 };

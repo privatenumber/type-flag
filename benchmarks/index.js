@@ -6,32 +6,74 @@ import { typeFlag, getFlag } from '../dist/index.mjs';
 
 const bench = new Bench({ time: 1000 });
 
+// A more realistic argv for testing parsing performance.
+// The previous benchmark used an empty array, which only measured setup cost.
+const sampleArgv = [
+	'--hello',
+	'world',
+	'--boolean',
+	'-a', // alias for age
+	'25',
+	'some-arg',
+	'--unknown-flag=test',
+	'another-arg',
+];
+
 bench
 	.add('minimist', () => {
-		minimist(process.argv.slice(2));
+		// minimist doesn't mutate the array
+		minimist(sampleArgv);
 	})
 	.add('type-flag', () => {
+		// type-flag mutates the array, so we pass a copy
 		typeFlag({
 			hello: String,
-		});
+			boolean: Boolean,
+			age: {
+				type: Number,
+				alias: 'a',
+			},
+		}, [...sampleArgv]);
 	})
 	.add('parseArgs', () => {
+		// parseArgs doesn't mutate the array
 		parseArgs({
-			hello: {
-				type: 'string',
+			args: sampleArgv,
+			options: {
+				hello: {
+					type: 'string',
+				},
+				boolean: {
+					type: 'boolean',
+				},
+				age: {
+					type: 'string',
+					short: 'a',
+				},
 			},
+			allowPositionals: true,
+			strict: false,
 		});
 	})
 	.add('get-flag', () => {
-		getFlag('--hello', String);
+		// get-flag mutates the array, so we pass a copy
+		getFlag('--age, -a', Number, [...sampleArgv]);
 	})
 	.add('arg', () => {
+		// arg doesn't mutate the array by default
 		arg({
 			'--hello': String,
+			'--boolean': Boolean,
+			'--age': Number,
+			'-a': '--age',
+		}, {
+			argv: sampleArgv,
+			permissive: true,
 		});
 	})
 	.add('empty', () => {
-		(a => a)(process.argv.slice(2));
+		// Just a baseline for function call overhead
+		(a => a)(sampleArgv);
 	});
 
 await bench.warmup(); // make results more reliable, ref: https://github.com/tinylibs/tinybench/pull/50

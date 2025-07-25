@@ -5,8 +5,26 @@ import type {
 } from './types';
 
 const { stringify } = JSON;
-const camelCasePattern = /\B([A-Z])/g;
-const camelToKebab = (string: string) => string.replaceAll(camelCasePattern, '-$1').toLowerCase();
+
+/**
+ * A fast way to convert camelCase to kebab-case.
+ * This is faster than using a regex with replace().
+ */
+const camelToKebab = (string: string) => {
+	let result = '';
+	for (let i = 0; i < string.length; i += 1) {
+		const char = string[i];
+		const charCode = char.charCodeAt(0);
+
+		// 65-90 is A-Z
+		if (charCode >= 65 && charCode <= 90) {
+			result += `${i > 0 ? '-' : ''}${String.fromCharCode(charCode + 32)}`;
+		} else {
+			result += char;
+		}
+	}
+	return result;
+};
 
 const { hasOwnProperty } = Object.prototype;
 export const hasOwn = (
@@ -24,18 +42,18 @@ const isReadonlyArray = (
 	array: readonly unknown[] | unknown,
 ): array is readonly unknown[] => Array.isArray(array);
 
-export const parseFlagType = (
-	flagSchema: FlagTypeOrSchema,
-): [parser: TypeFunction, isArray: boolean] => {
-	if (typeof flagSchema === 'function') {
-		return [flagSchema, false];
+export const parseFlagType = (flagSchema: FlagTypeOrSchema): [parser: TypeFunction, isArray: boolean] => {
+	let schema = flagSchema;
+	while (typeof schema !== 'function' && !isReadonlyArray(schema)) {
+		schema = schema.type;
 	}
 
-	if (isReadonlyArray(flagSchema)) {
-		return [flagSchema[0], true];
+	if (typeof schema === 'function') {
+		return [schema, false];
 	}
 
-	return parseFlagType(flagSchema.type);
+	// It must be a ReadonlyArray now
+	return [schema[0], true];
 };
 
 export const normalizeBoolean = <T>(
@@ -64,8 +82,6 @@ export const applyParser = (
 	return typeFunction(value);
 };
 
-const reservedCharactersPattern = /[\s.:=]/;
-
 const validateFlagName = (
 	flagName: string,
 ) => {
@@ -79,9 +95,17 @@ const validateFlagName = (
 		throw new Error(`${errorPrefix} must be longer than a character`);
 	}
 
-	const hasReservedCharacter = flagName.match(reservedCharactersPattern);
-	if (hasReservedCharacter) {
-		throw new Error(`${errorPrefix} cannot contain ${stringify(hasReservedCharacter?.[0])}`);
+	// This is faster than a regex for finding the first reserved character
+	for (let i = 0; i < flagName.length; i += 1) {
+		const char = flagName[i];
+		if (
+			char === ' '
+			|| char === '.'
+			|| char === ':'
+			|| char === '='
+		) {
+			throw new Error(`${errorPrefix} cannot contain ${stringify(char)}`);
+		}
 	}
 };
 
@@ -112,18 +136,14 @@ export const createRegistry = (
 		registry[flagName] = data;
 	};
 
-	for (const flagName in schemas) {
-		if (!hasOwn(schemas, flagName)) {
-			continue;
-		}
+	const flagNames = Object.keys(schemas);
+	for (let i = 0; i < flagNames.length; i += 1) {
+		const flagName = flagNames[i];
 		validateFlagName(flagName);
 
 		const schema = schemas[flagName];
-		const flagData: FlagParsingData = [
-			[],
-			...parseFlagType(schema),
-			schema,
-		];
+		const [parser, isArray] = parseFlagType(schema);
+		const flagData: FlagParsingData = [[], parser, isArray, schema];
 
 		setFlag(flagName, flagData);
 
@@ -132,7 +152,10 @@ export const createRegistry = (
 			setFlag(kebabCasing, flagData);
 		}
 
-		if ('alias' in schema && typeof schema.alias === 'string') {
+		if (
+			'alias' in schema
+			&& typeof schema.alias === 'string'
+		) {
 			const { alias } = schema;
 			const errorPrefix = `Flag alias ${stringify(alias)} for flag ${stringify(flagName)}`;
 
@@ -151,17 +174,12 @@ export const createRegistry = (
 	return registry;
 };
 
-export const finalizeFlags = (
-	schemas: Flags,
-	registry: FlagRegistry,
-) => {
+export const finalizeFlags = (schemas: Flags, registry: FlagRegistry) => {
 	const flags: Record<string, unknown> = {};
+	const flagNames = Object.keys(schemas);
 
-	for (const flagName in schemas) {
-		if (!hasOwn(schemas, flagName)) {
-			continue;
-		}
-
+	for (let i = 0; i < flagNames.length; i += 1) {
+		const flagName = flagNames[i];
 		const [values, , isArray, schema] = registry[flagName];
 		if (
 			values.length === 0
