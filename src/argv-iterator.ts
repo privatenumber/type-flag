@@ -20,7 +20,35 @@ type onArgument = (
 	isEoF?: boolean,
 ) => void;
 
-const isFlagPattern = /^-{1,2}\w/;
+/**
+ * A fast check to see if an argument is a flag.
+ * - Starts with `-` or `--`.
+ * - Is not just `-` or `--`.
+ * - The character after the hyphen(s) is a "word" character.
+ * This is a performance optimization for the equivalent regex: /^-{1,2}\w/
+ */
+const isFlag = (argument: string): boolean => {
+	if (argument[0] !== '-') {
+		return false;
+	}
+
+	const char1 = argument[1];
+	const char: string | undefined = (
+		char1 === '-'
+			? argument[2] // Long flag like --foo
+			: char1 // Short flag like -f
+	);
+	if (char === undefined) {
+		return false;
+	}
+
+	// This is a manual check for a "word" character, equivalent to \w in regex.
+	const characterCode = char.codePointAt(0)!;
+	return (characterCode >= 48 && characterCode <= 57) // 0-9
+		|| (characterCode >= 65 && characterCode <= 90) // A-Z
+		|| characterCode === 95 // _
+		|| (characterCode >= 97 && characterCode <= 122); // a-z
+};
 
 export const parseFlagArgv = (
 	flagArgv: string,
@@ -29,7 +57,7 @@ export const parseFlagArgv = (
 	flagValue: string | undefined,
 	isAlias: boolean,
 ] | undefined => {
-	if (!isFlagPattern.test(flagArgv)) {
+	if (!isFlag(flagArgv)) {
 		return;
 	}
 
