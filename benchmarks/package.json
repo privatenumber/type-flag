@@ -1,0 +1,8 @@
+{
+	"type": "module",
+	"devDependencies": {
+		"arg": "^5.0.2",
+		"minimist": "^1.2.8",
+		"tinybench": "^2.7.0"
+	}
+}
