@@ -1,7 +1,6 @@
 export const DOUBLE_DASH = '--';
 
-export type Index =
-	| [index: number]
+export type Index =	| [index: number]
 	| [index: number, aliasIndex: number, isLast: boolean];
 
 type onValueCallbackType = (
@@ -30,7 +29,7 @@ export const parseFlagArgv = (
 ): [
 	flagName: string,
 	flagValue: string | undefined,
-	isAlias: boolean
+	isAlias: boolean,
 ] | undefined => {
 	if (!isFlagPattern.test(flagArgv)) {
 		return;

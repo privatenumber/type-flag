@@ -89,7 +89,7 @@ type FlagParsingData = [
 	values: unknown[],
 	parser: TypeFunction,
 	isArray: boolean,
-	schema: FlagTypeOrSchema
+	schema: FlagTypeOrSchema,
 ];
 
 type FlagRegistry = {

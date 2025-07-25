@@ -69,7 +69,7 @@ export type FlagSchema<TF = FlagType> = (
 );
 
 export type FlagTypeOrSchema<
-	ExtraOptions = Record<string, unknown>
+	ExtraOptions = Record<string, unknown>,
 > = FlagType | (FlagSchema & ExtraOptions);
 
 export type Flags<ExtraOptions = Record<string, unknown>> = {
@@ -77,7 +77,7 @@ export type Flags<ExtraOptions = Record<string, unknown>> = {
 };
 
 export type InferFlagType<
-	Flag extends FlagTypeOrSchema
+	Flag extends FlagTypeOrSchema,
 > = (
 	Flag extends (TypeFunctionArray<infer T> | FlagSchema<TypeFunctionArray<infer T>>)
 		? (
