@@ -6,18 +6,15 @@ import type {
 } from './types';
 
 const { stringify } = JSON;
-// const camelCasePattern = /\B([A-Z])/g;
-// const camelToKebab = (string: string) => string.replaceAll(camelCasePattern, '-$1').toLowerCase();
-
 const camelToKebab = (string_: string) => {
 	let out = '';
-	for (let i = 0; i < string_.length; i++) {
-		const code = string_.charCodeAt(i);
+	for (let i = 0; i < string_.length; i += 1) {
+		const code = string_.codePointAt(i);
 		// If uppercase A–Z:
-		if (code >= 65 && code <= 90) {
+		if (code && code >= 65 && code <= 90) {
 			if (i) { out += '-'; }
 			// convert to lowercase by adding 32
-			out += String.fromCharCode(code + 32);
+			out += String.fromCodePoint(code + 32);
 		} else {
 			out += string_[i];
 		}
@@ -33,13 +30,13 @@ export const hasOwn = (
 
 export const parseFlagType = (
 	flagSchema: FlagTypeOrSchema,
-): FlagParsingData => { // [parser: TypeFunction, isArray: boolean] => {
+): [parser: TypeFunction, isArray: boolean] => {
 	if (typeof flagSchema === 'function') {
-		return [[], flagSchema, false, flagSchema];
+		return [flagSchema, false];
 	}
 
 	if (Array.isArray(flagSchema)) {
-		return [[], flagSchema[0], true, flagSchema];
+		return [flagSchema[0], true];
 	}
 
 	return parseFlagType((flagSchema as FlagSchema).type);
@@ -72,11 +69,16 @@ export const applyParser = (
 };
 
 const isSpaceChar = (ch: string) => {
-	const c = ch.charCodeAt(0);
-	return c === 32 // space
-      || (c >= 9 && c <= 13) // \t, \n, \v, \f, \r
-      || c === 0xA0; // non‑breaking space
+	const c = ch.codePointAt(0);
+	return (
+		c && (
+			c === 32 // space
+			|| (c >= 9 && c <= 13) // \t, \n, \v, \f, \r
+			|| c === 0xA0 // non‑breaking space
+		)
+	);
 };
+
 const validateFlagName = (
 	flagName: string,
 ) => {
@@ -91,6 +93,7 @@ const validateFlagName = (
 	}
 
 	for (const ch of flagName) {
+		// Reserved characters
 		if (ch === '.' || ch === ':' || ch === '=' || isSpaceChar(ch)) {
 			throw new Error(`${errorPrefix} cannot contain ${stringify(ch)}`);
 		}
@@ -107,6 +110,7 @@ type FlagParsingData = [
 type FlagRegistry = {
 	[flagName: string]: FlagParsingData;
 };
+
 const setFlag = (
 	registry: FlagRegistry,
 	flagName: string,
@@ -127,7 +131,11 @@ export const createRegistry = (
 	for (const [flagName, schema] of Object.entries(schemas)) {
 		validateFlagName(flagName);
 
-		const flagData: FlagParsingData = parseFlagType(schema);
+		const flagData: FlagParsingData = [
+			[],
+			...parseFlagType(schema),
+			schema,
+		];
 
 		setFlag(registry, flagName, flagData);
 
@@ -136,7 +144,7 @@ export const createRegistry = (
 			setFlag(registry, kebabCasing, flagData);
 		}
 
-		if ('alias' in schema && schema.alias) {
+		if ('alias' in schema && typeof schema.alias === 'string') {
 			const { alias } = schema;
 			const errorPrefix = `Flag alias ${stringify(alias)} for flag ${stringify(flagName)}`;
 
