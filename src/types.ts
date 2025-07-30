@@ -104,6 +104,22 @@ export type Flags<ExtraOptions = Record<string, unknown>> = {
 	[flagName: string]: FlagTypeOrSchema<ExtraOptions>;
 };
 
+// Infers the type for a flag that accepts multiple values
+type InferMultiValueFlag<
+	Flag extends FlagTypeOrSchema,
+	T,
+> = Flag extends { default: infer DefaultType | (() => infer DefaultType) }
+	? T[] | DefaultType
+	: T[];
+
+// Infers the type for a flag that accepts a single value
+type InferSingleValueFlag<
+	Flag extends FlagTypeOrSchema,
+	T,
+> = Flag extends { default: infer DefaultType | (() => infer DefaultType) }
+	? T | DefaultType
+	: T | undefined;
+
 /**
  * Infers the final JavaScript type of a flag based on its schema definition.
  * - Handles single and multiple values.
@@ -114,21 +130,12 @@ export type Flags<ExtraOptions = Record<string, unknown>> = {
 export type InferFlagType<
 	Flag extends FlagTypeOrSchema,
 > = (
-	// Check if the flag is an array type (e.g., `[String]` or `{ type: [String] }`)
+	// Check if the flag is a multi-value (array) type
 	Flag extends readonly [TypeFunction<infer T>] | { type: readonly [TypeFunction<infer T>] }
-		? Flag extends { default: infer D | (() => infer D) }
-			// If it has a default, the type is T[] or the default type
-			? T[] | D
-			// Otherwise, it's just T[] (an empty array if not present)
-			: T[]
-		// Check if the flag is a single-value type (e.g., `String` or `{ type: String }`)
+		? InferMultiValueFlag<Flag, T>
+		// Check if the flag is a single-value type
 		: Flag extends TypeFunction<infer T> | { type: TypeFunction<infer T> }
-			? Flag extends { default: infer D | (() => infer D) }
-				// If it has a default, the type is T or the default type
-				? T | D
-				// Otherwise, it can be T or undefined
-				: T | undefined
-			// Fallback for invalid types
+			? InferSingleValueFlag<Flag, T>
 			: never
 );
 
