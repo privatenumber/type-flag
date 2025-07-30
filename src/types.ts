@@ -89,9 +89,7 @@ export type FlagSchema = {
  *
  * @template ExtraOptions Extra properties allowed in the schema object.
  */
-export type FlagTypeOrSchema<
-	ExtraOptions = Record<string, unknown>,
-> = FlagType | (FlagSchema & ExtraOptions);
+export type FlagTypeOrSchema = FlagType | FlagSchema;
 
 /**
  * A map of flag names to their definitions.
@@ -125,30 +123,34 @@ export type InferFlagType<
 			: never
 );
 
+export type UnknownFlags = {
+	[flagName: string]: (string | boolean)[];
+};
+
+export type PositionalArguments = string[] & {
+
+	/** Arguments after the `--` double dash separator. */
+	[DOUBLE_DASH]: string[];
+};
+
 /**
  * The final parsed output object.
  *
  * @template Schemas The inferred types of all parsed flags.
  */
-export type ParsedFlags<Schemas = Record<string, unknown>> = {
+type ParsedFlags<Schemas> = {
 
 	/** Parsed values keyed by flag name. */
 	flags: Schemas;
 
 	/** Flags that were passed but not defined in the schema. */
-	unknownFlags: {
-		[flagName: string]: (string | boolean)[];
-	};
+	unknownFlags: UnknownFlags;
 
 	/**
 	 * Positional arguments (non-flag values).
 	 * Includes a special `"--"` key for arguments after the double dash.
 	 */
-	_: string[] & {
-
-		/** Arguments after the `--` double dash separator. */
-		[DOUBLE_DASH]: string[];
-	};
+	_: PositionalArguments;
 };
 
 /**
