@@ -102,21 +102,13 @@ export type Flags = {
 	[flagName: string]: FlagTypeOrSchema;
 };
 
-// Infers the type for a flag that accepts multiple values
-type InferMultiValueFlag<
+// Infers the type from the default value of a flag schema.
+type InferDefaultType<
 	Flag extends FlagTypeOrSchema,
-	T,
+	Fallback,
 > = Flag extends { default: infer DefaultType | (() => infer DefaultType) }
-	? T[] | DefaultType
-	: T[];
-
-// Infers the type for a flag that accepts a single value
-type InferSingleValueFlag<
-	Flag extends FlagTypeOrSchema,
-	T,
-> = Flag extends { default: infer DefaultType | (() => infer DefaultType) }
-	? T | DefaultType
-	: T | undefined;
+	? DefaultType
+	: Fallback;
 
 /**
  * Infers the final JavaScript type of a flag from its schema.
@@ -127,9 +119,9 @@ export type InferFlagType<
 	Flag extends FlagTypeOrSchema,
 > = (
 	Flag extends readonly [TypeFunction<infer T>] | { type: readonly [TypeFunction<infer T>] }
-		? InferMultiValueFlag<Flag, T>
+		? (T[] | InferDefaultType<Flag, never>)
 		: Flag extends TypeFunction<infer T> | { type: TypeFunction<infer T> }
-			? InferSingleValueFlag<Flag, T>
+			? (T | InferDefaultType<Flag, undefined>)
 			: never
 );
 
