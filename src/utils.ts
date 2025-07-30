@@ -3,6 +3,7 @@ import type {
 	FlagTypeOrSchema,
 	FlagSchema,
 	Flags,
+	FlagSchema,
 } from './types';
 
 const camelToKebab = (string_: string) => {

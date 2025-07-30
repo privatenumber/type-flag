@@ -1,8 +1,9 @@
 import {
 	type Flags,
-	type ParsedFlags,
 	type TypeFlag,
 	type TypeFlagOptions,
+	type ParsedFlags,
+	type Simplify,
 	KNOWN_FLAG,
 	UNKNOWN_FLAG,
 	ARGUMENT,
@@ -119,13 +120,9 @@ export const typeFlag = <Schemas extends Flags>(
 
 	spliceFromArgv(argv, removeArgvs);
 
-	type Result = TypeFlag<Schemas>;
 	return {
 		flags: finalizeFlags(schemas, flagRegistry),
 		unknownFlags,
 		_,
-	} as {
-		// This exposes the content of "TypeFlag<T>" in type hints
-		[Key in keyof Result]: Result[Key];
-	};
+	} as Simplify<TypeFlag<Schemas>>;
 };
