@@ -2,6 +2,7 @@ import type {
 	TypeFunction,
 	FlagTypeOrSchema,
 	Flags,
+	FlagSchema,
 } from './types';
 
 const camelCasePattern = /\B([A-Z])/g;
@@ -13,16 +14,6 @@ export const hasOwn = (
 	property: PropertyKey,
 ) => hasOwnProperty.call(object, property);
 
-/**
- * Default Array.isArray doesn't support type-narrowing
- * on readonly arrays.
- *
- * https://stackoverflow.com/a/56249765/911407
- */
-const isReadonlyArray = (
-	array: readonly unknown[] | unknown,
-): array is readonly unknown[] => Array.isArray(array);
-
 export const parseFlagType = (
 	flagSchema: FlagTypeOrSchema,
 ): [parser: TypeFunction, isArray: boolean] => {
@@ -30,11 +21,11 @@ export const parseFlagType = (
 		return [flagSchema, false];
 	}
 
-	if (isReadonlyArray(flagSchema)) {
+	if (Array.isArray(flagSchema)) {
 		return [flagSchema[0], true];
 	}
 
-	return parseFlagType(flagSchema.type);
+	return parseFlagType((flagSchema as FlagSchema).type);
 };
 
 export const normalizeBoolean = <T>(
