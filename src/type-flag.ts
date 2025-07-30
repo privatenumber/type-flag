@@ -1,10 +1,8 @@
-import type {
-	Flags,
-	ParsedFlags,
-	TypeFlag,
-	TypeFlagOptions,
-} from './types';
 import {
+	type Flags,
+	type ParsedFlags,
+	type TypeFlag,
+	type TypeFlagOptions,
 	KNOWN_FLAG,
 	UNKNOWN_FLAG,
 	ARGUMENT,
