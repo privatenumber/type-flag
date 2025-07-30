@@ -81,10 +81,6 @@ const validateFlagName = (
 		throw new Error(`${errorPrefix} cannot be empty`);
 	}
 
-	if (flagName.length === 1) {
-		throw new Error(`${errorPrefix} must be longer than a character`);
-	}
-
 	for (const ch of flagName) {
 		// Reserved characters
 		if (ch === '.' || ch === ':' || ch === '=' || isSpaceChar(ch)) {
@@ -142,6 +138,10 @@ export const createRegistry = (
 		if ('alias' in schema && typeof schema.alias === 'string') {
 			const { alias } = schema;
 			const errorPrefix = `Flag alias "${alias}" for flag "${flagName}"`;
+
+			if (flagName.length === 1) {
+				throw new Error(`${errorPrefix} cannot be defined for a single-character flag`);
+			}
 
 			if (alias.length === 0) {
 				throw new Error(`${errorPrefix} cannot be empty`);

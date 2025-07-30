@@ -13,14 +13,6 @@ export default testSuite(({ describe }) => {
 					}).toThrow(/* 'Invalid flag name: empty' */);
 				});
 
-				test('Single character flag name', () => {
-					expect(() => {
-						typeFlag({
-							i: String,
-						}, []);
-					}).toThrow(/* 'Invalid flag name: single characters are reserved for aliases' */);
-				});
-
 				test('Reserved characters', () => {
 					expect(() => {
 						typeFlag({ 'flag a': String }, []);
@@ -68,6 +60,20 @@ export default testSuite(({ describe }) => {
 							},
 						}, []);
 					}).toThrow(/* 'Empty alias' */);
+				});
+
+				test('Single-character alias', () => {
+					expect(() => {
+						typeFlag({
+							a: {
+								type: String,
+								alias: 'b',
+							},
+						}, []);
+					}).toThrow(
+
+						/* Flag alias "b" for flag "a" cannot be defined for a single-character flag */
+					);
 				});
 
 				test('Multi-character alias', () => {
@@ -420,10 +426,40 @@ export default testSuite(({ describe }) => {
 						},
 						argv,
 					);
-
 					expect<boolean | undefined>(parsed.flags.alias).toBe(undefined);
 					expect<(string | boolean)[]>(parsed.unknownFlags.a).toStrictEqual([true]);
 					expect(argv).toStrictEqual([]);
+				});
+
+				test('single-character alias', () => {
+					const argv = ['-x', '1', '-y', '2'];
+					const parsed = typeFlag(
+						{
+							x: Number,
+							y: Number,
+						},
+						argv,
+					);
+
+					expect<number | undefined>(parsed.flags.x).toBe(1);
+					expect<number | undefined>(parsed.flags.y).toBe(2);
+				});
+
+				test('single-character alias grouping', () => {
+					const argv = ['-am', 'hello'];
+					const parsed = typeFlag(
+						{
+							a: Boolean,
+							message: {
+								type: String,
+								alias: 'm',
+							},
+						},
+						argv,
+					);
+
+					expect<boolean | undefined>(parsed.flags.a).toBe(true);
+					expect<string | undefined>(parsed.flags.message).toBe('hello');
 				});
 			});
 
