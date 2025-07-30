@@ -1,12 +1,29 @@
 import type {
 	TypeFunction,
 	FlagTypeOrSchema,
+	FlagSchema,
 	Flags,
 } from './types';
 
 const { stringify } = JSON;
-const camelCasePattern = /\B([A-Z])/g;
-const camelToKebab = (string: string) => string.replaceAll(camelCasePattern, '-$1').toLowerCase();
+// const camelCasePattern = /\B([A-Z])/g;
+// const camelToKebab = (string: string) => string.replaceAll(camelCasePattern, '-$1').toLowerCase();
+
+const camelToKebab = (string_: string) => {
+	let out = '';
+	for (let i = 0; i < string_.length; i++) {
+		const code = string_.charCodeAt(i);
+		// If uppercase A–Z:
+		if (code >= 65 && code <= 90) {
+			if (i) { out += '-'; }
+			// convert to lowercase by adding 32
+			out += String.fromCharCode(code + 32);
+		} else {
+			out += string_[i];
+		}
+	}
+	return out;
+};
 
 const { hasOwnProperty } = Object.prototype;
 export const hasOwn = (
@@ -14,28 +31,18 @@ export const hasOwn = (
 	property: PropertyKey,
 ) => hasOwnProperty.call(object, property);
 
-/**
- * Default Array.isArray doesn't support type-narrowing
- * on readonly arrays.
- *
- * https://stackoverflow.com/a/56249765/911407
- */
-const isReadonlyArray = (
-	array: readonly unknown[] | unknown,
-): array is readonly unknown[] => Array.isArray(array);
-
 export const parseFlagType = (
 	flagSchema: FlagTypeOrSchema,
-): [parser: TypeFunction, isArray: boolean] => {
+): FlagParsingData => { // [parser: TypeFunction, isArray: boolean] => {
 	if (typeof flagSchema === 'function') {
-		return [flagSchema, false];
+		return [[], flagSchema, false, flagSchema];
 	}
 
-	if (isReadonlyArray(flagSchema)) {
-		return [flagSchema[0], true];
+	if (Array.isArray(flagSchema)) {
+		return [[], flagSchema[0], true, flagSchema];
 	}
 
-	return parseFlagType(flagSchema.type);
+	return parseFlagType((flagSchema as FlagSchema).type);
 };
 
 export const normalizeBoolean = <T>(
@@ -64,8 +71,12 @@ export const applyParser = (
 	return typeFunction(value);
 };
 
-const reservedCharactersPattern = /[\s.:=]/;
-
+const isSpaceChar = (ch: string) => {
+	const c = ch.charCodeAt(0);
+	return c === 32 // space
+      || (c >= 9 && c <= 13) // \t, \n, \v, \f, \r
+      || c === 0xA0; // non‑breaking space
+};
 const validateFlagName = (
 	flagName: string,
 ) => {
@@ -79,9 +90,10 @@ const validateFlagName = (
 		throw new Error(`${errorPrefix} must be longer than a character`);
 	}
 
-	const hasReservedCharacter = flagName.match(reservedCharactersPattern);
-	if (hasReservedCharacter) {
-		throw new Error(`${errorPrefix} cannot contain ${stringify(hasReservedCharacter?.[0])}`);
+	for (const ch of flagName) {
+		if (ch === '.' || ch === ':' || ch === '=' || isSpaceChar(ch)) {
+			throw new Error(`${errorPrefix} cannot contain ${stringify(ch)}`);
+		}
 	}
 };
 
@@ -95,44 +107,36 @@ type FlagParsingData = [
 type FlagRegistry = {
 	[flagName: string]: FlagParsingData;
 };
+const setFlag = (
+	registry: FlagRegistry,
+	flagName: string,
+	data: FlagParsingData,
+) => {
+	if (hasOwn(registry, flagName)) {
+		throw new Error(`Duplicate flags named ${stringify(flagName)}`);
+	}
+
+	registry[flagName] = data;
+};
 
 export const createRegistry = (
 	schemas: Flags,
 ) => {
 	const registry: FlagRegistry = {};
 
-	const setFlag = (
-		flagName: string,
-		data: FlagParsingData,
-	) => {
-		if (hasOwn(registry, flagName)) {
-			throw new Error(`Duplicate flags named ${stringify(flagName)}`);
-		}
-
-		registry[flagName] = data;
-	};
-
-	for (const flagName in schemas) {
-		if (!hasOwn(schemas, flagName)) {
-			continue;
-		}
+	for (const [flagName, schema] of Object.entries(schemas)) {
 		validateFlagName(flagName);
 
-		const schema = schemas[flagName];
-		const flagData: FlagParsingData = [
-			[],
-			...parseFlagType(schema),
-			schema,
-		];
+		const flagData: FlagParsingData = parseFlagType(schema);
 
-		setFlag(flagName, flagData);
+		setFlag(registry, flagName, flagData);
 
 		const kebabCasing = camelToKebab(flagName);
 		if (flagName !== kebabCasing) {
-			setFlag(kebabCasing, flagData);
+			setFlag(registry, kebabCasing, flagData);
 		}
 
-		if ('alias' in schema && typeof schema.alias === 'string') {
+		if ('alias' in schema && schema.alias) {
 			const { alias } = schema;
 			const errorPrefix = `Flag alias ${stringify(alias)} for flag ${stringify(flagName)}`;
 
@@ -144,7 +148,7 @@ export const createRegistry = (
 				throw new Error(`${errorPrefix} must be a single character`);
 			}
 
-			setFlag(alias, flagData);
+			setFlag(registry, alias, flagData);
 		}
 	}
 
