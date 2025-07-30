@@ -121,6 +121,7 @@ export const createRegistry = (
 ) => {
 	const registry = { __proto__: null } as unknown as FlagRegistry;
 
+	// eslint-disable-next-line guard-for-in
 	for (const flagName in schemas) {
 		validateFlagName(flagName);
 

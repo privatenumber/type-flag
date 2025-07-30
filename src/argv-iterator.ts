@@ -134,7 +134,7 @@ export const spliceFromArgv = (
 	argv: string[],
 	removeArgvs: Index[],
 ) => {
-	for (let i = removeArgvs.length - 1; i >= 0; i--) {
+	for (let i = removeArgvs.length - 1; i >= 0; i -= 1) {
 		const [index, aliasIndex, isLast] = removeArgvs[i];
 
 		if (aliasIndex) {
