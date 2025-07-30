@@ -1,111 +1,175 @@
 import type { DOUBLE_DASH } from './argv-iterator';
 
+/**
+ * Represents a function that processes a command-line argument and returns a typed value.
+ *
+ * @template ReturnType The type of the value returned by the function.
+ * @param value The raw string value from `argv`.
+ * @returns The parsed and typed value.
+ * @example
+ * ```
+ * const toUpperCase = (value: string) => value.toUpperCase();
+ * ```
+ */
 export type TypeFunction<ReturnType = unknown> = (...args: any[]) => ReturnType;
 
+/**
+ * Represents a `TypeFunction` wrapped in an array, indicating that the flag
+ * can accept multiple values.
+ *
+ * @template ReturnType The type of the value returned by the function.
+ */
 type TypeFunctionArray<ReturnType> = readonly [TypeFunction<ReturnType>];
 
+/**
+ * A shorthand for defining a flag's type. It can be a single `TypeFunction`
+ * for a single value, or a `TypeFunctionArray` for multiple values.
+ *
+ * @template ReturnType The type of the parsed value.
+ * @see FlagSchema
+ */
 export type FlagType<ReturnType = unknown> = (
 	TypeFunction<ReturnType>
 	| TypeFunctionArray<ReturnType>
 );
 
-type FlagSchemaBase<TF> = {
+/**
+ * Defines the complete schema for a command-line flag.
+ *
+ * @template T The `FlagType` for this flag.
+ * @template DefaultValue The type of the default value.
+ */
+export type FlagSchema<
+	T extends FlagType = FlagType,
+	DefaultValue = unknown,
+> = {
 
 	/**
-	Type of the flag as a function that parses the argv string and returns the parsed value.
-
-	@example
-	```
-	type: String
-	```
-
-	@example Wrap in an array to accept multiple values.
-	```
-	type: [Boolean]
-	```
-
-	@example Custom function type that uses moment.js to parse string as date.
-	```
-	type: function CustomDate(value: string) {
-		return moment(value).toDate();
-	}
-	```
-	*/
-	type: TF;
+	 * The function that parses the `argv` string into its expected type.
+	 *
+	 * @example For a single string value
+	 * ```
+	 * type: String
+	 * ```
+	 *
+	 * @example To accept multiple boolean values
+	 * ```
+	 * type: [Boolean]
+	 * ```
+	 *
+	 * @example For a custom date parser
+	 * ```
+	 * type: (value: string) => moment(value).toDate()
+	 * ```
+	 */
+	type: T;
 
 	/**
-	A single-character alias for the flag.
-
-	@example
-	```
-	alias: 's'
-	```
-	*/
+	 * A single-character alias for the flag.
+	 *
+	 * @example
+	 * ```
+	 * alias: 's'
+	 * ```
+	 */
 	alias?: string;
-} & Record<PropertyKey, unknown>;
-
-type FlagSchemaDefault<TF, DefaultType = unknown> = FlagSchemaBase<TF> & {
 
 	/**
-	Default value of the flag. Also accepts a function that returns the default value.
-	[Default: undefined]
+	 * The default value for the flag if it is not provided.
+	 * This can also be a function that returns the default value.
+	 *
+	 * @example
+	 * ```
+	 * default: 'hello'
+	 * ```
+	 *
+	 * @example Using a function for a mutable default
+	 * ```
+	 * default: () => [1, 2, 3]
+	 * ```
+	 */
+	default?: DefaultValue | (() => DefaultValue);
+} & Record<PropertyKey, unknown>; // Allows for custom, untyped properties
 
-	@example
-	```
-	default: 'hello'
-	```
-
-	@example
-	```
-	default: () => [1, 2, 3]
-	```
-	*/
-	default: DefaultType | (() => DefaultType);
-};
-
-export type FlagSchema<TF = FlagType> = (
-	FlagSchemaBase<TF>
-	| FlagSchemaDefault<TF>
-);
-
+/**
+ * Represents the definition for a single flag, which can either be a
+ * shorthand `FlagType` or a full `FlagSchema` object.
+ *
+ * @template ExtraOptions An object type allowing for custom properties to be added to the schema.
+ */
 export type FlagTypeOrSchema<
 	ExtraOptions = Record<string, unknown>,
 > = FlagType | (FlagSchema & ExtraOptions);
 
+/**
+ * A map of flag names to their corresponding definitions. This is the primary
+ * configuration object for defining all expected command-line flags.
+ *
+ * @template ExtraOptions An object type allowing for custom properties to be
+ * added to all flag schemas.
+ */
 export type Flags<ExtraOptions = Record<string, unknown>> = {
 	[flagName: string]: FlagTypeOrSchema<ExtraOptions>;
 };
 
+/**
+ * Infers the final JavaScript type of a flag based on its schema definition.
+ * - Handles single and multiple values.
+ * - Considers the presence of a default value.
+ *
+ * @template Flag The `FlagTypeOrSchema` to infer the type from.
+ */
 export type InferFlagType<
 	Flag extends FlagTypeOrSchema,
 > = (
-	Flag extends (TypeFunctionArray<infer T> | FlagSchema<TypeFunctionArray<infer T>>)
-		? (
-			Flag extends FlagSchemaDefault<TypeFunctionArray<T>, infer D>
-				? T[] | D
-				: T[]
-		)
-		: (
-			Flag extends TypeFunction<infer T> | FlagSchema<TypeFunction<infer T>>
-				? (
-					Flag extends FlagSchemaDefault<TypeFunction<T>, infer D>
-						? T | D
-						: T | undefined
-				)
-				: never
-		)
+	// Check if the flag is an array type (e.g., `[String]` or `{ type: [String] }`)
+	Flag extends TypeFunctionArray<infer T> | { type: TypeFunctionArray<infer T> }
+		? Flag extends { default: infer D | (() => infer D) }
+			// If it has a default, the type is T[] or the default type
+			? T[] | D
+			// Otherwise, it's just T[] (an empty array if not present)
+			: T[]
+		// Check if the flag is a single-value type (e.g., `String` or `{ type: String }`)
+		: Flag extends TypeFunction<infer T> | { type: TypeFunction<infer T> }
+			? Flag extends { default: infer D | (() => infer D) }
+				// If it has a default, the type is T or the default type
+				? T | D
+				// Otherwise, it can be T or undefined
+				: T | undefined
+			// Fallback for invalid types
+			: never
 );
 
+/**
+ * The final parsed output object.
+ *
+ * @template Schemas The inferred types of all parsed flags.
+ */
 export type ParsedFlags<Schemas = Record<string, unknown>> = {
+
+	/** A map of flag names to their parsed values. */
 	flags: Schemas;
+
+	/** A map of any flags that were not defined in the schema. */
 	unknownFlags: {
 		[flagName: string]: (string | boolean)[];
 	};
+
+	/**
+	 * An array of positional arguments.
+	 *
+	 * @property [DOUBLE_DASH] - An array of arguments that appeared after the `--` separator.
+	 */
 	_: string[] & {
 		[DOUBLE_DASH]: string[];
 	};
 };
 
+/**
+ * The main return type, providing a fully typed object based on the input schemas.
+ *
+ * @template Schemas The `Flags` configuration object.
+ */
 export type TypeFlag<Schemas extends Flags> = ParsedFlags<{
 	[flag in keyof Schemas]: InferFlagType<Schemas[flag]>;
 }>;
@@ -114,12 +178,26 @@ export const KNOWN_FLAG = 'known-flag';
 export const UNKNOWN_FLAG = 'unknown-flag';
 export const ARGUMENT = 'argument';
 
+/**
+ * A function to dynamically ignore specific argv elements during parsing.
+ * Returning `true` from this function will prevent the given element from being processed.
+ */
 type IgnoreFunction = {
+
+	/**
+	 * @param type The type of token: `'argument'`.
+	 * @param argvElement The raw argument string from argv (e.g., `'my-file.txt'`).
+	 */
 	(
 		type: typeof ARGUMENT,
 		argvElement: string,
 	): boolean | void;
 
+	/**
+	 * @param type The type of token: `'known-flag'` or `'unknown-flag'`.
+	 * @param flagName The name of the flag (e.g., `'verbose'`).
+	 * @param flagValue The value of the flag, or `undefined` for boolean flags.
+	 */
 	(
 		type: typeof KNOWN_FLAG | typeof UNKNOWN_FLAG,
 		flagName: string,
@@ -127,10 +205,14 @@ type IgnoreFunction = {
 	): boolean | void;
 };
 
+/**
+ * Options for customizing the parsing behavior.
+ */
 export type TypeFlagOptions = {
 
 	/**
-	 * Which argv elements to ignore from parsing
+	 * A function that determines which argv elements to ignore during parsing.
+	 * @see IgnoreFunction
 	 */
 	ignore?: IgnoreFunction;
 };
