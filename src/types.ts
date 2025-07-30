@@ -14,23 +14,15 @@ import type { DOUBLE_DASH } from './argv-iterator';
 export type TypeFunction<ReturnType = unknown> = (...args: any[]) => ReturnType;
 
 /**
- * Represents a `TypeFunction` wrapped in an array, indicating that the flag
- * can accept multiple values.
- *
- * @template ReturnType The type of the value returned by the function.
- */
-type TypeFunctionArray<ReturnType> = readonly [TypeFunction<ReturnType>];
-
-/**
  * A shorthand for defining a flag's type. It can be a single `TypeFunction`
- * for a single value, or a `TypeFunctionArray` for multiple values.
+ * for a single value, or a `readonly` tuple containing a `TypeFunction` for multiple values.
  *
  * @template ReturnType The type of the parsed value.
  * @see FlagSchema
  */
 export type FlagType<ReturnType = unknown> = (
 	TypeFunction<ReturnType>
-	| TypeFunctionArray<ReturnType>
+	| readonly [TypeFunction<ReturnType>]
 );
 
 /**
@@ -123,7 +115,7 @@ export type InferFlagType<
 	Flag extends FlagTypeOrSchema,
 > = (
 	// Check if the flag is an array type (e.g., `[String]` or `{ type: [String] }`)
-	Flag extends TypeFunctionArray<infer T> | { type: TypeFunctionArray<infer T> }
+	Flag extends readonly [TypeFunction<infer T>] | { type: readonly [TypeFunction<infer T>] }
 		? Flag extends { default: infer D | (() => infer D) }
 			// If it has a default, the type is T[] or the default type
 			? T[] | D
