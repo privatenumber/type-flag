@@ -20,9 +20,9 @@ export type TypeFunction<ReturnType = unknown> = (...args: any[]) => ReturnType;
  * @template ReturnType The type of the parsed value.
  * @see FlagSchema
  */
-export type FlagType<ReturnType = unknown> = (
-	TypeFunction<ReturnType>
-	| readonly [TypeFunction<ReturnType>]
+export type FlagType = (
+	TypeFunction
+	| readonly [TypeFunction]
 );
 
 /**
@@ -31,10 +31,7 @@ export type FlagType<ReturnType = unknown> = (
  * @template T The `FlagType` for this flag.
  * @template DefaultValue The type of the default value.
  */
-export type FlagSchema<
-	T extends FlagType = FlagType,
-	DefaultValue = unknown,
-> = {
+export type FlagSchema = {
 
 	/**
 	 * The function that parses the `argv` string into its expected type.
@@ -54,7 +51,7 @@ export type FlagSchema<
 	 * type: (value: string) => moment(value).toDate()
 	 * ```
 	 */
-	type: T;
+	type: FlagType;
 
 	/**
 	 * A single-character alias for the flag.
@@ -80,7 +77,7 @@ export type FlagSchema<
 	 * default: () => [1, 2, 3]
 	 * ```
 	 */
-	default?: DefaultValue | (() => DefaultValue);
+	default?: unknown | (() => unknown);
 } & Record<PropertyKey, unknown>; // Allows for custom, untyped properties
 
 /**
@@ -100,8 +97,8 @@ export type FlagTypeOrSchema<
  * @template ExtraOptions An object type allowing for custom properties to be
  * added to all flag schemas.
  */
-export type Flags<ExtraOptions = Record<string, unknown>> = {
-	[flagName: string]: FlagTypeOrSchema<ExtraOptions>;
+export type Flags = {
+	[flagName: string]: FlagTypeOrSchema;
 };
 
 // Infers the type for a flag that accepts multiple values
