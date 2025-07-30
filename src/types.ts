@@ -1,10 +1,7 @@
 import type { DOUBLE_DASH } from './argv-iterator';
 
 /**
- * Represents a function that processes a command-line argument and returns a typed value.
- *
- * @template ReturnType The type of the value returned by the function.
- * @param value The raw string value from `argv`.
+ * A function that processes a command-line argument and returns a typed value.
  *
  * @example
  * ```ts
@@ -17,9 +14,8 @@ export type TypeFunction<ReturnType = unknown> = (...args: any[]) => ReturnType;
  * A shorthand for defining a flag's type.
  *
  * - Use a single `TypeFunction` to accept one value.
- * - Use a readonly tuple `[TypeFunction]` to accept multiple values (array form).
+ * - Use a readonly tuple `[TypeFunction]` to accept multiple values (as an array).
  *
- * @template ReturnType The type of the parsed value.
  * @see FlagSchema
  */
 export type FlagType = (
@@ -29,9 +25,6 @@ export type FlagType = (
 
 /**
  * Defines the complete schema for a command-line flag.
- *
- * @template T The `FlagType` for this flag.
- * @template DefaultValue The type of the default value.
  */
 export type FlagSchema = {
 
@@ -42,12 +35,10 @@ export type FlagSchema = {
 	 * ```ts
 	 * type: String
 	 * ```
-	 *
 	 * @example
 	 * ```ts
 	 * type: [Boolean]
 	 * ```
-	 *
 	 * @example
 	 * ```ts
 	 * type: (value: string) => moment(value).toDate()
@@ -73,7 +64,6 @@ export type FlagSchema = {
 	 * ```ts
 	 * default: 'hello'
 	 * ```
-	 *
 	 * @example
 	 * ```ts
 	 * default: () => [1, 2, 3]
@@ -83,18 +73,12 @@ export type FlagSchema = {
 } & Record<PropertyKey, unknown>;
 
 /**
- * Represents the definition for a single flag. It can be:
- * - A simple `FlagType`, or
- * - A full `FlagSchema` object (optionally extended with extra properties).
- *
- * @template ExtraOptions Extra properties allowed in the schema object.
+ * A flag definition can either be a `FlagType` or a full `FlagSchema` object.
  */
 export type FlagTypeOrSchema = FlagType | FlagSchema;
 
 /**
  * A map of flag names to their definitions.
- *
- * @template ExtraOptions Extra properties allowed in each schema.
  */
 export type Flags = {
 	[flagName: string]: FlagTypeOrSchema;
@@ -110,8 +94,6 @@ type InferDefaultType<
 
 /**
  * Infers the final JavaScript type of a flag from its schema.
- *
- * @template Flag The flag schema to infer the type from.
  */
 export type InferFlagType<
 	Flag extends FlagTypeOrSchema,
@@ -123,20 +105,25 @@ export type InferFlagType<
 			: never
 );
 
+/**
+ * A map of any flags that were passed but not defined in the schema.
+ */
 export type UnknownFlags = {
 	[flagName: string]: (string | boolean)[];
 };
 
+/**
+ * Positional arguments parsed from `argv`.
+ * Includes `--` passthrough arguments.
+ */
 export type PositionalArguments = string[] & {
 
-	/** Arguments after the `--` double dash separator. */
+	/** Arguments that appeared after the `--` separator. */
 	[DOUBLE_DASH]: string[];
 };
 
 /**
- * The final parsed output object.
- *
- * @template Schemas The inferred types of all parsed flags.
+ * The final parsed output from a `TypeFlag` run.
  */
 type ParsedFlags<Schemas> = {
 
@@ -155,8 +142,6 @@ type ParsedFlags<Schemas> = {
 
 /**
  * The fully inferred return type from a given flag schema configuration.
- *
- * @template Schemas A map of flag names to their definitions.
  */
 export type TypeFlag<Schemas extends Flags> = ParsedFlags<{
 	[flag in keyof Schemas]: InferFlagType<Schemas[flag]>;
@@ -209,8 +194,6 @@ export type TypeFlagOptions = {
 
 	/**
 	 * Optional function to skip certain argv elements from parsing.
-	 *
-	 * @see IgnoreFunction
 	 */
 	ignore?: IgnoreFunction;
 };
