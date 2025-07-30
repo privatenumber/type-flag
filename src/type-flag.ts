@@ -1,8 +1,9 @@
 import {
 	type Flags,
-	type ParsedFlags,
 	type TypeFlag,
 	type TypeFlagOptions,
+	type ParsedFlags,
+	type Simplify,
 	KNOWN_FLAG,
 	UNKNOWN_FLAG,
 	ARGUMENT,
@@ -30,7 +31,7 @@ type-flag: typed argv parser
 
 @example
 ```ts
-import typeFlag from 'type-flag';
+import { typeFlag } from 'type-flag';
 
 const parsed = typeFlag({
 	foo: Boolean,
@@ -120,13 +121,9 @@ export const typeFlag = <Schemas extends Flags>(
 
 	spliceFromArgv(argv, removeArgvs);
 
-	type Result = TypeFlag<Schemas>;
 	return {
 		flags: finalizeFlags(schemas, flagRegistry),
 		unknownFlags,
 		_,
-	} as {
-		// This exposes the content of "TypeFlag<T>" in type hints
-		[Key in keyof Result]: Result[Key];
-	};
+	} as Simplify<TypeFlag<Schemas>>;
 };
