@@ -134,7 +134,9 @@ export const spliceFromArgv = (
 	argv: string[],
 	removeArgvs: Index[],
 ) => {
-	for (const [index, aliasIndex, isLast] of removeArgvs.reverse()) {
+	for (let i = removeArgvs.length - 1; i >= 0; i--) {
+		const [index, aliasIndex, isLast] = removeArgvs[i];
+
 		if (aliasIndex) {
 			const element = argv[index];
 			let newValue = element.slice(0, aliasIndex);

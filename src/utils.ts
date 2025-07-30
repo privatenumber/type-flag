@@ -5,7 +5,6 @@ import type {
 	Flags,
 } from './types';
 
-const { stringify } = JSON;
 const camelToKebab = (string_: string) => {
 	let out = '';
 	for (let i = 0; i < string_.length; i += 1) {
@@ -21,12 +20,6 @@ const camelToKebab = (string_: string) => {
 	}
 	return out;
 };
-
-const { hasOwnProperty } = Object.prototype;
-export const hasOwn = (
-	object: unknown,
-	property: PropertyKey,
-) => hasOwnProperty.call(object, property);
 
 export const parseFlagType = (
 	flagSchema: FlagTypeOrSchema,
@@ -82,7 +75,7 @@ const isSpaceChar = (ch: string) => {
 const validateFlagName = (
 	flagName: string,
 ) => {
-	const errorPrefix = `Flag name ${stringify(flagName)}`;
+	const errorPrefix = `Flag name "${flagName}"`;
 
 	if (flagName.length === 0) {
 		throw new Error(`${errorPrefix} cannot be empty`);
@@ -95,7 +88,7 @@ const validateFlagName = (
 	for (const ch of flagName) {
 		// Reserved characters
 		if (ch === '.' || ch === ':' || ch === '=' || isSpaceChar(ch)) {
-			throw new Error(`${errorPrefix} cannot contain ${stringify(ch)}`);
+			throw new Error(`${errorPrefix} cannot contain "${ch}"`);
 		}
 	}
 };
@@ -116,8 +109,8 @@ const setFlag = (
 	flagName: string,
 	data: FlagParsingData,
 ) => {
-	if (hasOwn(registry, flagName)) {
-		throw new Error(`Duplicate flags named ${stringify(flagName)}`);
+	if (flagName in registry) {
+		throw new Error(`Duplicate flags named "${flagName}"`);
 	}
 
 	registry[flagName] = data;
@@ -126,11 +119,12 @@ const setFlag = (
 export const createRegistry = (
 	schemas: Flags,
 ) => {
-	const registry: FlagRegistry = {};
+	const registry = { __proto__: null } as unknown as FlagRegistry;
 
-	for (const [flagName, schema] of Object.entries(schemas)) {
+	for (const flagName in schemas) {
 		validateFlagName(flagName);
 
+		const schema = schemas[flagName];
 		const flagData: FlagParsingData = [
 			[],
 			...parseFlagType(schema),
@@ -146,7 +140,7 @@ export const createRegistry = (
 
 		if ('alias' in schema && typeof schema.alias === 'string') {
 			const { alias } = schema;
-			const errorPrefix = `Flag alias ${stringify(alias)} for flag ${stringify(flagName)}`;
+			const errorPrefix = `Flag alias "${alias}" for flag "${flagName}"`;
 
 			if (alias.length === 0) {
 				throw new Error(`${errorPrefix} cannot be empty`);
@@ -168,12 +162,7 @@ export const finalizeFlags = (
 	registry: FlagRegistry,
 ) => {
 	const flags: Record<string, unknown> = {};
-
-	for (const flagName in schemas) {
-		if (!hasOwn(schemas, flagName)) {
-			continue;
-		}
-
+	for (const flagName of Object.keys(schemas)) {
 		const [values, , isArray, schema] = registry[flagName];
 		if (
 			values.length === 0

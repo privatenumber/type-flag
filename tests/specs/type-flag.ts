@@ -147,6 +147,7 @@ export default testSuite(({ describe }) => {
 					);
 					expect(parsed.flags).toStrictEqual({});
 					expect(parsed.unknownFlags).toStrictEqual({
+						__proto__: null,
 						'to-string': [true],
 					});
 				});
@@ -197,6 +198,7 @@ export default testSuite(({ describe }) => {
 						_: Object.assign([], { '--': [] }),
 						flags: {},
 						unknownFlags: {
+							__proto__: null,
 							i: [true, true, true],
 							n: [true],
 							v: [true],
@@ -456,6 +458,7 @@ export default testSuite(({ describe }) => {
 				};
 
 				expect<UnknownFlags>(parsed.unknownFlags).toStrictEqual({
+					__proto__: null,
 					unknownFlag: [true, 'false', ''],
 					u: [true, 'value'],
 					3: [true],
@@ -495,6 +498,7 @@ export default testSuite(({ describe }) => {
 							string: [],
 						},
 						unknownFlags: {
+							__proto__: null,
 							unknown: [true, 'd'],
 							u: [true],
 							v: [true, true, '1'],
@@ -531,7 +535,7 @@ export default testSuite(({ describe }) => {
 							string: ['a', 'b', 'd'],
 							boolean: true,
 						},
-						unknownFlags: {},
+						unknownFlags: { __proto__: null },
 						_: Object.assign(
 							['c'],
 							{ '--': [] },
@@ -568,7 +572,7 @@ export default testSuite(({ describe }) => {
 						flags: {
 							string: ['value'],
 						},
-						unknownFlags: {},
+						unknownFlags: { __proto__: null },
 						_: Object.assign(
 							[],
 							{ '--': [] },
@@ -601,7 +605,7 @@ export default testSuite(({ describe }) => {
 							string: 'hello',
 							boolean: undefined,
 						},
-						unknownFlags: {},
+						unknownFlags: { __proto__: null },
 						_: Object.assign(
 							['a'],
 							{ '--': [] },
