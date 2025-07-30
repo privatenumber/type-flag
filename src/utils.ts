@@ -4,7 +4,6 @@ import type {
 	Flags,
 } from './types';
 
-const { stringify } = JSON;
 const camelCasePattern = /\B([A-Z])/g;
 const camelToKebab = (string: string) => string.replaceAll(camelCasePattern, '-$1').toLowerCase();
 
@@ -69,7 +68,7 @@ const reservedCharactersPattern = /[\s.:=]/;
 const validateFlagName = (
 	flagName: string,
 ) => {
-	const errorPrefix = `Flag name ${stringify(flagName)}`;
+	const errorPrefix = `Flag name "${flagName}"`;
 
 	if (flagName.length === 0) {
 		throw new Error(`${errorPrefix} cannot be empty`);
@@ -77,7 +76,7 @@ const validateFlagName = (
 
 	const hasReservedCharacter = flagName.match(reservedCharactersPattern);
 	if (hasReservedCharacter) {
-		throw new Error(`${errorPrefix} cannot contain ${stringify(hasReservedCharacter?.[0])}`);
+		throw new Error(`${errorPrefix} cannot contain "${hasReservedCharacter?.[0]}"`);
 	}
 };
 
@@ -102,7 +101,7 @@ export const createRegistry = (
 		data: FlagParsingData,
 	) => {
 		if (hasOwn(registry, flagName)) {
-			throw new Error(`Duplicate flags named ${stringify(flagName)}`);
+			throw new Error(`Duplicate flags named "${flagName}"`);
 		}
 
 		registry[flagName] = data;
@@ -130,7 +129,7 @@ export const createRegistry = (
 
 		if ('alias' in schema && typeof schema.alias === 'string') {
 			const { alias } = schema;
-			const errorPrefix = `Flag alias ${stringify(alias)} for flag ${stringify(flagName)}`;
+			const errorPrefix = `Flag alias "${alias}" for flag "${flagName}"`;
 
 			if (flagName.length === 1) {
 				throw new Error(`${errorPrefix} cannot be defined for a single-character flag`);
