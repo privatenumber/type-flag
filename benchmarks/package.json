@@ -1,0 +1,13 @@
+{
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"bench": "node bench.js > benchmarks.md",
+		"profile": "node --cpu-prof --cpu-prof-name=typeflag.cpuprofile profile.mjs"
+	},
+	"dependencies": {
+		"arg": "^5.0.2",
+		"minimist": "^1.2.8",
+		"tinybench": "^2.7.0"
+	}
+}
