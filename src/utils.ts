@@ -91,21 +91,22 @@ type FlagRegistry = {
 	[flagName: string]: FlagParsingData;
 };
 
+const setFlag = (
+	registry: FlagRegistry,
+	flagName: string,
+	data: FlagParsingData,
+) => {
+	if (hasOwn(registry, flagName)) {
+		throw new Error(`Duplicate flags named "${flagName}"`);
+	}
+
+	registry[flagName] = data;
+};
+
 export const createRegistry = (
 	schemas: Flags,
 ) => {
 	const registry: FlagRegistry = {};
-
-	const setFlag = (
-		flagName: string,
-		data: FlagParsingData,
-	) => {
-		if (hasOwn(registry, flagName)) {
-			throw new Error(`Duplicate flags named "${flagName}"`);
-		}
-
-		registry[flagName] = data;
-	};
 
 	for (const flagName in schemas) {
 		if (!hasOwn(schemas, flagName)) {
@@ -120,11 +121,11 @@ export const createRegistry = (
 			schema,
 		];
 
-		setFlag(flagName, flagData);
+		setFlag(registry, flagName, flagData);
 
 		const kebabCasing = camelToKebab(flagName);
 		if (flagName !== kebabCasing) {
-			setFlag(kebabCasing, flagData);
+			setFlag(registry, kebabCasing, flagData);
 		}
 
 		if ('alias' in schema && typeof schema.alias === 'string') {
@@ -143,7 +144,7 @@ export const createRegistry = (
 				throw new Error(`${errorPrefix} must be a single character`);
 			}
 
-			setFlag(alias, flagData);
+			setFlag(registry, alias, flagData);
 		}
 	}
 
