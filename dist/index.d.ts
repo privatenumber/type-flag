@@ -69,12 +69,12 @@ type FlagSchema = {
 /**
  * A flag definition can either be a `FlagType` or a full `FlagSchema` object.
  */
-type FlagTypeOrSchema = FlagType | FlagSchema;
+type FlagTypeOrSchema<ExtraOptions = Record<string, unknown>> = FlagType | (FlagSchema & ExtraOptions);
 /**
  * A map of flag names to their definitions.
  */
-type Flags = {
-    [flagName: string]: FlagTypeOrSchema;
+type Flags<ExtraOptions = Record<string, unknown>> = {
+    [flagName: string]: FlagTypeOrSchema<ExtraOptions>;
 };
 type InferDefaultType<Flag extends FlagTypeOrSchema, Fallback> = Flag extends {
     default: infer DefaultType | (() => infer DefaultType);
