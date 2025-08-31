@@ -78,13 +78,15 @@ export type FlagSchema = {
 /**
  * A flag definition can either be a `FlagType` or a full `FlagSchema` object.
  */
-export type FlagTypeOrSchema = FlagType | FlagSchema;
+export type FlagTypeOrSchema<
+	ExtraOptions = Record<string, unknown>,
+> = FlagType | (FlagSchema & ExtraOptions);
 
 /**
  * A map of flag names to their definitions.
  */
-export type Flags = {
-	[flagName: string]: FlagTypeOrSchema;
+export type Flags<ExtraOptions = Record<string, unknown>> = {
+	[flagName: string]: FlagTypeOrSchema<ExtraOptions>;
 };
 
 // Infers the type from the default value of a flag schema.

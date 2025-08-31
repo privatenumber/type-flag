@@ -1,5 +1,5 @@
-import { expectType } from 'tsd';
-import { typeFlag } from '#type-flag';
+import { expectType, expectError } from 'tsd';
+import { typeFlag, type Flags } from '#type-flag';
 
 const parsed = typeFlag({
 	booleanFlag: Boolean,
@@ -44,3 +44,26 @@ type ExpectedType = {
 };
 
 expectType<ExpectedType>(parsed);
+
+type CustomOptions = {
+	description: string;
+};
+
+const customFlags: Flags<CustomOptions> = {
+	verbose: {
+		type: Boolean,
+		alias: 'v',
+		description: 'Enable verbose logging',
+	},
+	silent: Boolean,
+};
+
+expectType<Flags<CustomOptions>>(customFlags);
+
+expectError<Flags<CustomOptions>>({
+	verbose: {
+		type: Boolean,
+		alias: 'v',
+		description: 123,
+	},
+});
