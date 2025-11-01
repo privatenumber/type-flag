@@ -102,5 +102,21 @@ export default testSuite(({ describe }) => {
 			expect<boolean[]>(flagValue).toStrictEqual([true, true]);
 			expect(argv).toStrictEqual(['2']);
 		});
+
+		test('end of flags - flag after --', () => {
+			const argv = ['--', '--flag', 'value'];
+			const flagValue = getFlag('--flag', String, argv);
+
+			expect<string | undefined>(flagValue).toBe(undefined);
+			expect(argv).toStrictEqual(['--', '--flag', 'value']);
+		});
+
+		test('end of flags - flag before --', () => {
+			const argv = ['--flag', 'value', '--', '--flag', 'after'];
+			const flagValue = getFlag('--flag', String, argv);
+
+			expect<string | undefined>(flagValue).toBe('value');
+			expect(argv).toStrictEqual(['--', '--flag', 'after']);
+		});
 	});
 });

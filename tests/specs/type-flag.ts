@@ -101,6 +101,63 @@ export default testSuite(({ describe }) => {
 						}, []);
 					}).toThrow(/* 'Flag collision: Alias "a" is already used' */);
 				});
+
+				test('Collision - alias matches another flag name', () => {
+					expect(() => {
+						typeFlag({
+							flagName: String,
+							anotherFlag: {
+								type: String,
+								alias: 'flagName',
+							},
+						}, []);
+					}).toThrow();
+				});
+			});
+
+			describe('Custom type errors', ({ test }) => {
+				test('Custom parser throws error', () => {
+					const ThrowingParser = (_value: string) => {
+						throw new Error('Custom parse error');
+					};
+
+					expect(() => {
+						typeFlag({
+							custom: ThrowingParser,
+						}, ['--custom', 'value']);
+					}).toThrow('Custom parse error');
+				});
+
+				test('Custom parser throws on specific value', () => {
+					const StrictNumber = (value: string) => {
+						const parsed = Number(value);
+						if (Number.isNaN(parsed)) {
+							throw new TypeError(`Invalid number: ${value}`);
+						}
+						return parsed;
+					};
+
+					expect(() => {
+						typeFlag({
+							number: StrictNumber,
+						}, ['--number', 'not-a-number']);
+					}).toThrow('Invalid number: not-a-number');
+				});
+			});
+
+			describe('Default value errors', ({ test }) => {
+				test('Default function throws error', () => {
+					expect(() => {
+						typeFlag({
+							flag: {
+								type: String,
+								default: () => {
+									throw new Error('Default function error');
+								},
+							},
+						}, []);
+					}).toThrow('Default function error');
+				});
 			});
 		});
 
@@ -194,6 +251,53 @@ export default testSuite(({ describe }) => {
 					});
 				});
 
+				test('Negative number as argument', () => {
+					const parsed = typeFlag({
+						number: Number,
+					}, ['-123']);
+
+					expect(parsed.flags).toStrictEqual({
+						number: undefined,
+					});
+					expect(parsed.unknownFlags).toStrictEqual({
+						1: [true],
+						2: [true],
+						3: [true],
+					});
+				});
+
+				test('Negative number with flag', () => {
+					const parsed = typeFlag({
+						number: Number,
+					}, ['--number', '-123']);
+
+					// -123 is parsed as flag group -1 -2 -3, leaving number with no value
+					expect(parsed.flags).toStrictEqual({
+						number: Number.NaN,
+					});
+					expect(parsed.unknownFlags).toStrictEqual({
+						1: [true],
+						2: [true],
+						3: [true],
+					});
+					expect(parsed._).toStrictEqual(
+						Object.assign(
+							[],
+							{ '--': [] },
+						),
+					);
+				});
+
+				test('Negative number with equals', () => {
+					const parsed = typeFlag({
+						number: Number,
+					}, ['--number=-123']);
+
+					expect(parsed.flags).toStrictEqual({
+						number: -123,
+					});
+				});
+
 				test('invalid consolidated aliases', () => {
 					const parsed = typeFlag(
 						{}, ['-invalidAlias'],
@@ -212,6 +316,34 @@ export default testSuite(({ describe }) => {
 							A: [true],
 							s: [true],
 						},
+					});
+				});
+
+				test('Frozen argv array', () => {
+					const argv = Object.freeze(['--flag', 'value'] as string[]);
+
+					expect(() => {
+						typeFlag(
+							{
+								flag: String,
+							},
+							argv as string[],
+						);
+					}).toThrow();
+				});
+
+				test('Unknown flags starting with numbers', () => {
+					const parsed = typeFlag(
+						{},
+						['--123abc', '--456', '-7', '-8a'],
+					);
+
+					expect(parsed.unknownFlags).toStrictEqual({
+						'123abc': [true],
+						456: [true],
+						7: [true],
+						8: [true],
+						a: [true],
 					});
 				});
 			});
@@ -260,6 +392,44 @@ export default testSuite(({ describe }) => {
 					),
 				);
 				expect(argv).toStrictEqual([]);
+			});
+
+			test('number edge cases', () => {
+				const argv = ['--infinity', 'Infinity', '--negInfinity=-Infinity', '--scientific', '1.5e10', '--negScientific=-2.3e-5', '--large', '9007199254740992'];
+				const parsed = typeFlag(
+					{
+						infinity: Number,
+						negInfinity: Number,
+						scientific: Number,
+						negScientific: Number,
+						large: Number,
+					},
+					argv,
+				);
+
+				expect<number | undefined>(parsed.flags.infinity).toBe(Number.POSITIVE_INFINITY);
+				// Negative numbers must use = delimiter to avoid being parsed as flags
+				expect<number | undefined>(parsed.flags.negInfinity).toBe(Number.NEGATIVE_INFINITY);
+				expect<number | undefined>(parsed.flags.scientific).toBe(1.5e10);
+				expect<number | undefined>(parsed.flags.negScientific).toBe(-2.3e-5);
+				expect<number | undefined>(parsed.flags.large).toBe(9_007_199_254_740_992);
+				expect(argv).toStrictEqual([]);
+			});
+
+			test('number type coercion with whitespace', () => {
+				const argv = ['--numA=  123  ', '--numB=\t456\t', '--numC=\n789\n'];
+				const parsed = typeFlag(
+					{
+						numA: Number,
+						numB: Number,
+						numC: Number,
+					},
+					argv,
+				);
+
+				expect<number | undefined>(parsed.flags.numA).toBe(123);
+				expect<number | undefined>(parsed.flags.numB).toBe(456);
+				expect<number | undefined>(parsed.flags.numC).toBe(789);
 			});
 
 			test('convert kebab-case to camelCase', () => {
@@ -315,6 +485,32 @@ export default testSuite(({ describe }) => {
 				expect(argv).toStrictEqual([]);
 			});
 
+			test('boolean case sensitivity', () => {
+				const argv = ['--flagA=true', '--flagB=True', '--flagC=TRUE', '--flagD=false', '--flagE=False', '--flagF=FALSE', '--flagG=TrUe', '--flagH=FaLsE'];
+				const parsed = typeFlag(
+					{
+						flagA: Boolean,
+						flagB: Boolean,
+						flagC: Boolean,
+						flagD: Boolean,
+						flagE: Boolean,
+						flagF: Boolean,
+						flagG: Boolean,
+						flagH: Boolean,
+					},
+					argv,
+				);
+
+				expect<boolean | undefined>(parsed.flags.flagA).toBe(true);
+				expect<boolean | undefined>(parsed.flags.flagB).toBe(true);
+				expect<boolean | undefined>(parsed.flags.flagC).toBe(true);
+				expect<boolean | undefined>(parsed.flags.flagD).toBe(false);
+				expect<boolean | undefined>(parsed.flags.flagE).toBe(true);
+				expect<boolean | undefined>(parsed.flags.flagF).toBe(true);
+				expect<boolean | undefined>(parsed.flags.flagG).toBe(true);
+				expect<boolean | undefined>(parsed.flags.flagH).toBe(true);
+			});
+
 			test('flag: - to allow the use of = in values (or vice versa)', () => {
 				const argv = ['--string:A=hello', '-s:B=bye'];
 				const parsed = typeFlag(
@@ -345,6 +541,42 @@ export default testSuite(({ describe }) => {
 
 				expect<string | undefined>(parsed.flags.string).toBe('B=bye');
 				expect(argv).toStrictEqual([]);
+			});
+
+			test('Unicode in values', () => {
+				const argv = ['--emoji=🎉', '--japanese=日本語', '--mixed=Hello世界🌍', '--arabic=مرحبا'];
+				const parsed = typeFlag(
+					{
+						emoji: String,
+						japanese: String,
+						mixed: String,
+						arabic: String,
+					},
+					argv,
+				);
+
+				expect<string | undefined>(parsed.flags.emoji).toBe('🎉');
+				expect<string | undefined>(parsed.flags.japanese).toBe('日本語');
+				expect<string | undefined>(parsed.flags.mixed).toBe('Hello世界🌍');
+				expect<string | undefined>(parsed.flags.arabic).toBe('مرحبا');
+			});
+
+			test('Multiple delimiters in flag values', () => {
+				const argv = ['--flagA=x=y', '--flagB=x=y=z', '--flagC:x=y', '--flagD.x:y=z'];
+				const parsed = typeFlag(
+					{
+						flagA: String,
+						flagB: String,
+						flagC: String,
+						flagD: String,
+					},
+					argv,
+				);
+
+				expect<string | undefined>(parsed.flags.flagA).toBe('x=y');
+				expect<string | undefined>(parsed.flags.flagB).toBe('x=y=z');
+				expect<string | undefined>(parsed.flags.flagC).toBe('x=y');
+				expect<string | undefined>(parsed.flags.flagD).toBe('x:y=z');
 			});
 
 			describe('aliases', ({ test }) => {
@@ -433,21 +665,30 @@ export default testSuite(({ describe }) => {
 					const argv = ['-x', '1', '-y', '2'];
 					const parsed = typeFlag(
 						{
-							x: Number,
-							y: Number,
+							xFlag: {
+								type: Number,
+								alias: 'x',
+							},
+							yFlag: {
+								type: Number,
+								alias: 'y',
+							},
 						},
 						argv,
 					);
 
-					expect<number | undefined>(parsed.flags.x).toBe(1);
-					expect<number | undefined>(parsed.flags.y).toBe(2);
+					expect<number | undefined>(parsed.flags.xFlag).toBe(1);
+					expect<number | undefined>(parsed.flags.yFlag).toBe(2);
 				});
 
 				test('single-character alias grouping', () => {
 					const argv = ['-am', 'hello'];
 					const parsed = typeFlag(
 						{
-							a: Boolean,
+							aFlag: {
+								type: Boolean,
+								alias: 'a',
+							},
 							message: {
 								type: String,
 								alias: 'm',
@@ -456,8 +697,58 @@ export default testSuite(({ describe }) => {
 						argv,
 					);
 
-					expect<boolean | undefined>(parsed.flags.a).toBe(true);
+					expect<boolean | undefined>(parsed.flags.aFlag).toBe(true);
 					expect<string | undefined>(parsed.flags.message).toBe('hello');
+				});
+
+				test('alias group with all known flags', () => {
+					const argv = ['-abc'];
+					const parsed = typeFlag(
+						{
+							alpha: {
+								type: Boolean,
+								alias: 'a',
+							},
+							beta: {
+								type: Boolean,
+								alias: 'b',
+							},
+							gamma: {
+								type: Boolean,
+								alias: 'c',
+							},
+						},
+						argv,
+					);
+
+					expect<boolean | undefined>(parsed.flags.alpha).toBe(true);
+					expect<boolean | undefined>(parsed.flags.beta).toBe(true);
+					expect<boolean | undefined>(parsed.flags.gamma).toBe(true);
+					expect(argv).toStrictEqual([]);
+				});
+
+				test('alias group with mix of known and unknown flags', () => {
+					const argv = ['-axc'];
+					const parsed = typeFlag(
+						{
+							alpha: {
+								type: Boolean,
+								alias: 'a',
+							},
+							gamma: {
+								type: Boolean,
+								alias: 'c',
+							},
+						},
+						argv,
+					);
+
+					expect<boolean | undefined>(parsed.flags.alpha).toBe(true);
+					expect<boolean | undefined>(parsed.flags.gamma).toBe(true);
+					expect(parsed.unknownFlags).toStrictEqual({
+						x: [true],
+					});
+					expect(argv).toStrictEqual([]);
 				});
 			});
 
@@ -644,6 +935,45 @@ export default testSuite(({ describe }) => {
 						),
 					});
 					expect(argv).toStrictEqual(['--', 'b', '--string=b', '--unknown', '--boolean']);
+				});
+
+				test('ignore callback throws error', () => {
+					expect(() => {
+						typeFlag(
+							{
+								string: String,
+							},
+							['--string', 'value'],
+							{
+								ignore: () => {
+									throw new Error('Ignore callback error');
+								},
+							},
+						);
+					}).toThrow('Ignore callback error');
+				});
+
+				test('ignore callback returns non-boolean', () => {
+					const argv = ['--string', 'value', '--unknown', 'arg'];
+					const parsed = typeFlag(
+						{
+							string: String,
+						},
+						argv,
+						{
+							ignore: () => 'truthy' as unknown as boolean,
+						},
+					);
+
+					expect(parsed.flags.string).toBe(undefined);
+					expect(parsed.unknownFlags).toStrictEqual({});
+					expect(parsed._).toStrictEqual(
+						Object.assign(
+							[],
+							{ '--': [] },
+						),
+					);
+					expect(argv).toStrictEqual(['--string', 'value', '--unknown', 'arg']);
 				});
 			});
 
