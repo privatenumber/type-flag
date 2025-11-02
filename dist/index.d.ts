@@ -88,11 +88,13 @@ type InferFlagType<Flag extends FlagTypeOrSchema> = (Flag extends readonly [Type
     type: TypeFunction<infer T>;
 } ? (T | InferDefaultType<Flag, undefined>) : never);
 /**
- * The final parsed output from a `TypeFlag` run.
+ * The fully inferred return type from a given flag schema configuration.
  */
-type ParsedFlags<Schemas = never> = {
+type TypeFlag<Schemas extends Flags = Flags> = {
     /** Parsed values keyed by flag name. */
-    flags: Schemas;
+    flags: {
+        [flag in keyof Schemas]: InferFlagType<Schemas[flag]>;
+    };
     /** Flags that were passed but not defined in the schema. */
     unknownFlags: {
         [flagName: string]: (string | boolean)[];
@@ -106,12 +108,6 @@ type ParsedFlags<Schemas = never> = {
         [DOUBLE_DASH]: string[];
     };
 };
-/**
- * The fully inferred return type from a given flag schema configuration.
- */
-type TypeFlag<Schemas extends Flags> = ParsedFlags<{
-    [flag in keyof Schemas]: InferFlagType<Schemas[flag]>;
-}>;
 /** Constant indicating a known flag token type. */
 declare const KNOWN_FLAG = "known-flag";
 /** Constant indicating an unknown flag token type. */
