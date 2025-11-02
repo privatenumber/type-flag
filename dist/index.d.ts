@@ -173,4 +173,5 @@ declare const typeFlag: <Schemas extends Flags>(schemas: Schemas, argv?: string[
 
 declare const getFlag: <Type extends FlagType>(flagNames: string, flagType: Type, argv?: string[]) => InferFlagType<Type>;
 
-export { type Flags, type TypeFlag, type TypeFlagOptions, getFlag, typeFlag };
+export { getFlag, typeFlag };
+export type { Flags, TypeFlag, TypeFlagOptions };
