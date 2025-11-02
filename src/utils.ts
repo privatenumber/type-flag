@@ -1,18 +1,26 @@
 import type {
 	TypeFunction,
 	FlagTypeOrSchema,
+	FlagSchema,
 	Flags,
 	FlagSchema,
 } from './types';
 
-const camelCasePattern = /\B([A-Z])/g;
-const camelToKebab = (string: string) => string.replaceAll(camelCasePattern, '-$1').toLowerCase();
-
-const { hasOwnProperty } = Object.prototype;
-export const hasOwn = (
-	object: unknown,
-	property: PropertyKey,
-) => hasOwnProperty.call(object, property);
+const camelToKebab = (string_: string) => {
+	let out = '';
+	for (let i = 0; i < string_.length; i += 1) {
+		const code = string_.codePointAt(i);
+		// If uppercase A–Z:
+		if (code && code >= 65 && code <= 90) {
+			if (i) { out += '-'; }
+			// convert to lowercase by adding 32
+			out += String.fromCodePoint(code + 32);
+		} else {
+			out += string_[i];
+		}
+	}
+	return out;
+};
 
 export const parseFlagType = (
 	flagSchema: FlagTypeOrSchema,
@@ -54,7 +62,16 @@ export const applyParser = (
 	return typeFunction(value);
 };
 
-const reservedCharactersPattern = /[\s.:=]/;
+const isSpaceChar = (ch: string) => {
+	const c = ch.codePointAt(0);
+	return (
+		c && (
+			c === 32 // space
+			|| (c >= 9 && c <= 13) // \t, \n, \v, \f, \r
+			|| c === 0xA0 // non‑breaking space
+		)
+	);
+};
 
 const validateFlagName = (
 	flagName: string,
@@ -65,9 +82,11 @@ const validateFlagName = (
 		throw new Error(`${errorPrefix} cannot be empty`);
 	}
 
-	const hasReservedCharacter = flagName.match(reservedCharactersPattern);
-	if (hasReservedCharacter) {
-		throw new Error(`${errorPrefix} cannot contain "${hasReservedCharacter?.[0]}"`);
+	for (const ch of flagName) {
+		// Reserved characters
+		if (ch === '.' || ch === ':' || ch === '=' || isSpaceChar(ch)) {
+			throw new Error(`${errorPrefix} cannot contain "${ch}"`);
+		}
 	}
 };
 
@@ -87,7 +106,7 @@ const setFlag = (
 	flagName: string,
 	data: FlagParsingData,
 ) => {
-	if (hasOwn(registry, flagName)) {
+	if (flagName in registry) {
 		throw new Error(`Duplicate flags named "${flagName}"`);
 	}
 
@@ -97,12 +116,10 @@ const setFlag = (
 export const createRegistry = (
 	schemas: Flags,
 ) => {
-	const registry: FlagRegistry = {};
+	const registry = { __proto__: null } as unknown as FlagRegistry;
 
+	// eslint-disable-next-line guard-for-in
 	for (const flagName in schemas) {
-		if (!hasOwn(schemas, flagName)) {
-			continue;
-		}
 		validateFlagName(flagName);
 
 		const schema = schemas[flagName];
@@ -147,12 +164,7 @@ export const finalizeFlags = (
 	registry: FlagRegistry,
 ) => {
 	const flags: Record<string, unknown> = {};
-
-	for (const flagName in schemas) {
-		if (!hasOwn(schemas, flagName)) {
-			continue;
-		}
-
+	for (const flagName of Object.keys(schemas)) {
 		const [values, , isArray, schema] = registry[flagName];
 		if (
 			values.length === 0

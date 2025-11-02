@@ -20,8 +20,6 @@ type onArgument = (
 	isEoF?: boolean,
 ) => void;
 
-const valueDelimiterPattern = /[.:=]/;
-
 const isFlagPattern = /^-{1,2}\w/;
 
 export const parseFlagArgv = (
@@ -39,11 +37,22 @@ export const parseFlagArgv = (
 	let flagName = flagArgv.slice(isAlias ? 1 : 2);
 	let flagValue;
 
-	const hasValueDalimiter = flagName.match(valueDelimiterPattern);
-	if (hasValueDalimiter) {
-		const { index } = hasValueDalimiter;
-		flagValue = flagName.slice(index! + 1);
-		flagName = flagName.slice(0, index);
+	let delimiterIndex = -1;
+	for (let i = 0; i < flagName.length; i += 1) {
+		const char = flagName[i];
+		if (
+			char === '.'
+			|| char === ':'
+			|| char === '='
+		) {
+			delimiterIndex = i;
+			break;
+		}
+	}
+
+	if (delimiterIndex !== -1) {
+		flagValue = flagName.slice(delimiterIndex + 1);
+		flagName = flagName.slice(0, delimiterIndex);
 	}
 
 	return [flagName, flagValue, isAlias];
@@ -127,6 +136,7 @@ export const spliceFromArgv = (
 ) => {
 	for (let i = removeArgvs.length - 1; i >= 0; i -= 1) {
 		const [index, aliasIndex, isLast] = removeArgvs[i];
+
 		if (aliasIndex) {
 			const element = argv[index];
 			let newValue = element.slice(0, aliasIndex);

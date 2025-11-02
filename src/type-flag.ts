@@ -9,7 +9,6 @@ import {
 	ARGUMENT,
 } from './types';
 import {
-	hasOwn,
 	createRegistry,
 	normalizeBoolean,
 	applyParser,
@@ -49,7 +48,7 @@ export const typeFlag = <Schemas extends Flags>(
 ) => {
 	const removeArgvs: Index[] = [];
 	const flagRegistry = createRegistry(schemas);
-	const unknownFlags: ParsedFlags['unknownFlags'] = {};
+	const unknownFlags = { __proto__: null } as unknown as ParsedFlags['unknownFlags'];
 	const _ = [] as unknown as ParsedFlags['_'];
 	_[DOUBLE_DASH] = [];
 
@@ -57,7 +56,7 @@ export const typeFlag = <Schemas extends Flags>(
 		onFlag(name, explicitValue, flagIndex) {
 			const isAlias = flagIndex.length === 3;
 			const isValid = isAlias || name.length > 1;
-			const isKnownFlag = isValid && hasOwn(flagRegistry, name);
+			const isKnownFlag = isValid && (name in flagRegistry);
 			if (
 				ignore?.(
 					isKnownFlag ? KNOWN_FLAG : UNKNOWN_FLAG,
@@ -93,7 +92,7 @@ export const typeFlag = <Schemas extends Flags>(
 				);
 			}
 
-			if (!hasOwn(unknownFlags, name)) {
+			if (!(name in unknownFlags)) {
 				unknownFlags[name] = [];
 			}
 
