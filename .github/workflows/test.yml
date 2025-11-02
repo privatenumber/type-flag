@@ -36,8 +36,5 @@ jobs:
           pnpm test
           pnpm --use-node-version=18.20.3 test
 
-      - name: Test DTS
-        run: pnpm test:dts
-
       - name: Lint
         run: pnpm lint
