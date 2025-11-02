@@ -12,9 +12,6 @@ Strongly typed command-line arguments parser.
 No dependencies & tree-shakable (Max 1.4 kB).
 
 → [Try it out online](https://stackblitz.com/edit/type-flag-demo?devtoolsheight=50&file=src/type-flag.ts&view=editor)
-</div>
-
-
 
 > [!TIP]
 > **Looking for something more robust? 👀**
@@ -34,6 +31,23 @@ No dependencies & tree-shakable (Max 1.4 kB).
 ```bash
 npm i type-flag
 ```
+
+### Import styles
+
+```ts
+// ESM
+import { typeFlag, getFlag } from 'type-flag'
+
+// CommonJS
+const { typeFlag, getFlag } = require('type-flag')
+```
+
+### Why type-flag?
+
+- **Zero dependencies**, **tree-shakable**, ~**1.4 kB**.
+- **TypeScript-first**: schema → inferred types (no manual typings).
+- **Predictable**: booleans don't swallow the next arg; explicit delimiters (`= : .`) for values.
+- **Flexible**: custom parsers, alias groups (`-abc`), kebab↔camel mapping, unknown flags captured.
 
 ## 🚦 Quick start
 
@@ -79,7 +93,7 @@ _type-flag_ also exports a `getFlag` function that returns a single flag value.
 import { getFlag } from 'type-flag'
 
 const name = getFlag('--name', String)
-const age = getFlag('-a,--age', Number)
+const age = getFlag('-a, --age', Number)
 
 console.log(name) // 'John'
 console.log(age) // 20
@@ -93,6 +107,36 @@ These are quick demos but _type-flag_ can do so much more:
 - Parse alias groups (e.g. `-abc`)
 
 Keep reading to learn more!
+
+## 🧾 Cheat sheet
+
+```ts
+// Basic types
+typeFlag({ name: String, age: Number, debug: Boolean })
+
+// Arrays (repeatable flags)
+typeFlag({ include: [String] }) // --include a --include b
+
+// Aliases & groups
+typeFlag({ verbose: { type: [Boolean], alias: 'v' } }) // -vvv
+
+// Defaults
+typeFlag({ level: { type: Number, default: 1 } })
+
+// Custom type (validation)
+const Port = (v: string) => {
+  const n = Number(v)
+  if (!Number.isInteger(n) || n < 1 || n > 65535) throw new Error('Invalid port')
+  return n
+}
+typeFlag({ port: Port })
+
+// Unknown flags & args
+const parsed = typeFlag({})
+parsed.unknownFlags // { 'foo': [true, 'bar'] }
+parsed._            // positionals
+parsed._['--']      // args after the double dash
+```
 
 ## 🧑‍💻 Usage
 ### Defining flags
@@ -122,12 +166,12 @@ const parsed = typeFlag({
     myFlag: [String]
 })
 
-// $ node ./cli --my-flag A --my-flag B
+// $ node ./cli.js --my-flag A --my-flag B
 parsed.flags.myFlag // => ['A', 'B']
 ```
 
 #### Aliases
-Flags are often given single-character aliases for shorthand usage (eg. `--help` to `-h`). To give a flag an alias, use the object syntax and set the `alias` property to a single-character name.
+Flags are often given single-character aliases for shorthand usage (e.g., `--help` to `-h`). To give a flag an alias, use the object syntax and set the `alias` property to a single-character name.
 
 ```ts
 typeFlag({
@@ -137,14 +181,69 @@ typeFlag({
     }
 })
 
-// $ node ./cli -m hello
+// $ node ./cli.js -m hello
 parsed.flags.myFlag // => 'hello'
+```
+
+##### Alias groups
+Multiple single-character aliases can be combined into an alias group. For example, `-abc` is equivalent to `-a -b -c`.
+
+> [!NOTE]
+> Only the **last** alias in a group can take a value; the value can be provided either as the **next token** or inline with an **`=`** in the same token.
+
+```ts
+const parsed = typeFlag({
+    all: {
+        type: Boolean,
+        alias: 'a'
+    },
+    binary: {
+        type: Boolean,
+        alias: 'b'
+    },
+    color: {
+        type: Boolean,
+        alias: 'c'
+    }
+})
+
+// $ node ./cli.js -abc
+parsed.flags.all // => true
+parsed.flags.binary // => true
+parsed.flags.color // => true
+```
+
+If the last alias in the group accepts a value, it can be passed in as the next token or with `=`:
+```ts
+const parsed = typeFlag({
+    all: {
+        type: Boolean,
+        alias: 'a'
+    },
+    binary: {
+        type: Boolean,
+        alias: 'b'
+    },
+    config: {
+        type: String,
+        alias: 'c'
+    }
+})
+
+// $ node ./cli.js -abc path/to/config
+parsed.flags.all // => true
+parsed.flags.binary // => true
+parsed.flags.config // => 'path/to/config'
+
+// Or, with the value in the same token:
+// $ node ./cli.js -abc=path/to/config
+parsed.flags.config // => 'path/to/config'
 ```
 
 #### Default values
 Flags that are not passed in will default to being `undefined`. To set a different default value, use the object syntax and pass in a value as the `default` property. When a default is provided, the return type will reflect that instead of `undefined`.
 
-When using mutable values (eg. objects/arrays) as a default, pass in a function that creates it to avoid mutation-related bugs.
+When using mutable values (e.g., objects/arrays) as a default, pass in a function that creates it to avoid mutation-related bugs.
 
 ```ts
 const parsed = typeFlag({
@@ -164,6 +263,33 @@ const parsed = typeFlag({
 
 To get `undefined` in the parsed flag type, make sure [`strict`](https://www.typescriptlang.org/tsconfig/#strict) or [`strictNullChecks`](https://www.typescriptlang.org/tsconfig#strictNullChecks) is enabled.
 
+#### Boolean flags
+Boolean flags don't consume the next argument—they're `true` when present without a value. To explicitly set `true` or `false`, use a delimiter (`=`, `:`, or `.`).
+
+```ts
+const parsed = typeFlag({
+    verbose: Boolean,
+    quiet: Boolean
+})
+
+// $ node ./cli.js --verbose --quiet false
+parsed.flags.verbose // => true
+parsed.flags.quiet // => true
+parsed._ // => ['false']  // 'false' is treated as an argument, not a flag value
+
+// To explicitly set false (recommended):
+// $ node ./cli.js --verbose --quiet=false
+parsed.flags.verbose // => true
+parsed.flags.quiet // => false
+
+// You can also set true explicitly if you want:
+// $ node ./cli.js --verbose=true
+parsed.flags.verbose // => true
+```
+
+> [!NOTE]
+> To pass negative numbers (e.g., `--num=-3`) or literal strings beginning with `-`, use `=` so they're not mistaken for alias groups.
+
 ### kebab-case flags mapped to camelCase
 When passing in the flags, they can be in kebab-case and will automatically map to the camelCase equivalent.
 ```ts
@@ -171,7 +297,7 @@ const parsed = typeFlag({
     someString: [String]
 })
 
-// $ node ./cli --someString hello --some-string world
+// $ node ./cli.js --someString hello --some-string world
 parsed.flags.someString // => ['hello', 'world']
 ```
 
@@ -181,7 +307,7 @@ When unrecognized flags are passed in, they are interpreted as a boolean, or a s
 ```ts
 const parsed = typeFlag({})
 
-// $ node ./cli --some-flag --some-flag=1234
+// $ node ./cli.js --some-flag --some-flag=1234
 parsed.unknownFlags // => { 'some-flag': [true, '1234'] }
 ```
 
@@ -195,7 +321,7 @@ const parsed = typeFlag({
     myFlag: [String]
 })
 
-// $ node ./cli --my-flag value arg1 -- --my-flag world
+// $ node ./cli.js --my-flag value arg1 -- --my-flag world
 parsed.flags.myFlag // => ['value']
 parsed._ // => ['arg1', '--my-flag', 'world']
 parsed._['--'] // => ['--my-flag', 'world']
@@ -205,18 +331,27 @@ parsed._['--'] // => ['--my-flag', 'world']
 The characters `=`, `:` and `.` are reserved for delimiting the value from the flag.
 
 ```sh
-$ node ./cli --flag=value --flag:value --flag.value
+$ node ./cli.js --flag=value --flag:value --flag.value
 ```
 
 This allows for usage like `--flag:key=value` or `--flag.property=value` to be possible.
 
-### Mutated argv array
+### How argv is handled (immutability by default)
 
-When `type-flag` iterates over the argv array, it removes the tokens it parses out via mutation.
+- By default, `typeFlag()` parses a **copy** of `process.argv.slice(2)`.
+- If you **pass your own argv array**, `type-flag` will **mutate it** by removing:
+  - parsed flags and their values
+  - parsed positionals
+  - unknown flags (unless ignored)
+  - everything after `--` (also available at `_['--']`)
 
-By default, `type-flag` works on a new copy of `process.argv.slice(2)` so this doesn't have any side-effects. But if you want to leverage this behavior to extract certain flags and arguments, you can pass in your own copy of `process.argv.slice(2)`.
+This makes it easy to **strip handled flags** and forward the rest to a child process.
 
-This may be useful for filtering out certain flags before passing down the `argv` to a child process.
+```ts
+const argv = ['--name', 'John', 'file.txt']
+const parsed = typeFlag({ name: String }, argv)
+argv // => ['file.txt']
+```
 
 #### Ignoring unknown flags
 Sometimes it may be undesirable to parse unknown flags. In these cases, you can ignore them so they're left unparsed in the `argv` array.
@@ -231,7 +366,7 @@ const parsed = typeFlag(
     }
 )
 
-// $ node ./cli --unknown=hello
+// $ node ./cli.js --unknown=hello
 parsed._ // => []
 argv // => ['--unknown=hello']
 ```
@@ -263,7 +398,7 @@ const parsed = typeFlag(
     }
 )
 
-// $ node ./cli --my-flag ./file.js --my-flag
+// $ node ./cli.js --my-flag ./file.js --my-flag
 parsed.flags.myFlag // => [true]
 argv // => ['./file.js', '--my-flag']
 ```
@@ -272,7 +407,7 @@ argv // => ['./file.js', '--my-flag']
 ## 👨🏻‍🏫 Examples
 
 ### Custom flag type
-Basic types can be set using [built-in functions in JavaScript](https://www.w3schools.com/js/js_object_constructors.asp#:~:text=Built-in%20JavaScript%20Constructors), but sometimes you want to a new type, narrow the type, or add validation.
+Basic types can be set using [built-in JavaScript constructors](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects#fundamental_objects), but sometimes you want to a new type, narrow the type, or add validation.
 
 To create a new type, simply declare a function that accepts a string argument and returns the parsed value with the expected type.
 
@@ -322,10 +457,10 @@ const parsed = typeFlag({
     string: OptionalString
 })
 
-// $ node ./cli --string
+// $ node ./cli.js --string
 parsed.flags.string // => true
 
-// $ node ./cli --string hello
+// $ node ./cli.js --string hello
 parsed.flags.string // => 'hello'
 ```
 
@@ -337,7 +472,7 @@ const parsed = typeFlag({
     define: String
 })
 
-// $ node ./cli --define:key=value
+// $ node ./cli.js --define:key=value
 parsed.flags.define // => 'key=value'
 ```
 
@@ -364,29 +499,8 @@ const env = parsed.flags.env.reduce(
     {}
 )
 
-// $ node ./cli --env.TOKEN=123 --env.CI
+// $ node ./cli.js --env.TOKEN=123 --env.CI
 env // => { TOKEN: 123, CI: true }
-```
-
-### Inverting a boolean
-To invert a boolean flag, `false` must be passed in with the `=` operator (or any other value delimiters).
-
-
-```ts
-const parsed = typeFlag({
-    booleanFlag: Boolean
-})
-
-// $ node ./cli --boolean-flag=false
-parsed.flags.booleanFlag // => false
-```
-
-Without explicitly specfying the flag value via `=`, the `false` will be parsed as a separate argument.
-
-```ts
-// $ node ./cli --boolean-flag false
-parsed.flags.booleanFlag // => true
-parsed._ // => ['false']
 ```
 
 ### Counting flags
@@ -400,8 +514,91 @@ const parsed = typeFlag({
     }
 })
 
-// $ node ./cli -vvv
+// $ node ./cli.js -vvv
 parsed.flags.verbose.length // => 3
+```
+
+## 🍳 Common recipes
+
+### Required flags (beginner-friendly)
+Option A (validate after parse):
+```ts
+const parsed = typeFlag({ token: String })
+if (!parsed.flags.token) {
+  console.error('Missing --token'); process.exit(1)
+}
+```
+
+Option B (make it impossible to pass empty/invalid):
+```ts
+const NonEmptyString = (v: string) => {
+  if (!v) throw new Error('Expected a value'); return v
+}
+const parsed = typeFlag({ token: NonEmptyString })
+```
+
+### Print a simple --help
+
+```ts
+const schema = {
+  help: { type: Boolean, alias: 'h' },
+  out: { type: String, alias: 'o', default: 'dist' },
+}
+const parsed = typeFlag(schema)
+
+if (parsed.flags.help) {
+  console.log(`
+Usage: mytool [options] [--] [args...]
+
+Options:
+  -h, --help            Show help
+  -o, --out <dir>       Output directory (default: "${parsed.flags.out}")
+  --debug               Enable debug mode
+  `)
+  process.exit(0)
+}
+```
+
+### Migrate from minimist/arg/parseArgs quickly
+
+```ts
+// minimist: { boolean: ['debug'], string: ['name'], alias: { o: 'out' } }
+typeFlag({
+  debug: Boolean,
+  name: String,
+  out: { type: String, alias: 'o' },
+})
+
+// arg: { '--out': String, '-o': '--out', '--flag': Boolean }
+typeFlag({
+  out: { type: String, alias: 'o' },
+  flag: Boolean,
+})
+
+// parseArgs({ options: { port: { type: 'string', short: 'p' } } })
+typeFlag({
+  port: { type: Number, alias: 'p' },
+})
+```
+
+### Read environment maps (`--env.KEY=value`)
+
+```ts
+type Env = Record<string, string | boolean>
+const EnvEntry = (v: string): Env => {
+  const [k, val] = v.split('=')
+  return { [k]: val ?? true }
+}
+const parsed = typeFlag({ env: [EnvEntry] })
+// fold into one object:
+const env = parsed.flags.env.reduce((acc, e) => Object.assign(acc, e), {} as Env)
+```
+
+### "Optional string or boolean"
+
+```ts
+const OptionalString = (v: string) => (v ? v : true)
+typeFlag({ mode: OptionalString }) // --mode or --mode=prod
 ```
 
 ## ⚙️ API
@@ -485,6 +682,90 @@ Default: `process.argv.slice(2)`
 
 The argv array to parse. The array is mutated to remove the parsed flags.
 
+---
+
+## TypeScript types
+
+_type-flag_ exports TypeScript types for defining and typing flag schemas:
+
+### `Flags`
+Type for defining a flag schema. Useful for creating reusable flag definitions or when you want to separate the schema definition from usage.
+
+```ts
+import type { Flags } from 'type-flag'
+
+const flags: Flags = {
+    name: String,
+    age: {
+        type: Number,
+        alias: 'a'
+    }
+}
+
+const parsed = typeFlag(flags)
+```
+
+You can extend `Flags` with custom properties for adding metadata like descriptions:
+
+```ts
+import type { Flags } from 'type-flag'
+
+type FlagsWithDescription = Flags<{
+    description: string
+}>
+
+
+const flags: FlagsWithDescription = {
+    name: {
+        type: String,
+        description: 'Your name'
+    },
+    age: {
+        type: Number,
+        alias: 'a',
+        description: 'Your age'
+    }
+}
+```
+
+### `TypeFlag`
+The return type of `typeFlag()`. This is automatically inferred, but can be useful for typing functions that accept parsed results.
+
+```ts
+import type { TypeFlag } from 'type-flag'
+
+type ParsedFlags = TypeFlag<typeof flags>
+
+function processFlags(parsed: ParsedFlags) {
+    // ...
+}
+```
+
+> [!TIP]
+> Type inference means you rarely need to import these types—they're mainly useful for library authors or meta tooling.
+
+## ❓ FAQ & Troubleshooting
+
+**Q: Why is `--num -3` not giving me -3?**
+Because `-3` looks like an alias group (`-3`) to a parser. Use an explicit delimiter: `--num=-3`.
+
+**Q: My boolean ate the next argument.**
+By design, booleans **do not** consume the next token. `--flag value` → `flag = true` and `value` becomes a positional. To set `false`, use `--flag=false`.
+
+**Q: How do I pass values with spaces?**
+Use your shell's quoting: `--name "John Smith"`.
+
+**Q: Why are some flags in camelCase and some in kebab-case?**
+You define in camelCase; the CLI accepts both. `someString` and `--some-string` map to the same flag.
+
+**Q: Can I capture args after `--`?**
+Yes: they appear in `parsed._['--']`.
+
+**Q: Does this work in CommonJS?**
+Yes—see the "Import styles" section.
+
+**Q: Can I keep all unknown flags for later?**
+Yes: `parsed.unknownFlags` gives you a record of unknowns and their values.
 
 ## Sponsors
 <p align="center">
