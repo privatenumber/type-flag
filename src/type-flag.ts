@@ -2,7 +2,6 @@ import {
 	type Flags,
 	type TypeFlag,
 	type TypeFlagOptions,
-	type ParsedFlags,
 	type Simplify,
 	KNOWN_FLAG,
 	UNKNOWN_FLAG,
@@ -50,8 +49,8 @@ export const typeFlag = <Schemas extends Flags>(
 ) => {
 	const removeArgvs: Index[] = [];
 	const flagRegistry = createRegistry(schemas);
-	const unknownFlags: ParsedFlags['unknownFlags'] = {};
-	const _ = [] as unknown as ParsedFlags['_'];
+	const unknownFlags: TypeFlag['unknownFlags'] = {};
+	const _ = [] as unknown as TypeFlag['_'];
 	_[DOUBLE_DASH] = [];
 
 	argvIterator(argv, {

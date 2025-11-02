@@ -111,12 +111,14 @@ export type InferFlagType<
 );
 
 /**
- * The final parsed output from a `TypeFlag` run.
+ * The fully inferred return type from a given flag schema configuration.
  */
-export type ParsedFlags<Schemas = never> = {
+export type TypeFlag<Schemas extends Flags = Flags> = {
 
 	/** Parsed values keyed by flag name. */
-	flags: Schemas;
+	flags: {
+		[flag in keyof Schemas]: InferFlagType<Schemas[flag]>;
+	};
 
 	/** Flags that were passed but not defined in the schema. */
 	unknownFlags: {
@@ -133,13 +135,6 @@ export type ParsedFlags<Schemas = never> = {
 		[DOUBLE_DASH]: string[];
 	};
 };
-
-/**
- * The fully inferred return type from a given flag schema configuration.
- */
-export type TypeFlag<Schemas extends Flags> = ParsedFlags<{
-	[flag in keyof Schemas]: InferFlagType<Schemas[flag]>;
-}>;
 
 /** Constant indicating a known flag token type. */
 export const KNOWN_FLAG = 'known-flag';
