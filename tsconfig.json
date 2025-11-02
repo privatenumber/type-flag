@@ -7,7 +7,4 @@
 		"isolatedModules": true,
 		"skipLibCheck": true,
 	},
-	"exclude": [
-		"test-d",
-	],
 }
