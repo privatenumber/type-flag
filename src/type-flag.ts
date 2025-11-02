@@ -17,6 +17,7 @@ import {
 } from './utils';
 import {
 	DOUBLE_DASH,
+	ALIAS_INDEX_LENGTH,
 	argvIterator,
 	spliceFromArgv,
 	type Index,
@@ -55,7 +56,7 @@ export const typeFlag = <Schemas extends Flags>(
 
 	argvIterator(argv, {
 		onFlag(name, explicitValue, flagIndex) {
-			const isAlias = flagIndex.length === 3;
+			const isAlias = flagIndex.length === ALIAS_INDEX_LENGTH;
 			const isValid = isAlias || name.length > 1;
 			const isKnownFlag = isValid && hasOwn(flagRegistry, name);
 			if (

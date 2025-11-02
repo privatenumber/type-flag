@@ -1,6 +1,9 @@
 export const DOUBLE_DASH = '--';
 
-export type Index =	| [index: number]
+export const ALIAS_INDEX_LENGTH = 3;
+
+export type Index =
+	| [index: number]
 	| [index: number, aliasIndex: number, isLast: boolean];
 
 type onValueCallbackType = (
@@ -39,9 +42,9 @@ export const parseFlagArgv = (
 	let flagName = flagArgv.slice(isAlias ? 1 : 2);
 	let flagValue;
 
-	const hasValueDalimiter = flagName.match(valueDelimiterPattern);
-	if (hasValueDalimiter) {
-		const { index } = hasValueDalimiter;
+	const hasValueDelimiter = flagName.match(valueDelimiterPattern);
+	if (hasValueDelimiter) {
+		const { index } = hasValueDelimiter;
 		flagValue = flagName.slice(index! + 1);
 		flagName = flagName.slice(0, index);
 	}

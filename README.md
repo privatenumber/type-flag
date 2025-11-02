@@ -454,7 +454,7 @@ type Options = {
     ignore?: (
         type: 'known-flag' | 'unknown-flag' | 'argument',
         flagOrArgv: string,
-        value: string | undefined,
+        value: string | undefined
     ) => boolean | void
 }
 ```

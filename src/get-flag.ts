@@ -19,8 +19,9 @@ export const getFlag = <Type extends FlagType>(
 	flagType: Type,
 	argv = process.argv.slice(2),
 ) => {
-	// eslint-disable-next-line unicorn/prefer-set-has
-	const flags = flagNames.split(',').map(name => parseFlagArgv(name)?.[0]);
+	const flags = new Set(
+		flagNames.split(',').map(name => parseFlagArgv(name)?.[0]),
+	);
 	const [parser, gatherAll] = parseFlagType(flagType);
 	const results: unknown[] = [];
 	const removeArgvs: Index[] = [];
@@ -28,7 +29,7 @@ export const getFlag = <Type extends FlagType>(
 	argvIterator(argv, {
 		onFlag: (name, explicitValue, flagIndex) => {
 			if (
-				!flags.includes(name)
+				!flags.has(name)
 				|| (!gatherAll && results.length > 0)
 			) {
 				return;
