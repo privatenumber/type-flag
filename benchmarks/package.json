@@ -2,7 +2,7 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"bench": "node bench.js > benchmarks.md",
+		"bench": "node bench.js > benchmarks.txt",
 		"profile": "node --cpu-prof --cpu-prof-name=typeflag.cpuprofile profile.mjs"
 	},
 	"dependencies": {

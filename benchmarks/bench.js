@@ -35,7 +35,7 @@ bench
 			},
 		}, sampleArgv.slice());
 	})
-	.add('parseArgs', () => {
+	.add('parseArgs (node:util)', () => {
 		// parseArgs doesn't mutate the array
 		parseArgs({
 			args: sampleArgv,
@@ -55,7 +55,7 @@ bench
 			strict: false,
 		});
 	})
-	.add('get-flag', () => {
+	.add('get-flag (type-flag)', () => {
 		// get-flag mutates the array, so we pass a copy
 		getFlag('--age, -a', Number, sampleArgv.slice());
 	})
@@ -79,4 +79,10 @@ bench
 await bench.warmup(); // make results more reliable, ref: https://github.com/tinylibs/tinybench/pull/50
 await bench.run();
 
-console.table(bench.table());
+const results = bench.table();
+results.sort((a, b) => {
+	const aOps = Number(a['ops/sec'].replaceAll(',', ''));
+	const bOps = Number(b['ops/sec'].replaceAll(',', ''));
+	return bOps - aOps;
+});
+console.table(results);
