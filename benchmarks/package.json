@@ -8,6 +8,6 @@
 	"dependencies": {
 		"arg": "^5.0.2",
 		"minimist": "^1.2.8",
-		"tinybench": "^2.7.0"
+		"mitata": "^1.0.34"
 	}
 }
