@@ -23,8 +23,6 @@ type onArgument = (
 	isEoF?: boolean,
 ) => void;
 
-const valueDelimiterPattern = /[.:=]/;
-
 const isFlagPattern = /^-{1,2}\w/;
 
 export const parseFlagArgv = (
@@ -42,11 +40,19 @@ export const parseFlagArgv = (
 	let flagName = flagArgv.slice(isAlias ? 1 : 2);
 	let flagValue;
 
-	const hasValueDelimiter = flagName.match(valueDelimiterPattern);
-	if (hasValueDelimiter) {
-		const { index } = hasValueDelimiter;
-		flagValue = flagName.slice(index! + 1);
-		flagName = flagName.slice(0, index);
+	// Find the first (leftmost) delimiter among =, :, and .
+	// Avoiding regex for performance - indexOf is much faster
+	let delimiterIndex = -1;
+	for (const delimiter of ['=', ':', '.']) {
+		const index = flagName.indexOf(delimiter);
+		if (index !== -1 && (delimiterIndex === -1 || index < delimiterIndex)) {
+			delimiterIndex = index;
+		}
+	}
+
+	if (delimiterIndex !== -1) {
+		flagValue = flagName.slice(delimiterIndex + 1);
+		flagName = flagName.slice(0, delimiterIndex);
 	}
 
 	return [flagName, flagValue, isAlias];
