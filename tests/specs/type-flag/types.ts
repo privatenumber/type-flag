@@ -7,7 +7,7 @@ import {
 // Test Helpers
 const toDate = (s: string) => new Date(s);
 const toCustomObject = (s: string) => ({ value: s });
-const toAny = (v: any) => v;
+const toAny = (v: string) => v as any; // eslint-disable-line @typescript-eslint/no-explicit-any
 const toUnknown = (v: string) => v as unknown;
 
 export default testSuite(({ describe }) => {
