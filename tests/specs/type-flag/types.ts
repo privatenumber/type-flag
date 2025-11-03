@@ -11,28 +11,31 @@ const toAny = (v: any) => v;
 const toUnknown = (v: string) => v as unknown;
 
 export default testSuite(({ describe }) => {
-	describe('Types', ({ test }) => {
-		test('Only one element in array allowed', () => {
-			typeFlag({
-				// @ts-expect-error only one element allowed
-				flagB: [String, String],
+	describe('Types', ({ describe, test }) => {
 
-				// @ts-expect-error only one element allowed
-				flagC: {
-					type: [String, String],
-					alias: 'a',
-				},
-			}, []);
-		});
+		describe('Errors', ({ test }) => {
+			test('Only one element in array allowed', () => {
+				typeFlag({
+					// @ts-expect-error only one element allowed
+					flagB: [String, String],
 
-		test('Alias should be a string', () => {
-			typeFlag({
-				// @ts-expect-error alias must be a string
-				badAlias: {
-					type: String,
-					alias: 1,
-				},
-			}, []);
+					// @ts-expect-error only one element allowed
+					flagC: {
+						type: [String, String],
+						alias: 'a',
+					},
+				}, []);
+			});
+
+			test('Alias should be a string', () => {
+				typeFlag({
+					// @ts-expect-error alias must be a string
+					badAlias: {
+						type: String,
+						alias: 1,
+					},
+				}, []);
+			});
 		});
 
 		test('Readonly type', () => {
