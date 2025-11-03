@@ -90,6 +90,8 @@ export type Flags<ExtraOptions = Record<string, unknown>> = {
 };
 
 // Infers the type from the default value of a flag schema.
+// Note: Preserves literal types from default functions (e.g., () => 'hello' infers 'hello').
+// Users can widen types explicitly with type assertions (e.g., 'hello' as string).
 type InferDefaultType<
 	Flag extends FlagTypeOrSchema,
 	Fallback,
@@ -106,7 +108,9 @@ export type InferFlagType<
 	Flag extends readonly [TypeFunction<infer T>] | { type: readonly [TypeFunction<infer T>] }
 		? (T[] | InferDefaultType<Flag, never>)
 		: Flag extends TypeFunction<infer T> | { type: TypeFunction<infer T> }
-			? (T | InferDefaultType<Flag, undefined>)
+			// Tuple trick: [T] extends [never] prevents distributive conditional types,
+			// preserving never instead of widening to undefined
+			? ([T] extends [never] ? T : (T | InferDefaultType<Flag, undefined>))
 			: never
 );
 
@@ -149,7 +153,7 @@ export const ARGUMENT = 'argument';
  * A function to dynamically ignore specific elements during parsing.
  * Returning `true` skips that element.
  */
-type IgnoreFunction = {
+export type IgnoreFunction = {
 
 	/**
 	 * Ignore a positional argument (e.g., a filename).
@@ -172,7 +176,7 @@ type IgnoreFunction = {
 	(
 		type: typeof KNOWN_FLAG | typeof UNKNOWN_FLAG,
 		flagName: string,
-		flagValue: string | undefined,
+		flagValue?: string | undefined,
 	): boolean | void;
 };
 

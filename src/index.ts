@@ -4,4 +4,5 @@ export type {
 	TypeFlag,
 	TypeFlagOptions,
 	Flags,
+	IgnoreFunction,
 } from './types';
