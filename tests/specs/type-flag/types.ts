@@ -1,7 +1,11 @@
 import { testSuite } from 'manten';
 import { expectTypeOf } from 'expect-type';
 import {
-	typeFlag, type Flags, type TypeFlag, type TypeFlagOptions,
+	typeFlag,
+	type Flags,
+	type TypeFlag,
+	type TypeFlagOptions,
+	type IgnoreFunction,
 } from '#type-flag';
 
 // Test Helpers
@@ -277,139 +281,141 @@ export default testSuite(({ describe }) => {
 					_: string[] & { '--': string[] };
 				}>();
 			});
+
+			test('Types work in function signatures', () => {
+				// Test that exported types can be used to type function parameters/returns
+				const processFlags = (
+					parsed: TypeFlag<{
+						name: StringConstructor;
+						date: typeof toDate;
+					}>,
+				) => ({
+					name: parsed.flags.name,
+					date: parsed.flags.date,
+				});
+
+				const result = processFlags(typeFlag({
+					name: String,
+					date: toDate,
+				}));
+				expectTypeOf(result.name).toEqualTypeOf<string | undefined>();
+				expectTypeOf(result.date).toEqualTypeOf<Date | undefined>();
+
+				// Test Flags as parameter type
+				const createParser = (schema: Flags) => typeFlag(schema);
+
+				const parser = createParser({ test: Boolean });
+				expectTypeOf(parser.flags.test).toBeUnknown(); // Correct
+
+				// Test TypeFlagOptions as parameter (pure type test, no runtime)
+				type OptionsTest = TypeFlagOptions;
+				const options: OptionsTest = { ignore: () => false };
+				expectTypeOf(options).toExtend<TypeFlagOptions>();
+			});
 		});
 
-		// test('TypeFlagOptions - Call-Site Signatures (Strict)', () => {
-		// 	// Declare test variable for call-site testing
-		// 	const testIgnoreFn: NonNullable<TypeFlagOptions['ignore']> = () => void 0;
+		describe('TypeFlagOptions', ({ test }) => {
+			test('Call-Site Signatures (Strict)', () => {
+				// Declare test variable for call-site testing
+				const testIgnoreFn: IgnoreFunction = () => void 0;
 
-		// 	// Test 'argument' overload
-		// 	// Correct arity (2 params)
-		// 	testIgnoreFn('argument', 'some/path');
+				// Test 'argument' overload
+				// Correct arity (2 params)
+				testIgnoreFn('argument', 'some/path');
 
-		// 	// @ts-expect-error 'argument' overload has no 3rd param
-		// 	testIgnoreFn('argument', 'some/path', undefined);
+				// @ts-expect-error 'argument' overload has no 3rd param
+				testIgnoreFn('argument', 'some/path', undefined);
 
-		// 	// @ts-expect-error 'argument' overload has no 3rd param
-		// 	testIgnoreFn('argument', 'some/path', 'extra');
+				// @ts-expect-error 'argument' overload has no 3rd param
+				testIgnoreFn('argument', 'some/path', 'extra');
 
-		// 	// @ts-expect-error 'argument' overload expects string for 2nd param
-		// 	testIgnoreFn('argument', 123);
+				// @ts-expect-error 'argument' overload expects string for 2nd param
+				testIgnoreFn('argument', 123);
 
-		// 	// Test 'flag' overload
-		// 	// Correct arity (3 params)
-		// 	testIgnoreFn('known-flag', '--foo', 'bar');
-		// 	testIgnoreFn('unknown-flag', '--baz', undefined);
+				// Test 'flag' overload
+				// Correct arity (3 params)
+				testIgnoreFn('known-flag', '--foo', 'bar');
+				testIgnoreFn('unknown-flag', '--baz', undefined);
 
-		// 	// Correct arity (2 params, as 3rd is optional)
-		// 	testIgnoreFn('known-flag', '--foo');
+				// Correct arity (2 params, as 3rd is optional)
+				testIgnoreFn('known-flag', '--foo');
 
-		// 	// @ts-expect-error 'flag' overload expects string for 2nd param
-		// 	testIgnoreFn('known-flag', 123);
+				// @ts-expect-error 'flag' overload expects string for 2nd param
+				testIgnoreFn('known-flag', 123);
 
-		// 	// @ts-expect-error 'flag' overload expects string|undefined for 3rd param
-		// 	testIgnoreFn('known-flag', '--foo', 123);
+				// @ts-expect-error 'flag' overload expects string|undefined for 3rd param
+				testIgnoreFn('known-flag', '--foo', 123);
 
-		// 	// @ts-expect-error 'type' must be one of the three constants
-		// 	testIgnoreFn('other-type', 'foo');
-		// });
-
-		// test('TypeFlagOptions - Implementation-Site Signature', () => {
-		// 	// This test proves that TS does not narrow arg2
-		// 	const options: TypeFlagOptions = {
-		// 		ignore: (type, arg1, arg2) => {
-		// 			// This is the *real* type inside the implementation
-		// 			expectTypeOf(arg1).toEqualTypeOf<string>();
-		// 			expectTypeOf(arg2).toEqualTypeOf<string | undefined>();
-
-		// 			if (type === 'argument') {
-		// 				// We confirm 'arg2' is NOT narrowed
-		// 				expectTypeOf(arg2).toEqualTypeOf<string | undefined>();
-		// 				return true;
-		// 			}
-
-		// 			if (type === 'known-flag' || type === 'unknown-flag') {
-		// 				// We confirm 'arg2' is still the wide type
-		// 				expectTypeOf(arg2).toEqualTypeOf<string | undefined>();
-		// 				return false;
-		// 			}
-		// 		},
-		// 	};
-
-		// 	// This just proves the object is valid.
-		// 	expectTypeOf(options).toExtend<TypeFlagOptions>();
-		// });
-
-		test('TypeFlagOptions - Optional and Minimal Signatures', () => {
-			// Test minimal signature
-			const minimalOptions: TypeFlagOptions = {
-				ignore: type => type === 'unknown-flag',
-			};
-			expectTypeOf(minimalOptions).toExtend<TypeFlagOptions>();
-
-			// Test that it's optional
-			const noIgnore: TypeFlagOptions = {};
-			expectTypeOf(noIgnore).toExtend<TypeFlagOptions>();
-
-			// Test runtime usage compiles
-			typeFlag({}, [], minimalOptions);
-			typeFlag({}, [], noIgnore);
-		});
-
-		// TODO: This seems tautological
-		// test('Flags generic with extra options', () => {
-		// 	type CustomFlags = Flags<{
-		// 		description: string;
-		// 		required?: boolean;
-		// 	}>;
-
-		// 	const flags: CustomFlags = {
-		// 		name: {
-		// 			type: String,
-		// 			description: 'User name',
-		// 			required: true,
-		// 		},
-		// 		age: {
-		// 			type: Number,
-		// 			description: 'User age',
-		// 		},
-		// 		// Shorthand should also be allowed
-		// 		verbose: Boolean,
-		// 		ids: [Number],
-		// 	};
-
-		// 	expectTypeOf(flags).toExtend<CustomFlags>();
-		// });
-
-		test('Types work in function signatures', () => {
-			// Test that exported types can be used to type function parameters/returns
-			const processFlags = (
-				parsed: TypeFlag<{
-					name: StringConstructor;
-					date: typeof toDate;
-				}>,
-			) => ({
-				name: parsed.flags.name,
-				date: parsed.flags.date,
+				// @ts-expect-error 'type' must be one of the three constants
+				testIgnoreFn('other-type', 'foo');
 			});
 
-			const result = processFlags(typeFlag({
-				name: String,
-				date: toDate,
-			}));
-			expectTypeOf(result.name).toEqualTypeOf<string | undefined>();
-			expectTypeOf(result.date).toEqualTypeOf<Date | undefined>();
+			// test('Implementation-Site Signature', () => {
+			// 	// This test proves that TS does not narrow arg2
+			// 	const options: TypeFlagOptions = {
+			// 		ignore: (type, arg1, arg2) => {
+			// 			// This is the *real* type inside the implementation
+			// 			expectTypeOf(arg1).toEqualTypeOf<string>();
+			// 			expectTypeOf(arg2).toEqualTypeOf<string | undefined>();
 
-			// Test Flags as parameter type
-			const createParser = (schema: Flags) => typeFlag(schema);
+			// 			if (type === 'argument') {
+			// 				// We confirm 'arg2' is NOT narrowed
+			// 				expectTypeOf(arg2).toEqualTypeOf<string | undefined>();
+			// 				return true;
+			// 			}
 
-			const parser = createParser({ test: Boolean });
-			expectTypeOf(parser.flags.test).toBeUnknown(); // Correct
+			// 			if (type === 'known-flag' || type === 'unknown-flag') {
+			// 				// We confirm 'arg2' is still the wide type
+			// 				expectTypeOf(arg2).toEqualTypeOf<string | undefined>();
+			// 				return false;
+			// 			}
+			// 		},
+			// 	};
 
-			// Test TypeFlagOptions as parameter (pure type test, no runtime)
-			type OptionsTest = TypeFlagOptions;
-			const options: OptionsTest = { ignore: () => false };
-			expectTypeOf(options).toExtend<TypeFlagOptions>();
+			// 	// This just proves the object is valid.
+			// 	expectTypeOf(options).toExtend<TypeFlagOptions>();
+			// });
+
+			test('Optional and Minimal Signatures', () => {
+				// Test minimal signature
+				const minimalOptions: TypeFlagOptions = {
+					ignore: type => type === 'unknown-flag',
+				};
+				expectTypeOf(minimalOptions).toExtend<TypeFlagOptions>();
+
+				// Test that it's optional
+				const noIgnore: TypeFlagOptions = {};
+				expectTypeOf(noIgnore).toExtend<TypeFlagOptions>();
+
+				// Test runtime usage compiles
+				typeFlag({}, [], minimalOptions);
+				typeFlag({}, [], noIgnore);
+			});
+
+			// TODO: This seems tautological
+			// test('Flags generic with extra options', () => {
+			// 	type CustomFlags = Flags<{
+			// 		description: string;
+			// 		required?: boolean;
+			// 	}>;
+
+			// 	const flags: CustomFlags = {
+			// 		name: {
+			// 			type: String,
+			// 			description: 'User name',
+			// 			required: true,
+			// 		},
+			// 		age: {
+			// 			type: Number,
+			// 			description: 'User age',
+			// 		},
+			// 		// Shorthand should also be allowed
+			// 		verbose: Boolean,
+			// 		ids: [Number],
+			// 	};
+
+			// 	expectTypeOf(flags).toExtend<CustomFlags>();
+			// });
 		});
 	});
 });

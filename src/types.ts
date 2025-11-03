@@ -153,7 +153,7 @@ export const ARGUMENT = 'argument';
  * A function to dynamically ignore specific elements during parsing.
  * Returning `true` skips that element.
  */
-type IgnoreFunction = {
+export type IgnoreFunction = {
 
 	/**
 	 * Ignore a positional argument (e.g., a filename).
