@@ -167,18 +167,29 @@ export default testSuite(({ describe }) => {
 					type: String,
 					default: 123,
 				},
-				// Type/default function mismatch
+				// Type/default function mismatch - preserves literal type
 				typeMismatchFn: {
 					type: Boolean,
-					// TODO: I wonder if we can make it return `string` automatically?
 					default: () => 'hello',
+				},
+				// Type assertion widens to base type
+				widenedFlag: {
+					type: String,
+					default: () => 'hello' as string,
+				},
+				// as const preserves literal type explicitly
+				constFlag: {
+					type: Number,
+					default: () => 42 as const,
 				},
 			});
 
 			expectTypeOf(parsed.flags.singleWithArrDefault).toEqualTypeOf<string | string[]>();
 			expectTypeOf(parsed.flags.arrWithSingleDefault).toEqualTypeOf<number[] | number>();
 			expectTypeOf(parsed.flags.typeMismatch).toEqualTypeOf<string | number>();
-			expectTypeOf(parsed.flags.typeMismatchFn).toEqualTypeOf<boolean | string>();
+			expectTypeOf(parsed.flags.typeMismatchFn).toEqualTypeOf<boolean | 'hello'>();
+			expectTypeOf(parsed.flags.widenedFlag).toEqualTypeOf<string>();
+			expectTypeOf(parsed.flags.constFlag).toEqualTypeOf<number | 42>();
 		});
 
 		test('any/unknown/never types', () => {
