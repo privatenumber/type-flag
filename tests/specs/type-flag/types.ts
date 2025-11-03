@@ -65,7 +65,7 @@ export default testSuite(({ describe }) => {
 
 		test('typeFlag return type (Comprehensive)', () => {
 			const parsed = typeFlag({
-				// Standard types
+				// Basic types
 				booleanFlag: Boolean,
 				booleanFlagDefault: {
 					type: Boolean,
@@ -82,7 +82,7 @@ export default testSuite(({ describe }) => {
 					default: 1,
 				},
 
-				// Standard array types
+				// Array types
 				booleanArr: [Boolean],
 				stringArr: [String],
 				numberArr: [Number],
@@ -120,25 +120,29 @@ export default testSuite(({ describe }) => {
 
 			expectTypeOf(parsed).toEqualTypeOf<{
 				flags: {
-					// Standard
+					// Basic types
 					booleanFlag: boolean | undefined;
 					booleanFlagDefault: boolean;
 					stringFlag: string | undefined;
 					stringFlagDefault: string;
 					numberFlag: number | undefined;
 					numberFlagDefault: number;
-					// Standard array
+
+					// Array types
 					booleanArr: boolean[];
 					stringArr: string[];
 					numberArr: number[];
 					stringArrDefault: string[];
+
 					// Custom
 					date: Date | undefined;
 					dateDefault: Date;
 					customObj: { value: string } | undefined;
+
 					// Custom array
 					dates: Date[];
 					datesDefault: Date[];
+
 					// Extra
 					extraOptions: boolean;
 				};
