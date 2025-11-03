@@ -215,8 +215,11 @@ export default testSuite(({ describe }) => {
 					},
 				});
 
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
 				expectTypeOf(parsed.flags.anyFlag).toEqualTypeOf<any | undefined>();
 				expectTypeOf(parsed.flags.unknownFlag).toEqualTypeOf<unknown | undefined>();
+
+				// eslint-disable-next-line @typescript-eslint/no-explicit-any
 				expectTypeOf(parsed.flags.anyArr).toEqualTypeOf<any[]>();
 				expectTypeOf(parsed.flags.unknownArr).toEqualTypeOf<unknown[]>();
 				expectTypeOf(parsed.flags.neverFlag).toBeNever();
