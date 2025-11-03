@@ -5,7 +5,7 @@ import { getFlag } from '#type-flag';
 // Test Helpers
 const toDate = (s: string) => new Date(s);
 const toCustomObject = (s: string) => ({ value: s });
-const toAny = (v: any) => v;
+const toAny = (v: string) => v as any; // eslint-disable-line @typescript-eslint/no-explicit-any
 const toUnknown = (v: string) => v as unknown;
 
 export default testSuite(({ describe }) => {
@@ -50,12 +50,15 @@ export default testSuite(({ describe }) => {
 
 		test('getFlag special types', () => {
 			const anyFlag = getFlag('--foo', toAny);
+
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			expectTypeOf(anyFlag).toEqualTypeOf<any | undefined>();
 
 			const unknownFlag = getFlag('--foo', toUnknown);
 			expectTypeOf(unknownFlag).toEqualTypeOf<unknown | undefined>();
 
 			const anyArray = getFlag('--foo', [toAny]);
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			expectTypeOf(anyArray).toEqualTypeOf<any[]>();
 
 			const unknownArray = getFlag('--foo', [toUnknown]);
