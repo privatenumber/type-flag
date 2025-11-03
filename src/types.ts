@@ -89,22 +89,13 @@ export type Flags<ExtraOptions = Record<string, unknown>> = {
 	[flagName: string]: FlagTypeOrSchema<ExtraOptions>;
 };
 
-// Widens literal types to their base types (e.g., 'hello' -> string, 123 -> number)
-type WidenLiteral<T> = T extends string ? string :
-	T extends number ? number :
-	T extends boolean ? boolean :
-	T extends bigint ? bigint :
-	T;
-
 // Infers the type from the default value of a flag schema.
 type InferDefaultType<
 	Flag extends FlagTypeOrSchema,
 	Fallback,
-> = Flag extends { default: () => infer DefaultType }
-	? WidenLiteral<DefaultType>
-	: Flag extends { default: infer DefaultType }
-		? WidenLiteral<DefaultType>
-		: Fallback;
+> = Flag extends { default: infer DefaultType | (() => infer DefaultType) }
+	? DefaultType
+	: Fallback;
 
 /**
  * Infers the final JavaScript type of a flag from its schema.
@@ -157,15 +148,33 @@ export const ARGUMENT = 'argument';
 /**
  * A function to dynamically ignore specific elements during parsing.
  * Returning `true` skips that element.
- *
- * Uses a generic with conditional types to properly narrow parameter types
- * based on the first parameter's value.
  */
-type IgnoreFunction = <T extends typeof ARGUMENT | typeof KNOWN_FLAG | typeof UNKNOWN_FLAG>(
-	type: T,
-	arg1: string,
-	arg2: T extends typeof ARGUMENT ? undefined : string | undefined
-) => boolean | void;
+type IgnoreFunction = {
+
+	/**
+	 * Ignore a positional argument (e.g., a filename).
+	 *
+	 * @param type Always `'argument'`
+	 * @param argvElement The raw argument string.
+	 */
+	(
+		type: typeof ARGUMENT,
+		argvElement: string
+	): boolean | void;
+
+	/**
+	 * Ignore a known or unknown flag.
+	 *
+	 * @param type `'known-flag'` or `'unknown-flag'`
+	 * @param flagName The name of the flag.
+	 * @param flagValue The value provided, or `undefined` for boolean flags.
+	 */
+	(
+		type: typeof KNOWN_FLAG | typeof UNKNOWN_FLAG,
+		flagName: string,
+		flagValue: string | undefined,
+	): boolean | void;
+};
 
 /**
  * Options to customize the flag parsing behavior.
