@@ -349,40 +349,44 @@ export default testSuite(({ describe }) => {
 				ignoreFunction('other-type', 'foo');
 			});
 
-			// test('Implementation-Site Signature', () => {
-			// 	// This test proves that TS does not narrow arg2
-			// 	const options: TypeFlagOptions = {
-			// 		ignore: (type, arg1, arg2) => {
-			// 			// This is the *real* type inside the implementation
-			// 			expectTypeOf(arg1).toEqualTypeOf<string>();
-			// 			expectTypeOf(arg2).toEqualTypeOf<string | undefined>();
+			test('Implementation-Site Signature (Limitation Test)', () => {
+				const options: TypeFlagOptions = {
+					// This is the idiomatic, general-purpose signature a user would write.
+					// The implementation must use the widest types compatible with all overloads.
+					ignore: (
+						type: 'argument' | 'known-flag' | 'unknown-flag',
+						arg1: string,
+						arg2?: string,
+					) => {
+						// These are the explicit types needed to be compatible with both overloads.
+						expectTypeOf(type).toEqualTypeOf<'argument' | 'known-flag' | 'unknown-flag'>();
+						expectTypeOf(arg1).toEqualTypeOf<string>();
+						expectTypeOf(arg2).toEqualTypeOf<string | undefined>();
 
-			// 			if (type === 'argument') {
-			// 				// We confirm 'arg2' is NOT narrowed
-			// 				expectTypeOf(arg2).toEqualTypeOf<string | undefined>();
-			// 				return true;
-			// 			}
+						if (type === 'argument') {
+							// This proves the limitation:
+							// Even after checking 'type', 'arg2' is NOT narrowed
+							// from 'string | undefined' to 'undefined'.
+							expectTypeOf(arg2).toEqualTypeOf<string | undefined>();
+							return true;
+						}
 
-			// 			if (type === 'known-flag' || type === 'unknown-flag') {
-			// 				// We confirm 'arg2' is still the wide type
-			// 				expectTypeOf(arg2).toEqualTypeOf<string | undefined>();
-			// 				return false;
-			// 			}
-			// 		},
-			// 	};
+						// ...other logic
+					},
+				};
 
-			// 	// This just proves the object is valid.
-			// 	expectTypeOf(options).toExtend<TypeFlagOptions>();
-			// });
+				// This proves the implementation is valid and assignable.
+				expectTypeOf(options).toExtend<TypeFlagOptions>();
+			});
 
-			test('Optional and Minimal Signatures', () => {
+			test('Options object (optional & minimal)', () => {
 				// Test minimal signature
 				const minimalOptions: TypeFlagOptions = {
 					ignore: type => type === 'unknown-flag',
 				};
 				expectTypeOf(minimalOptions).toExtend<TypeFlagOptions>();
 
-				// Test that it's optional
+				// Test that 'ignore' is optional
 				const noIgnore: TypeFlagOptions = {};
 				expectTypeOf(noIgnore).toExtend<TypeFlagOptions>();
 
@@ -390,31 +394,6 @@ export default testSuite(({ describe }) => {
 				typeFlag({}, [], minimalOptions);
 				typeFlag({}, [], noIgnore);
 			});
-
-			// TODO: This seems tautological
-			// test('Flags generic with extra options', () => {
-			// 	type CustomFlags = Flags<{
-			// 		description: string;
-			// 		required?: boolean;
-			// 	}>;
-
-			// 	const flags: CustomFlags = {
-			// 		name: {
-			// 			type: String,
-			// 			description: 'User name',
-			// 			required: true,
-			// 		},
-			// 		age: {
-			// 			type: Number,
-			// 			description: 'User age',
-			// 		},
-			// 		// Shorthand should also be allowed
-			// 		verbose: Boolean,
-			// 		ids: [Number],
-			// 	};
-
-			// 	expectTypeOf(flags).toExtend<CustomFlags>();
-			// });
 		});
 	});
 });
