@@ -40,7 +40,7 @@
 	"packageManager": "pnpm@10.13.1",
 	"scripts": {
 		"build": "pkgroll --minify --clean-dist",
-		"lint": "lintroll --cache .",
+		"lint": "lintroll --cache",
 		"test": "tsx tests",
 		"type-check": "tsc",
 		"dev": "tsx watch --conditions=development tests",

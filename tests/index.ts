@@ -1,7 +1,6 @@
 import { describe } from 'manten';
 
 describe('type-flag', ({ runTestSuite }) => {
-	runTestSuite(import('./specs/type-flag.js'));
-	runTestSuite(import('./specs/get-flag.js'));
-	runTestSuite(import('./specs/types.js'));
+	runTestSuite(import('./specs/type-flag/index.js'));
+	runTestSuite(import('./specs/get-flag/index.js'));
 });

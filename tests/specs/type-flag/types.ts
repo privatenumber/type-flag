@@ -1,0 +1,346 @@
+import { testSuite, expect } from 'manten';
+import { expectTypeOf } from 'expect-type';
+import {
+	typeFlag, type Flags, type TypeFlag, type TypeFlagOptions,
+} from '#type-flag';
+
+// Test Helpers
+const toDate = (s: string) => new Date(s);
+const toCustomObject = (s: string) => ({ value: s });
+const toAny = (v: any) => v;
+const toUnknown = (v: string) => v as unknown;
+
+export default testSuite(({ describe }) => {
+	describe('Types', ({ test }) => {
+		test('Errors', () => {
+			typeFlag({
+				// @ts-expect-error only one element allowed
+				flagB: [String, String],
+
+				// @ts-expect-error only one element allowed
+				flagC: {
+					type: [String, String],
+					alias: 'a',
+				},
+			}, []);
+		});
+
+		test('Negative schema tests', () => {
+			typeFlag({
+				// @ts-expect-error alias must be a string
+				badAlias: {
+					type: String,
+					alias: 1,
+				},
+			}, []);
+		});
+
+		test('Readonly type', () => {
+			typeFlag({
+				flagA: {
+					type: [String],
+				},
+			} as const, []);
+
+			const readonly = <F extends Flags>(
+				options: Readonly<F>,
+				argv: string[],
+			) => typeFlag(options, argv);
+
+			const parsed = readonly({
+				flagA: {
+					type: String,
+				},
+				flagB: {
+					type: [String],
+				},
+			}, ['--flag-a', 'hello']);
+
+			expectTypeOf(parsed.flags.flagA).toEqualTypeOf<string | undefined>();
+			expectTypeOf(parsed.flags.flagB).toEqualTypeOf<string[]>();
+		});
+
+		test('typeFlag return type (Comprehensive)', () => {
+			const parsed = typeFlag({
+				// Standard types
+				booleanFlag: Boolean,
+				booleanFlagDefault: {
+					type: Boolean,
+					default: false,
+				},
+				stringFlag: String,
+				stringFlagDefault: {
+					type: String,
+					default: 'hello',
+				},
+				numberFlag: Number,
+				numberFlagDefault: {
+					type: Number,
+					default: 1,
+				},
+
+				// Standard array types
+				booleanArr: [Boolean],
+				stringArr: [String],
+				numberArr: [Number],
+				stringArrDefault: {
+					type: [String],
+					default: () => ['a', 'b'],
+				},
+
+				// Custom type functions
+				date: toDate,
+				dateDefault: {
+					type: toDate,
+					default: () => new Date(),
+				},
+				customObj: {
+					type: toCustomObject,
+					alias: 'c',
+				},
+
+				// Custom array type functions
+				dates: [toDate],
+				datesDefault: {
+					type: [toDate],
+					default: () => [new Date()],
+				},
+
+				// Extra options
+				extraOptions: {
+					type: Boolean,
+					alias: 'e',
+					default: false,
+					description: 'Some description',
+				},
+			});
+
+			type ExpectedType = {
+				flags: {
+					// Standard
+					booleanFlag: boolean | undefined;
+					booleanFlagDefault: boolean;
+					stringFlag: string | undefined;
+					stringFlagDefault: string;
+					numberFlag: number | undefined;
+					numberFlagDefault: number;
+					// Standard array
+					booleanArr: boolean[];
+					stringArr: string[];
+					numberArr: number[];
+					stringArrDefault: string[];
+					// Custom
+					date: Date | undefined;
+					dateDefault: Date;
+					customObj: { value: string } | undefined;
+					// Custom array
+					dates: Date[];
+					datesDefault: Date[];
+					// Extra
+					extraOptions: boolean;
+				};
+				unknownFlags: {
+					[flag: string]: (string | boolean)[];
+				};
+				_: string[] & { '--': string[] };
+			};
+
+			expectTypeOf(parsed).toEqualTypeOf<ExpectedType>();
+		});
+
+		test('Default type inference edge cases', () => {
+			const parsed = typeFlag({
+				// Single type, array default
+				singleWithArrDefault: {
+					type: String,
+					default: () => ['a', 'b'],
+				},
+				// Array type, single default
+				arrWithSingleDefault: {
+					type: [Number],
+					default: 123,
+				},
+				// Type/default literal mismatch
+				typeMismatch: {
+					type: String,
+					default: 123,
+				},
+				// Type/default function mismatch
+				typeMismatchFn: {
+					type: Boolean,
+					default: () => 'hello',
+				},
+			});
+
+			expectTypeOf(parsed.flags.singleWithArrDefault).toEqualTypeOf<string | string[]>();
+			expectTypeOf(parsed.flags.arrWithSingleDefault).toEqualTypeOf<number[] | number>();
+			expectTypeOf(parsed.flags.typeMismatch).toEqualTypeOf<string | number>();
+			expectTypeOf(parsed.flags.typeMismatchFn).toEqualTypeOf<boolean | string>();
+		});
+
+		test('any/unknown/never types', () => {
+			const parsed = typeFlag({
+				anyFlag: toAny,
+				unknownFlag: toUnknown,
+				anyArr: [toAny],
+				unknownArr: [toUnknown],
+				// A function returning never
+				neverFlag: {
+					type: () => {
+						throw new Error();
+					},
+				},
+			});
+
+			expectTypeOf(parsed.flags.anyFlag).toEqualTypeOf<any | undefined>();
+			expectTypeOf(parsed.flags.unknownFlag).toEqualTypeOf<unknown | undefined>();
+			expectTypeOf(parsed.flags.anyArr).toEqualTypeOf<any[]>();
+			expectTypeOf(parsed.flags.unknownArr).toEqualTypeOf<unknown[]>();
+			expectTypeOf(parsed.flags.neverFlag).toEqualTypeOf<never | undefined>();
+		});
+
+		test('Flags type errors on invalid custom options', () => {
+			type CustomOptions = {
+				description: string;
+			};
+
+			expectTypeOf<{
+				verbose: {
+					type: BooleanConstructor;
+					alias: string;
+					description: number;
+				};
+			}>().not.toMatchObjectType<Flags<CustomOptions>>();
+		});
+
+		test('TypeFlag generic with schema', () => {
+			type Schema = {
+				name: StringConstructor;
+				age: {
+					type: NumberConstructor;
+					default: number;
+				};
+				verbose: [BooleanConstructor];
+				custom: typeof toDate;
+				customArr: readonly [typeof toDate];
+			};
+
+			type Expected = TypeFlag<Schema>;
+
+			expectTypeOf<Expected>().toEqualTypeOf<{
+				flags: {
+					name: string | undefined;
+					age: number;
+					verbose: boolean[];
+					custom: Date | undefined;
+					customArr: Date[];
+				};
+				unknownFlags: {
+					[flagName: string]: (string | boolean)[];
+				};
+				_: string[] & { '--': string[] };
+			}>();
+		});
+
+		test('TypeFlag generic without parameter (default)', () => {
+			type DefaultTypeFlag = TypeFlag;
+
+			expectTypeOf<DefaultTypeFlag>().toEqualTypeOf<{
+				flags: {
+					[flag: string]: unknown;
+				};
+				unknownFlags: {
+					[flagName: string]: (string | boolean)[];
+				};
+				_: string[] & { '--': string[] };
+			}>();
+		});
+
+		test('TypeFlagOptions exported and usable (Strict)', () => {
+			// Test the full, strict signature
+			const options: TypeFlagOptions = {
+				ignore: (type, arg1, arg2) => {
+					if (type === 'argument') {
+						expectTypeOf(arg1).toEqualTypeOf<string>();
+						expectTypeOf(arg2).toEqualTypeOf<undefined>();
+						return true;
+					}
+
+					if (type === 'known-flag' || type === 'unknown-flag') {
+						expectTypeOf(arg1).toEqualTypeOf<string>();
+						expectTypeOf(arg2).toEqualTypeOf<string | undefined>();
+						return false;
+					}
+
+					// @ts-expect-error
+					type === 'other-type';
+				},
+			};
+			expectTypeOf(options).toExtend<TypeFlagOptions>();
+
+			// Test minimal signature
+			const minimalOptions: TypeFlagOptions = {
+				ignore: (type) => type === 'unknown-flag',
+			};
+			expectTypeOf(minimalOptions).toExtend<TypeFlagOptions>();
+
+			// Test that it's optional
+			const noIgnore: TypeFlagOptions = {};
+			expectTypeOf(noIgnore).toExtend<TypeFlagOptions>();
+
+			// Test runtime usage compiles
+			typeFlag({}, [], options);
+			typeFlag({}, [], noIgnore);
+			typeFlag({}, [], minimalOptions);
+		});
+
+		test('Flags generic with extra options', () => {
+			type CustomFlags = Flags<{
+				description: string;
+				required?: boolean;
+			}>;
+
+			const flags: CustomFlags = {
+				name: {
+					type: String,
+					description: 'User name',
+					required: true,
+				},
+				age: {
+					type: Number,
+					description: 'User age',
+				},
+				// Shorthand should also be allowed
+				verbose: Boolean,
+				ids: [Number],
+			};
+
+			expectTypeOf(flags).toExtend<CustomFlags>();
+		});
+
+		test('Types work in function signatures', () => {
+			// Test that exported types can be used to type function parameters/returns
+			const processFlags = (
+				parsed: TypeFlag<{ name: StringConstructor; date: typeof toDate }>,
+			) => ({
+				name: parsed.flags.name,
+				date: parsed.flags.date,
+			});
+
+			const result = processFlags(typeFlag({ name: String, date: toDate }));
+			expectTypeOf(result.name).toEqualTypeOf<string | undefined>();
+			expectTypeOf(result.date).toEqualTypeOf<Date | undefined>();
+
+			// Test Flags as parameter type
+			const createParser = (schema: Flags) => typeFlag(schema);
+
+			const parser = createParser({ test: Boolean });
+			expectTypeOf(parser.flags.test).toBeUnknown(); // Correct
+
+			// Test TypeFlagOptions as parameter (pure type test, no runtime)
+			type OptionsTest = TypeFlagOptions;
+			const options: OptionsTest = { ignore: () => false };
+			expectTypeOf(options).toExtend<TypeFlagOptions>();
+		});
+	});
+});

@@ -2,7 +2,7 @@ import { testSuite, expect } from 'manten';
 import { getFlag } from '#type-flag';
 
 export default testSuite(({ describe }) => {
-	describe('get-flag', ({ describe, test }) => {
+	describe('Parsing', ({ describe, test }) => {
 		describe('alias', ({ test }) => {
 			test('gets number', () => {
 				const argv = ['-n', '1111', '2222', '-n', '3333'];
