@@ -95,10 +95,8 @@ export type Flags<ExtraOptions = Record<string, unknown>> = {
 type InferDefaultType<
 	Flag extends FlagTypeOrSchema,
 	Fallback,
-> = Flag extends { default: infer DefaultValue }
-	? DefaultValue extends TypeFunction<infer ReturnType>
-		? ReturnType
-		: DefaultValue
+> = Flag extends { default: infer DefaultType | (() => infer DefaultType) }
+	? DefaultType
 	: Fallback;
 
 /**
