@@ -355,19 +355,19 @@ export default testSuite(({ describe }) => {
 					// The implementation must use the widest types compatible with all overloads.
 					ignore: (
 						type: 'argument' | 'known-flag' | 'unknown-flag',
-						arg1: string,
-						arg2?: string,
+						argument1: string,
+						argument2?: string,
 					) => {
 						// These are the explicit types needed to be compatible with both overloads.
 						expectTypeOf(type).toEqualTypeOf<'argument' | 'known-flag' | 'unknown-flag'>();
-						expectTypeOf(arg1).toEqualTypeOf<string>();
-						expectTypeOf(arg2).toEqualTypeOf<string | undefined>();
+						expectTypeOf(argument1).toEqualTypeOf<string>();
+						expectTypeOf(argument2).toEqualTypeOf<string | undefined>();
 
 						if (type === 'argument') {
 							// This proves the limitation:
 							// Even after checking 'type', 'arg2' is NOT narrowed
 							// from 'string | undefined' to 'undefined'.
-							expectTypeOf(arg2).toEqualTypeOf<string | undefined>();
+							expectTypeOf(argument2).toEqualTypeOf<string | undefined>();
 							return true;
 						}
 
