@@ -11,33 +11,33 @@ const toUnknown = (v: string) => v as unknown;
 export default testSuite(({ describe }) => {
 	describe('Types', ({ test }) => {
 		test('getFlag standard types', () => {
-			const str = getFlag('--foo', String);
-			expectTypeOf(str).toEqualTypeOf<string | undefined>();
+			const string_ = getFlag('--foo', String);
+			expectTypeOf(string_).toEqualTypeOf<string | undefined>();
 
-			const num = getFlag('--foo', Number);
-			expectTypeOf(num).toEqualTypeOf<number | undefined>();
+			const number_ = getFlag('--foo', Number);
+			expectTypeOf(number_).toEqualTypeOf<number | undefined>();
 
 			const bool = getFlag('--foo', Boolean);
 			expectTypeOf(bool).toEqualTypeOf<boolean | undefined>();
 		});
 
 		test('getFlag array types', () => {
-			const strArr = getFlag('--foo', [String]);
-			expectTypeOf(strArr).toEqualTypeOf<string[]>();
+			const stringArray = getFlag('--foo', [String]);
+			expectTypeOf(stringArray).toEqualTypeOf<string[]>();
 
-			const numArr = getFlag('--foo', [Number]);
-			expectTypeOf(numArr).toEqualTypeOf<number[]>();
+			const numberArray = getFlag('--foo', [Number]);
+			expectTypeOf(numberArray).toEqualTypeOf<number[]>();
 
-			const boolArr = getFlag('--foo', [Boolean]);
-			expectTypeOf(boolArr).toEqualTypeOf<boolean[]>();
+			const boolArray = getFlag('--foo', [Boolean]);
+			expectTypeOf(boolArray).toEqualTypeOf<boolean[]>();
 		});
 
 		test('getFlag custom types', () => {
 			const date = getFlag('--foo', toDate);
 			expectTypeOf(date).toEqualTypeOf<Date | undefined>();
 
-			const obj = getFlag('--foo', toCustomObject);
-			expectTypeOf(obj).toEqualTypeOf<{ value: string } | undefined>();
+			const object = getFlag('--foo', toCustomObject);
+			expectTypeOf(object).toEqualTypeOf<{ value: string } | undefined>();
 		});
 
 		test('getFlag custom array types', () => {
@@ -55,11 +55,11 @@ export default testSuite(({ describe }) => {
 			const unknownFlag = getFlag('--foo', toUnknown);
 			expectTypeOf(unknownFlag).toEqualTypeOf<unknown | undefined>();
 
-			const anyArr = getFlag('--foo', [toAny]);
-			expectTypeOf(anyArr).toEqualTypeOf<any[]>();
+			const anyArray = getFlag('--foo', [toAny]);
+			expectTypeOf(anyArray).toEqualTypeOf<any[]>();
 
-			const unknownArr = getFlag('--foo', [toUnknown]);
-			expectTypeOf(unknownArr).toEqualTypeOf<unknown[]>();
+			const unknownArray = getFlag('--foo', [toUnknown]);
+			expectTypeOf(unknownArray).toEqualTypeOf<unknown[]>();
 		});
 	});
 });

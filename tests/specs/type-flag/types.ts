@@ -171,7 +171,7 @@ export default testSuite(({ describe }) => {
 				typeMismatchFn: {
 					type: Boolean,
 					// TODO: I wonder if we can make it return `string` automatically?
-					default: () => 'hello' as string,
+					default: () => 'hello',
 				},
 			});
 
@@ -319,7 +319,7 @@ export default testSuite(({ describe }) => {
 		test('TypeFlagOptions - Optional and Minimal Signatures', () => {
 			// Test minimal signature
 			const minimalOptions: TypeFlagOptions = {
-				ignore: (type) => type === 'unknown-flag',
+				ignore: type => type === 'unknown-flag',
 			};
 			expectTypeOf(minimalOptions).toExtend<TypeFlagOptions>();
 
@@ -360,13 +360,17 @@ export default testSuite(({ describe }) => {
 		test('Types work in function signatures', () => {
 			// Test that exported types can be used to type function parameters/returns
 			const processFlags = (
-				parsed: TypeFlag<{ name: StringConstructor; date: typeof toDate }>,
+				parsed: TypeFlag<{ name: StringConstructor;
+					date: typeof toDate; }>,
 			) => ({
 				name: parsed.flags.name,
 				date: parsed.flags.date,
 			});
 
-			const result = processFlags(typeFlag({ name: String, date: toDate }));
+			const result = processFlags(typeFlag({
+				name: String,
+				date: toDate,
+			}));
 			expectTypeOf(result.name).toEqualTypeOf<string | undefined>();
 			expectTypeOf(result.date).toEqualTypeOf<Date | undefined>();
 
