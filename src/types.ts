@@ -106,7 +106,7 @@ export type InferFlagType<
 	Flag extends readonly [TypeFunction<infer T>] | { type: readonly [TypeFunction<infer T>] }
 		? (T[] | InferDefaultType<Flag, never>)
 		: Flag extends TypeFunction<infer T> | { type: TypeFunction<infer T> }
-			? (T | InferDefaultType<Flag, undefined>)
+			? ([T] extends [never] ? T : (T | InferDefaultType<Flag, undefined>))
 			: never
 );
 

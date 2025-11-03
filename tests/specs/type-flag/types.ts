@@ -199,7 +199,6 @@ export default testSuite(({ describe }) => {
 			expectTypeOf(parsed.flags.unknownFlag).toEqualTypeOf<unknown | undefined>();
 			expectTypeOf(parsed.flags.anyArr).toEqualTypeOf<any[]>();
 			expectTypeOf(parsed.flags.unknownArr).toEqualTypeOf<unknown[]>();
-			// TODO: fix this
 			expectTypeOf(parsed.flags.neverFlag).toBeNever();
 		});
 
