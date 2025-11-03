@@ -1,4 +1,4 @@
-import { testSuite, expect } from 'manten';
+import { testSuite } from 'manten';
 import { expectTypeOf } from 'expect-type';
 import {
 	typeFlag, type Flags, type TypeFlag, type TypeFlagOptions,
@@ -210,7 +210,7 @@ export default testSuite(({ describe }) => {
 					// A function returning never
 					neverFlag: {
 						type: () => {
-							throw new Error();
+							throw new Error('This function never returns');
 						},
 					},
 				});
@@ -381,8 +381,10 @@ export default testSuite(({ describe }) => {
 		test('Types work in function signatures', () => {
 			// Test that exported types can be used to type function parameters/returns
 			const processFlags = (
-				parsed: TypeFlag<{ name: StringConstructor;
-					date: typeof toDate; }>,
+				parsed: TypeFlag<{
+					name: StringConstructor;
+					date: typeof toDate;
+				}>,
 			) => ({
 				name: parsed.flags.name,
 				date: parsed.flags.date,
