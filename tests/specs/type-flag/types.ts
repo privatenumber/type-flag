@@ -15,7 +15,7 @@ const toAny = (v: string) => v as any; // eslint-disable-line @typescript-eslint
 const toUnknown = (v: string) => v as unknown;
 
 export default testSuite(({ describe }) => {
-	describe('Types', ({ describe, test }) => {
+	describe('Types', ({ describe }) => {
 		describe('Errors', ({ test }) => {
 			test('Only one element in array allowed', () => {
 				typeFlag({
@@ -316,38 +316,37 @@ export default testSuite(({ describe }) => {
 
 		describe('TypeFlagOptions', ({ test }) => {
 			test('Call-Site Signatures (Strict)', () => {
-				// Declare test variable for call-site testing
-				const testIgnoreFn: IgnoreFunction = () => void 0;
+				const ignoreFunction: IgnoreFunction = () => {};
 
 				// Test 'argument' overload
 				// Correct arity (2 params)
-				testIgnoreFn('argument', 'some/path');
+				ignoreFunction('argument', 'some/path');
 
 				// @ts-expect-error 'argument' overload has no 3rd param
-				testIgnoreFn('argument', 'some/path', undefined);
+				ignoreFunction('argument', 'some/path', undefined);
 
 				// @ts-expect-error 'argument' overload has no 3rd param
-				testIgnoreFn('argument', 'some/path', 'extra');
+				ignoreFunction('argument', 'some/path', 'extra');
 
 				// @ts-expect-error 'argument' overload expects string for 2nd param
-				testIgnoreFn('argument', 123);
+				ignoreFunction('argument', 123);
 
 				// Test 'flag' overload
 				// Correct arity (3 params)
-				testIgnoreFn('known-flag', '--foo', 'bar');
-				testIgnoreFn('unknown-flag', '--baz', undefined);
+				ignoreFunction('known-flag', '--foo', 'bar');
+				ignoreFunction('unknown-flag', '--baz', undefined);
 
 				// Correct arity (2 params, as 3rd is optional)
-				testIgnoreFn('known-flag', '--foo');
+				ignoreFunction('known-flag', '--foo');
 
 				// @ts-expect-error 'flag' overload expects string for 2nd param
-				testIgnoreFn('known-flag', 123);
+				ignoreFunction('known-flag', 123);
 
 				// @ts-expect-error 'flag' overload expects string|undefined for 3rd param
-				testIgnoreFn('known-flag', '--foo', 123);
+				ignoreFunction('known-flag', '--foo', 123);
 
 				// @ts-expect-error 'type' must be one of the three constants
-				testIgnoreFn('other-type', 'foo');
+				ignoreFunction('other-type', 'foo');
 			});
 
 			// test('Implementation-Site Signature', () => {

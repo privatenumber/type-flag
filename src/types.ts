@@ -176,7 +176,7 @@ export type IgnoreFunction = {
 	(
 		type: typeof KNOWN_FLAG | typeof UNKNOWN_FLAG,
 		flagName: string,
-		flagValue: string | undefined,
+		flagValue?: string | undefined,
 	): boolean | void;
 };
 
