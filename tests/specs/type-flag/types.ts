@@ -379,20 +379,23 @@ export default testSuite(({ describe }) => {
 				expectTypeOf(options).toExtend<TypeFlagOptions>();
 			});
 
-			test('Options object (optional & minimal)', () => {
-				// Test minimal signature
+			test('ignore option is optional', () => {
+				const noIgnore: TypeFlagOptions = {};
+				expectTypeOf(noIgnore).toExtend<TypeFlagOptions>();
+
+				// Test runtime usage compiles
+				typeFlag({}, [], noIgnore);
+			});
+
+			test('ignore option accepts a minimal implementation', () => {
+				// Test minimal (un-typed) signature
 				const minimalOptions: TypeFlagOptions = {
 					ignore: type => type === 'unknown-flag',
 				};
 				expectTypeOf(minimalOptions).toExtend<TypeFlagOptions>();
 
-				// Test that 'ignore' is optional
-				const noIgnore: TypeFlagOptions = {};
-				expectTypeOf(noIgnore).toExtend<TypeFlagOptions>();
-
 				// Test runtime usage compiles
 				typeFlag({}, [], minimalOptions);
-				typeFlag({}, [], noIgnore);
 			});
 		});
 	});
