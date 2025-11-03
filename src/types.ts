@@ -89,13 +89,22 @@ export type Flags<ExtraOptions = Record<string, unknown>> = {
 	[flagName: string]: FlagTypeOrSchema<ExtraOptions>;
 };
 
+// Widens literal types to their base types
+type WidenLiteral<T> = T extends string ? string :
+	T extends number ? number :
+	T extends boolean ? boolean :
+	T extends bigint ? bigint :
+	T;
+
 // Infers the type from the default value of a flag schema.
 type InferDefaultType<
 	Flag extends FlagTypeOrSchema,
 	Fallback,
-> = Flag extends { default: infer DefaultType | (() => infer DefaultType) }
-	? DefaultType
-	: Fallback;
+> = Flag extends { default: () => infer DefaultType }
+	? WidenLiteral<DefaultType>
+	: Flag extends { default: infer DefaultType }
+		? WidenLiteral<DefaultType>
+		: Fallback;
 
 /**
  * Infers the final JavaScript type of a flag from its schema.

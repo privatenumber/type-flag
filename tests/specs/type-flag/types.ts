@@ -10,9 +10,12 @@ const toCustomObject = (s: string) => ({ value: s });
 const toAny = (v: any) => v;
 const toUnknown = (v: string) => v as unknown;
 
+// Declare test variable for call-site testing
+declare const testIgnoreFn: NonNullable<TypeFlagOptions['ignore']>;
+
 export default testSuite(({ describe }) => {
 	describe('Types', ({ test }) => {
-		test('Errors', () => {
+		test('Only one element in array allowed', () => {
 			typeFlag({
 				// @ts-expect-error only one element allowed
 				flagB: [String, String],
@@ -25,7 +28,7 @@ export default testSuite(({ describe }) => {
 			}, []);
 		});
 
-		test('Negative schema tests', () => {
+		test('Alias should be a string', () => {
 			typeFlag({
 				// @ts-expect-error alias must be a string
 				badAlias: {
@@ -115,7 +118,7 @@ export default testSuite(({ describe }) => {
 				},
 			});
 
-			type ExpectedType = {
+			expectTypeOf(parsed).toEqualTypeOf<{
 				flags: {
 					// Standard
 					booleanFlag: boolean | undefined;
@@ -143,9 +146,7 @@ export default testSuite(({ describe }) => {
 					[flag: string]: (string | boolean)[];
 				};
 				_: string[] & { '--': string[] };
-			};
-
-			expectTypeOf(parsed).toEqualTypeOf<ExpectedType>();
+			}>();
 		});
 
 		test('Default type inference edge cases', () => {
@@ -175,8 +176,7 @@ export default testSuite(({ describe }) => {
 			expectTypeOf(parsed.flags.singleWithArrDefault).toEqualTypeOf<string | string[]>();
 			expectTypeOf(parsed.flags.arrWithSingleDefault).toEqualTypeOf<number[] | number>();
 			expectTypeOf(parsed.flags.typeMismatch).toEqualTypeOf<string | number>();
-			// TypeScript infers literal type from default function return
-			expectTypeOf(parsed.flags.typeMismatchFn).toEqualTypeOf<boolean | 'hello'>();
+			expectTypeOf(parsed.flags.typeMismatchFn).toEqualTypeOf<boolean | string>();
 		});
 
 		test('any/unknown/never types', () => {
@@ -257,40 +257,65 @@ export default testSuite(({ describe }) => {
 			}>();
 		});
 
-		test('TypeFlagOptions exported and usable (Strict)', () => {
-			// Test 2-parameter implementation (works for both ARGUMENT and flag overloads)
+		test('TypeFlagOptions - Call-Site Signatures (Strict)', () => {
+			// Test 'argument' overload
+			// Correct arity (2 params)
+			testIgnoreFn('argument', 'some/path');
+
+			// @ts-expect-error 'argument' overload has no 3rd param
+			testIgnoreFn('argument', 'some/path', undefined);
+
+			// @ts-expect-error 'argument' overload has no 3rd param
+			testIgnoreFn('argument', 'some/path', 'extra');
+
+			// @ts-expect-error 'argument' overload expects string for 2nd param
+			testIgnoreFn('argument', 123);
+
+			// Test 'flag' overload
+			// Correct arity (3 params)
+			testIgnoreFn('known-flag', '--foo', 'bar');
+			testIgnoreFn('unknown-flag', '--baz', undefined);
+
+			// Correct arity (2 params, as 3rd is optional)
+			testIgnoreFn('known-flag', '--foo');
+
+			// @ts-expect-error 'flag' overload expects string for 2nd param
+			testIgnoreFn('known-flag', 123);
+
+			// @ts-expect-error 'flag' overload expects string|undefined for 3rd param
+			testIgnoreFn('known-flag', '--foo', 123);
+
+			// @ts-expect-error 'type' must be one of the three constants
+			testIgnoreFn('other-type', 'foo');
+		});
+
+		test('TypeFlagOptions - Implementation-Site Signature', () => {
+			// This test proves that TS does not narrow arg2
 			const options: TypeFlagOptions = {
-				ignore: (type, arg1) => {
+				ignore: (type, arg1, arg2) => {
+					// This is the *real* type inside the implementation
+					expectTypeOf(arg1).toEqualTypeOf<string>();
+					expectTypeOf(arg2).toEqualTypeOf<string | undefined>();
+
 					if (type === 'argument') {
-						expectTypeOf(arg1).toEqualTypeOf<string>();
+						// We confirm 'arg2' is NOT narrowed
+						expectTypeOf(arg2).toEqualTypeOf<string | undefined>();
 						return true;
 					}
 
 					if (type === 'known-flag' || type === 'unknown-flag') {
-						expectTypeOf(arg1).toEqualTypeOf<string>();
+						// We confirm 'arg2' is still the wide type
+						expectTypeOf(arg2).toEqualTypeOf<string | undefined>();
 						return false;
 					}
-
-					// Type is exhausted - this line should be unreachable
-					return false;
 				},
 			};
+
+			// This just proves the object is valid.
 			expectTypeOf(options).toExtend<TypeFlagOptions>();
+		});
 
-			// TODO: Test 3-parameter implementation with type narrowing
-			// TypeScript cannot narrow arg2 type based on type parameter in overloaded
-			// function implementations. This is a known limitation.
-			// const options3Param: TypeFlagOptions = {
-			//   ignore: (type, arg1, arg2) => {
-			//     if (type === 'argument') {
-			//       expectTypeOf(arg2).toEqualTypeOf<undefined>(); // Fails - sees string | undefined
-			//     }
-			//     if (type === 'known-flag' || type === 'unknown-flag') {
-			//       expectTypeOf(arg2).toEqualTypeOf<string | undefined>();
-			//     }
-			//   }
-			// };
-
+		test('TypeFlagOptions - Optional and Minimal Signatures', () => {
 			// Test minimal signature
 			const minimalOptions: TypeFlagOptions = {
 				ignore: (type) => type === 'unknown-flag',
@@ -302,9 +327,8 @@ export default testSuite(({ describe }) => {
 			expectTypeOf(noIgnore).toExtend<TypeFlagOptions>();
 
 			// Test runtime usage compiles
-			typeFlag({}, [], options);
-			typeFlag({}, [], noIgnore);
 			typeFlag({}, [], minimalOptions);
+			typeFlag({}, [], noIgnore);
 		});
 
 		test('Flags generic with extra options', () => {
