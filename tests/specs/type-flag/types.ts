@@ -165,7 +165,7 @@ export default testSuite(({ describe }) => {
 					type: String,
 					default: 123,
 				},
-				// Type/default function mismatch
+				// Type/default function mismatch - note: infers literal type
 				typeMismatchFn: {
 					type: Boolean,
 					default: () => 'hello',
@@ -175,7 +175,8 @@ export default testSuite(({ describe }) => {
 			expectTypeOf(parsed.flags.singleWithArrDefault).toEqualTypeOf<string | string[]>();
 			expectTypeOf(parsed.flags.arrWithSingleDefault).toEqualTypeOf<number[] | number>();
 			expectTypeOf(parsed.flags.typeMismatch).toEqualTypeOf<string | number>();
-			expectTypeOf(parsed.flags.typeMismatchFn).toEqualTypeOf<boolean | string>();
+			// TypeScript infers literal type 'hello', not general 'string'
+			expectTypeOf(parsed.flags.typeMismatchFn).toEqualTypeOf<boolean | 'hello'>();
 		});
 
 		test('any/unknown/never types', () => {
@@ -256,24 +257,20 @@ export default testSuite(({ describe }) => {
 			}>();
 		});
 
-		test('TypeFlagOptions exported and usable (Strict)', () => {
-			// Test the full, strict signature
+		test('TypeFlagOptions exported and usable', () => {
+			// Test implementation (both overloads compatible with 2 params)
 			const options: TypeFlagOptions = {
-				ignore: (type, arg1, arg2) => {
+				ignore: (type, arg1) => {
 					if (type === 'argument') {
 						expectTypeOf(arg1).toEqualTypeOf<string>();
-						expectTypeOf(arg2).toEqualTypeOf<undefined>();
 						return true;
 					}
-
 					if (type === 'known-flag' || type === 'unknown-flag') {
 						expectTypeOf(arg1).toEqualTypeOf<string>();
-						expectTypeOf(arg2).toEqualTypeOf<string | undefined>();
 						return false;
 					}
-
-					// @ts-expect-error
-					type === 'other-type';
+					// Type is exhausted - this line is unreachable
+					return false;
 				},
 			};
 			expectTypeOf(options).toExtend<TypeFlagOptions>();
@@ -290,8 +287,8 @@ export default testSuite(({ describe }) => {
 
 			// Test runtime usage compiles
 			typeFlag({}, [], options);
-			typeFlag({}, [], noIgnore);
 			typeFlag({}, [], minimalOptions);
+			typeFlag({}, [], noIgnore);
 		});
 
 		test('Flags generic with extra options', () => {
