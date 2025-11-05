@@ -399,7 +399,14 @@ export default testSuite(({ describe }) => {
 			});
 		});
 
-		test('readonly type', () => {
+		test('Generic with Readonly<T> parameter inference (TypeScript compiler bug)', () => {
+			/**
+			 * Tests workaround for TS bug: Readonly<T> in parameter position breaks
+			 * conditional type matching in return type. Without `& Object_` workaround
+			 * in InferFlagType/InferDefaultType, this returns `never` instead of correct type.
+			 *
+			 * @see https://github.com/microsoft/TypeScript/issues/62720
+			 */
 			const wrapper = <Options extends Flags>(options: Readonly<Options>) => typeFlag(options);
 
 			const argv = wrapper({

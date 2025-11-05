@@ -26,7 +26,14 @@ export type FlagType = (
 	| readonly [TypeFunction]
 );
 
-type Object_ = Record<PropertyKey, unknown>;
+/**
+ * Workaround for TypeScript bug where `Readonly<T>` in parameter position breaks
+ * conditional type matching in return type. Adding `& Object_` to extends clauses
+ * fixes the matcher.
+ *
+ * @see https://github.com/microsoft/TypeScript/issues/62720
+ */
+type AnyObject = Record<PropertyKey, unknown>;
 
 /**
  * Defines the complete schema for a command-line flag.
@@ -75,7 +82,7 @@ export type FlagSchema = {
 	 * ```
 	 */
 	default?: unknown | (() => unknown);
-} & Object_;
+} & AnyObject;
 
 /**
  * A flag definition can either be a `FlagType` or a full `FlagSchema` object.
@@ -97,7 +104,7 @@ export type Flags<ExtraOptions = Record<string, unknown>> = {
 type InferDefaultType<
 	Flag extends FlagTypeOrSchema,
 	Fallback,
-> = Flag extends { default: infer DefaultType | (() => infer DefaultType) } & Object_ // <- This hack is needed for Readonly generics inference
+> = Flag extends { default: infer DefaultType | (() => infer DefaultType) } & AnyObject // <- This hack is needed for Readonly generics inference
 	? DefaultType
 	: Fallback;
 
@@ -109,7 +116,7 @@ export type InferFlagType<
 > = (
 	Flag extends readonly [TypeFunction<infer T>] | { type: readonly [TypeFunction<infer T>] }
 		? (T[] | InferDefaultType<Flag, never>)
-		: Flag extends TypeFunction<infer T> | ({ type: TypeFunction<infer T> } & Object_) // <- This hack is needed for Readonly generics inference
+		: Flag extends TypeFunction<infer T> | ({ type: TypeFunction<infer T> } & AnyObject) // <- This hack is needed for Readonly generics inference
 			// Tuple trick: [T] extends [never] prevents distributive conditional types,
 			// preserving never instead of widening to undefined
 			? ([T] extends [never] ? T : (T | InferDefaultType<Flag, undefined>))
