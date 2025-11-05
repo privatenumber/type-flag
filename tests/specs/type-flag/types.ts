@@ -1,4 +1,4 @@
-import { testSuite } from 'manten';
+import { expect, testSuite } from 'manten';
 import { expectTypeOf } from 'expect-type';
 import {
 	typeFlag,
@@ -15,7 +15,7 @@ const toAny = (v: string) => v as any; // eslint-disable-line @typescript-eslint
 const toUnknown = (v: string) => v as unknown;
 
 export default testSuite(({ describe }) => {
-	describe('Types', ({ describe }) => {
+	describe('Types', ({ describe, test }) => {
 		describe('Errors', ({ test }) => {
 			test('Only one element in array allowed', () => {
 				typeFlag({
@@ -398,5 +398,24 @@ export default testSuite(({ describe }) => {
 				typeFlag({}, [], minimalOptions);
 			});
 		});
+
+		test('should work', () => {
+			const wrapper = <Options extends Flags>(options: Readonly<Options>) => typeFlag(options);
+
+			const argv = wrapper({
+				booleanFlag: Boolean,
+				booleanFlagDefault: {
+					type: Boolean,
+					default: false,
+				},
+			});
+
+			expectTypeOf(argv.flags.booleanFlag).not.toBeNever();
+			expectTypeOf(argv.flags.booleanFlagDefault).not.toBeNever();
+			expectTypeOf(argv.flags).toEqualTypeOf<{
+				booleanFlag: boolean | undefined;
+				booleanFlagDefault: boolean;
+			}>();
+		})
 	});
 });
