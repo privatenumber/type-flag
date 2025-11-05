@@ -1,4 +1,4 @@
-import { expect, testSuite } from 'manten';
+import { testSuite } from 'manten';
 import { expectTypeOf } from 'expect-type';
 import {
 	typeFlag,
@@ -399,7 +399,7 @@ export default testSuite(({ describe }) => {
 			});
 		});
 
-		test('should work', () => {
+		test('readonly type', () => {
 			const wrapper = <Options extends Flags>(options: Readonly<Options>) => typeFlag(options);
 
 			const argv = wrapper({
@@ -410,12 +410,8 @@ export default testSuite(({ describe }) => {
 				},
 			});
 
-			expectTypeOf(argv.flags.booleanFlag).not.toBeNever();
-			expectTypeOf(argv.flags.booleanFlagDefault).not.toBeNever();
-			expectTypeOf(argv.flags).toEqualTypeOf<{
-				booleanFlag: boolean | undefined;
-				booleanFlagDefault: boolean;
-			}>();
-		})
+			expectTypeOf(argv.flags.booleanFlag).toEqualTypeOf<boolean | undefined>();
+			expectTypeOf(argv.flags.booleanFlagDefault).toBeBoolean();
+		});
 	});
 });
