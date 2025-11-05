@@ -22,6 +22,14 @@ type TypeFunction<ReturnType = unknown> = (...args: any[]) => ReturnType;
  */
 type FlagType = (TypeFunction | readonly [TypeFunction]);
 /**
+ * Workaround for TypeScript bug where `Readonly<T>` in parameter position breaks
+ * conditional type matching in return type. Adding `& AnyObject` to extends clauses
+ * fixes the matcher.
+ *
+ * @see https://github.com/microsoft/TypeScript/issues/62720
+ */
+type AnyObject = Record<PropertyKey, unknown>;
+/**
  * Defines the complete schema for a command-line flag.
  */
 type FlagSchema = {
@@ -65,7 +73,7 @@ type FlagSchema = {
      * ```
      */
     default?: unknown | (() => unknown);
-} & Record<PropertyKey, unknown>;
+} & AnyObject;
 /**
  * A flag definition can either be a `FlagType` or a full `FlagSchema` object.
  */
@@ -78,15 +86,15 @@ type Flags<ExtraOptions = Record<string, unknown>> = {
 };
 type InferDefaultType<Flag extends FlagTypeOrSchema, Fallback> = Flag extends {
     default: infer DefaultType | (() => infer DefaultType);
-} ? DefaultType : Fallback;
+} & AnyObject ? DefaultType : Fallback;
 /**
  * Infers the final JavaScript type of a flag from its schema.
  */
 type InferFlagType<Flag extends FlagTypeOrSchema> = (Flag extends readonly [TypeFunction<infer T>] | {
     type: readonly [TypeFunction<infer T>];
-} ? (T[] | InferDefaultType<Flag, never>) : Flag extends TypeFunction<infer T> | {
+} ? (T[] | InferDefaultType<Flag, never>) : Flag extends TypeFunction<infer T> | ({
     type: TypeFunction<infer T>;
-} ? (T | InferDefaultType<Flag, undefined>) : never);
+} & AnyObject) ? ([T] extends [never] ? T : (T | InferDefaultType<Flag, undefined>)) : never);
 /**
  * The fully inferred return type from a given flag schema configuration.
  */
@@ -133,7 +141,7 @@ type IgnoreFunction = {
      * @param flagName The name of the flag.
      * @param flagValue The value provided, or `undefined` for boolean flags.
      */
-    (type: typeof KNOWN_FLAG | typeof UNKNOWN_FLAG, flagName: string, flagValue: string | undefined): boolean | void;
+    (type: typeof KNOWN_FLAG | typeof UNKNOWN_FLAG, flagName: string, flagValue?: string | undefined): boolean | void;
 };
 /**
  * Options to customize the flag parsing behavior.
@@ -170,4 +178,4 @@ declare const typeFlag: <Schemas extends Flags>(schemas: Schemas, argv?: string[
 declare const getFlag: <Type extends FlagType>(flagNames: string, flagType: Type, argv?: string[]) => InferFlagType<Type>;
 
 export { getFlag, typeFlag };
-export type { Flags, TypeFlag, TypeFlagOptions };
+export type { Flags, IgnoreFunction, TypeFlag, TypeFlagOptions };
