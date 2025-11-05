@@ -15,7 +15,7 @@ const toAny = (v: string) => v as any; // eslint-disable-line @typescript-eslint
 const toUnknown = (v: string) => v as unknown;
 
 export default testSuite(({ describe }) => {
-	describe('Types', ({ describe }) => {
+	describe('Types', ({ describe, test }) => {
 		describe('Errors', ({ test }) => {
 			test('Only one element in array allowed', () => {
 				typeFlag({
@@ -397,6 +397,28 @@ export default testSuite(({ describe }) => {
 				// Test runtime usage compiles
 				typeFlag({}, [], minimalOptions);
 			});
+		});
+
+		test('Generic with Readonly<T> parameter inference (TypeScript compiler bug)', () => {
+			/**
+			 * Tests workaround for TS bug: Readonly<T> in parameter position breaks
+			 * conditional type matching in return type. Without `& Object_` workaround
+			 * in InferFlagType/InferDefaultType, this returns `never` instead of correct type.
+			 *
+			 * @see https://github.com/microsoft/TypeScript/issues/62720
+			 */
+			const wrapper = <Options extends Flags>(options: Readonly<Options>) => typeFlag(options);
+
+			const argv = wrapper({
+				booleanFlag: Boolean,
+				booleanFlagDefault: {
+					type: Boolean,
+					default: false,
+				},
+			});
+
+			expectTypeOf(argv.flags.booleanFlag).toEqualTypeOf<boolean | undefined>();
+			expectTypeOf(argv.flags.booleanFlagDefault).toBeBoolean();
 		});
 	});
 });
