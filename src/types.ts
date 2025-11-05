@@ -104,7 +104,7 @@ export type Flags<ExtraOptions = Record<string, unknown>> = {
 type InferDefaultType<
 	Flag extends FlagTypeOrSchema,
 	Fallback,
-> = Flag extends { default: infer DefaultType | (() => infer DefaultType) } & AnyObject // <- This hack is needed for Readonly generics inference
+> = Flag extends { default: infer DefaultType | (() => infer DefaultType) } & AnyObject // Workaround
 	? DefaultType
 	: Fallback;
 
@@ -116,7 +116,7 @@ export type InferFlagType<
 > = (
 	Flag extends readonly [TypeFunction<infer T>] | { type: readonly [TypeFunction<infer T>] }
 		? (T[] | InferDefaultType<Flag, never>)
-		: Flag extends TypeFunction<infer T> | ({ type: TypeFunction<infer T> } & AnyObject) // <- This hack is needed for Readonly generics inference
+		: Flag extends TypeFunction<infer T> | ({ type: TypeFunction<infer T> } & AnyObject) // Workaround
 			// Tuple trick: [T] extends [never] prevents distributive conditional types,
 			// preserving never instead of widening to undefined
 			? ([T] extends [never] ? T : (T | InferDefaultType<Flag, undefined>))
