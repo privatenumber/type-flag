@@ -114,7 +114,10 @@ type InferDefaultType<
 export type InferFlagType<
 	Flag extends FlagTypeOrSchema,
 > = (
-	Flag extends readonly [TypeFunction<infer T>] | { type: readonly [TypeFunction<infer T>] }
+	Flag extends (
+		readonly [TypeFunction<infer T>]
+		| { type: readonly [TypeFunction<infer T>] } & AnyObject
+	)
 		? (T[] | InferDefaultType<Flag, never>)
 		: Flag extends TypeFunction<infer T> | ({ type: TypeFunction<infer T> } & AnyObject)
 			// Tuple trick: [T] extends [never] prevents distributive conditional types,

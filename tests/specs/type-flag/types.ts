@@ -415,10 +415,15 @@ export default testSuite(({ describe }) => {
 					type: Boolean,
 					default: false,
 				},
+				booleanArray: {
+					type: [Boolean],
+					default: [false],
+				},
 			});
 
 			expectTypeOf(argv.flags.booleanFlag).toEqualTypeOf<boolean | undefined>();
 			expectTypeOf(argv.flags.booleanFlagDefault).toBeBoolean();
+			expectTypeOf(argv.flags.booleanArray).toEqualTypeOf<boolean[]>();
 		});
 	});
 });
