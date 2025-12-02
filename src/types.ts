@@ -163,34 +163,43 @@ export const ARGUMENT = 'argument';
 
 /**
  * A function to dynamically ignore specific elements during parsing.
- * Returning `true` skips that element.
+ * Return `true` to skip the element, or `false`/`undefined` to process it normally.
+ *
+ * @param type - The type of element being processed:
+ *   - `'argument'`: A positional argument (non-flag value)
+ *   - `'known-flag'`: A flag defined in the schema
+ *   - `'unknown-flag'`: A flag not defined in the schema
+ * @param argvElement - The raw argv string. For arguments, this is the value itself.
+ *   For flags, this is the flag name (e.g., `'--verbose'` or `'-v'`).
+ * @param flagValue - The value associated with a flag, if any.
+ *   - For flags with explicit values: the string value (e.g., `'--port=3000'` → `'3000'`)
+ *   - For boolean flags or flags without values: `undefined`
+ *   - For arguments (`type === 'argument'`): always `undefined`
+ * @returns `true` to ignore/skip this element, `false` or `undefined` to process it
+ *
+ * @example
+ * ```ts
+ * // Ignore all unknown flags
+ * ignore: (type) => type === 'unknown-flag'
+ * ```
+ *
+ * @example
+ * ```ts
+ * // Ignore arguments starting with a dot
+ * ignore: (type, argvElement) => type === 'argument' && argvElement.startsWith('.')
+ * ```
+ *
+ * @example
+ * ```ts
+ * // Ignore a specific flag
+ * ignore: (type, argvElement) => argvElement === '--internal-only'
+ * ```
  */
-export type IgnoreFunction = {
-
-	/**
-	 * Ignore a positional argument (e.g., a filename).
-	 *
-	 * @param type Always `'argument'`
-	 * @param argvElement The raw argument string.
-	 */
-	(
-		type: typeof ARGUMENT,
-		argvElement: string
-	): boolean | void;
-
-	/**
-	 * Ignore a known or unknown flag.
-	 *
-	 * @param type `'known-flag'` or `'unknown-flag'`
-	 * @param flagName The name of the flag.
-	 * @param flagValue The value provided, or `undefined` for boolean flags.
-	 */
-	(
-		type: typeof KNOWN_FLAG | typeof UNKNOWN_FLAG,
-		flagName: string,
-		flagValue?: string | undefined,
-	): boolean | void;
-};
+export type IgnoreFunction = (
+	type: typeof ARGUMENT | typeof KNOWN_FLAG | typeof UNKNOWN_FLAG,
+	argvElement: string,
+	flagValue?: string,
+) => boolean | void;
 
 /**
  * Options to customize the flag parsing behavior.

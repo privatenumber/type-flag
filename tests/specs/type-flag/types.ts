@@ -315,67 +315,43 @@ export default testSuite(({ describe }) => {
 		});
 
 		describe('TypeFlagOptions', ({ test }) => {
-			test('Call-Site Signatures (Strict)', () => {
+			test('Call-Site Signatures', () => {
 				const ignoreFunction: IgnoreFunction = () => {};
 
-				// Test 'argument' overload
-				// Correct arity (2 params)
+				// Valid calls - 2 or 3 params
 				ignoreFunction('argument', 'some/path');
-
-				// @ts-expect-error 'argument' overload has no 3rd param
 				ignoreFunction('argument', 'some/path', undefined);
-
-				// @ts-expect-error 'argument' overload has no 3rd param
-				ignoreFunction('argument', 'some/path', 'extra');
-
-				// @ts-expect-error 'argument' overload expects string for 2nd param
-				ignoreFunction('argument', 123);
-
-				// Test 'flag' overload
-				// Correct arity (3 params)
+				ignoreFunction('argument', 'some/path', 'value');
 				ignoreFunction('known-flag', '--foo', 'bar');
 				ignoreFunction('unknown-flag', '--baz', undefined);
-
-				// Correct arity (2 params, as 3rd is optional)
 				ignoreFunction('known-flag', '--foo');
 
-				// @ts-expect-error 'flag' overload expects string for 2nd param
+				// @ts-expect-error 2nd param must be string
+				ignoreFunction('argument', 123);
+
+				// @ts-expect-error 2nd param must be string
 				ignoreFunction('known-flag', 123);
 
-				// @ts-expect-error 'flag' overload expects string|undefined for 3rd param
+				// @ts-expect-error 3rd param must be string or undefined
 				ignoreFunction('known-flag', '--foo', 123);
 
 				// @ts-expect-error 'type' must be one of the three constants
 				ignoreFunction('other-type', 'foo');
 			});
 
-			test('Implementation-Site Signature (Limitation Test)', () => {
+			test('Implementation with explicit types', () => {
 				const options: TypeFlagOptions = {
-					// This is the idiomatic, general-purpose signature a user would write.
-					// The implementation must use the widest types compatible with all overloads.
 					ignore: (
 						type: 'argument' | 'known-flag' | 'unknown-flag',
-						argument1: string,
-						argument2?: string,
+						argvElement: string,
+						flagValue?: string,
 					) => {
-						// These are the explicit types needed to be compatible with both overloads.
 						expectTypeOf(type).toEqualTypeOf<'argument' | 'known-flag' | 'unknown-flag'>();
-						expectTypeOf(argument1).toEqualTypeOf<string>();
-						expectTypeOf(argument2).toEqualTypeOf<string | undefined>();
-
-						if (type === 'argument') {
-							// This proves the limitation:
-							// Even after checking 'type', 'arg2' is NOT narrowed
-							// from 'string | undefined' to 'undefined'.
-							expectTypeOf(argument2).toEqualTypeOf<string | undefined>();
-							return true;
-						}
-
-						// ...other logic
+						expectTypeOf(argvElement).toEqualTypeOf<string>();
+						expectTypeOf(flagValue).toEqualTypeOf<string | undefined>();
+						return false;
 					},
 				};
-
-				// This proves the implementation is valid and assignable.
 				expectTypeOf(options).toExtend<TypeFlagOptions>();
 			});
 
@@ -396,6 +372,18 @@ export default testSuite(({ describe }) => {
 
 				// Test runtime usage compiles
 				typeFlag({}, [], minimalOptions);
+			});
+
+			test('3-parameter callback works', () => {
+				const options: TypeFlagOptions = {
+					ignore(type, argvElement, flagValue) {
+						expectTypeOf(type).toEqualTypeOf<'argument' | 'known-flag' | 'unknown-flag'>();
+						expectTypeOf(argvElement).toEqualTypeOf<string>();
+						expectTypeOf(flagValue).toEqualTypeOf<string | undefined>();
+						return false;
+					},
+				};
+				expectTypeOf(options).toExtend<TypeFlagOptions>();
 			});
 		});
 
