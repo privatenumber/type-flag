@@ -5,6 +5,11 @@ import type {
 	FlagSchema,
 } from './types.ts';
 
+/**
+ * Regex uses zero-width assertions to find positions for hyphen insertion:
+ * - (?<=[a-z])(?=[A-Z])  →  after lowercase, before uppercase
+ * - (?<=[A-Z])(?=[A-Z][a-z])  →  after uppercase, before uppercase+lowercase
+ */
 const camelToKebab = (string: string) => string
 	.replaceAll(/(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])/g, '-')
 	.toLowerCase();
