@@ -6,8 +6,7 @@ import type {
 } from './types.ts';
 
 const camelToKebab = (string: string) => string
-	.replaceAll(/([a-z])([A-Z])/g, '$1-$2')
-	.replaceAll(/([A-Z]+)([A-Z][a-z])/g, '$1-$2')
+	.replaceAll(/(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])/g, '-')
 	.toLowerCase();
 
 const { hasOwnProperty } = Object.prototype;
