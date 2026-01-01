@@ -5,8 +5,10 @@ import type {
 	FlagSchema,
 } from './types.ts';
 
-const camelCasePattern = /\B([A-Z])/g;
-const camelToKebab = (string: string) => string.replaceAll(camelCasePattern, '-$1').toLowerCase();
+const camelToKebab = (string: string) => string
+	.replaceAll(/([a-z])([A-Z])/g, '$1-$2')
+	.replaceAll(/([A-Z]+)([A-Z][a-z])/g, '$1-$2')
+	.toLowerCase();
 
 const { hasOwnProperty } = Object.prototype;
 export const hasOwn = (
