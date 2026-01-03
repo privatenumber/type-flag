@@ -1,0 +1,40 @@
+{
+  "name": "type-flag",
+  "version": "0.0.0-semantic-release",
+  "description": "Typed command-line arguments parser",
+  "keywords": [
+    "cli",
+    "command-line",
+    "flag",
+    "argv",
+    "arguments",
+    "parser",
+    "typed",
+    "typescript"
+  ],
+  "license": "MIT",
+  "repository": "privatenumber/type-flag",
+  "funding": "https://github.com/privatenumber/type-flag?sponsor=1",
+  "author": {
+    "name": "Hiroki Osame",
+    "email": "hiroki.osame@gmail.com"
+  },
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    "require": "./dist/index.js",
+    "import": "./dist/index.mjs",
+    "types": "./dist/index.d.ts"
+  },
+  "imports": {
+    "#type-flag": {
+      "types": "./src/index.ts",
+      "development": "./src/index.ts",
+      "default": "./dist/index.mjs"
+    }
+  }
+}
