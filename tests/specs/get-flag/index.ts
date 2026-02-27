@@ -1,8 +1,6 @@
-import { testSuite } from 'manten';
+import { describe } from 'manten';
 
-export default testSuite(({ describe }) => {
-	describe('get-flag', ({ runTestSuite }) => {
-		runTestSuite(import('./types.js'));
-		runTestSuite(import('./parsing.js'));
-	});
+describe('get-flag', async () => {
+	await import('./types.js');
+	await import('./parsing.js');
 });
