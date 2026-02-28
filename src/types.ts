@@ -1,4 +1,4 @@
-import type { DOUBLE_DASH } from './argv-iterator';
+import type { DOUBLE_DASH } from './argv-iterator.ts';
 
 // Expand the type of a given object to include all its properties.
 export type Simplify<T> = { [Key in keyof T]: T[Key] } & {};

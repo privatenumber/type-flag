@@ -1,8 +1,8 @@
-export { typeFlag } from './type-flag';
-export { getFlag } from './get-flag';
+export { typeFlag } from './type-flag.ts';
+export { getFlag } from './get-flag.ts';
 export type {
 	TypeFlag,
 	TypeFlagOptions,
 	Flags,
 	IgnoreFunction,
-} from './types';
+} from './types.ts';

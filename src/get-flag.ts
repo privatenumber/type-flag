@@ -1,18 +1,18 @@
 import type {
 	InferFlagType,
 	FlagType,
-} from './types';
+} from './types.ts';
 import {
 	parseFlagType,
 	normalizeBoolean,
 	applyParser,
-} from './utils';
+} from './utils.ts';
 import {
 	argvIterator,
 	parseFlagArgv,
 	spliceFromArgv,
 	type Index,
-} from './argv-iterator';
+} from './argv-iterator.ts';
 
 export const getFlag = <Type extends FlagType>(
 	flagNames: string,

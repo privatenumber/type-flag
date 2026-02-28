@@ -1,6 +1,6 @@
 import { describe } from 'manten';
 
-describe('type-flag', async () => {
-	await import('./specs/type-flag/index.js');
-	await import('./specs/get-flag/index.js');
+describe('type-flag', () => {
+	import('./specs/type-flag/index.ts');
+	import('./specs/get-flag/index.ts');
 });

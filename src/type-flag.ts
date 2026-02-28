@@ -6,21 +6,21 @@ import {
 	KNOWN_FLAG,
 	UNKNOWN_FLAG,
 	ARGUMENT,
-} from './types';
+} from './types.ts';
 import {
 	hasOwn,
 	createRegistry,
 	normalizeBoolean,
 	applyParser,
 	finalizeFlags,
-} from './utils';
+} from './utils.ts';
 import {
 	DOUBLE_DASH,
 	ALIAS_INDEX_LENGTH,
 	argvIterator,
 	spliceFromArgv,
 	type Index,
-} from './argv-iterator';
+} from './argv-iterator.ts';
 
 /**
 type-flag: typed argv parser

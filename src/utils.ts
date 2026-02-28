@@ -3,7 +3,7 @@ import type {
 	FlagTypeOrSchema,
 	Flags,
 	FlagSchema,
-} from './types';
+} from './types.ts';
 
 const camelCasePattern = /\B([A-Z])/g;
 const camelToKebab = (string: string) => string.replaceAll(camelCasePattern, '-$1').toLowerCase();
