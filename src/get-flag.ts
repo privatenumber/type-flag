@@ -46,7 +46,7 @@ export const getFlag = <Type extends FlagType>(
 					removeArgvs.push(valueIndex);
 				}
 
-				results.push(applyParser(parser, implicitValue || ''));
+				results.push(applyParser(parser, implicitValue || '', name));
 			};
 
 			return (
