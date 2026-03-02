@@ -257,6 +257,38 @@ describe('Parsing', () => {
 		expect<string[]>(argv).toStrictEqual([]);
 	});
 
+	test('acronyms in camelCase convert to kebab-case correctly', () => {
+		// getID should accept --get-id, not --get-i-d
+		const argv1 = ['--get-id=123'];
+		const parsed1 = typeFlag({ getID: String }, argv1);
+		expect<string | undefined>(parsed1.flags.getID).toBe('123');
+		expect<string[]>(argv1).toStrictEqual([]);
+
+		// parseURL should accept --parse-url, not --parse-u-r-l
+		const argv2 = ['--parse-url=https://example.com'];
+		const parsed2 = typeFlag({ parseURL: String }, argv2);
+		expect<string | undefined>(parsed2.flags.parseURL).toBe('https://example.com');
+		expect<string[]>(argv2).toStrictEqual([]);
+
+		// XMLParser should accept --xml-parser
+		const argv3 = ['--xml-parser=true'];
+		const parsed3 = typeFlag({ XMLParser: Boolean }, argv3);
+		expect<boolean | undefined>(parsed3.flags.XMLParser).toBe(true);
+		expect<string[]>(argv3).toStrictEqual([]);
+
+		// getIDNumber should accept --get-id-number
+		const argv4 = ['--get-id-number=456'];
+		const parsed4 = typeFlag({ getIDNumber: Number }, argv4);
+		expect<number | undefined>(parsed4.flags.getIDNumber).toBe(456);
+		expect<string[]>(argv4).toStrictEqual([]);
+
+		// someAPIKey should accept --some-api-key
+		const argv5 = ['--some-api-key=secret'];
+		const parsed5 = typeFlag({ someAPIKey: String }, argv5);
+		expect<string | undefined>(parsed5.flags.someAPIKey).toBe('secret');
+		expect<string[]>(argv5).toStrictEqual([]);
+	});
+
 	test('flag=', () => {
 		const argv = ['--string=hello', '-s=bye', '--string=', '--boolean=true', '--boolean=false', '--boolean=', 'world', '--number=3.14', '--number='];
 		const parsed = typeFlag(
