@@ -123,7 +123,7 @@ describe('Error handling', () => {
 				typeFlag({
 					custom: ThrowingParser,
 				}, ['--custom', 'value']);
-			}).toThrow('Custom parse error');
+			}).toThrow('Flag "--custom": Custom parse error');
 		});
 
 		test('Custom parser throws on specific value', () => {
@@ -139,7 +139,23 @@ describe('Error handling', () => {
 				typeFlag({
 					number: StrictNumber,
 				}, ['--number', 'not-a-number']);
-			}).toThrow('Invalid number: not-a-number');
+			}).toThrow('Flag "--number": Invalid number: not-a-number');
+		});
+
+		test('Wrapped error preserves original via cause', () => {
+			const original = new Error('original error');
+			const ThrowingParser = (_value: string) => {
+				throw original;
+			};
+
+			try {
+				typeFlag({
+					flag: ThrowingParser,
+				}, ['--flag', 'value']);
+			} catch (error) {
+				expect(error).toBeInstanceOf(TypeError);
+				expect((error as TypeError).cause).toBe(original);
+			}
 		});
 	});
 

@@ -82,7 +82,7 @@ export const typeFlag = <Schemas extends Flags>(
 					}
 
 					values.push(
-						applyParser(parser, value || ''),
+						applyParser(parser, value || '', name),
 					);
 				};
 

@@ -49,6 +49,7 @@ export const normalizeBoolean = <T>(
 export const applyParser = (
 	typeFunction: TypeFunction,
 	value: unknown,
+	flagName?: string,
 ) => {
 	if (typeof value === 'boolean') {
 		return value;
@@ -58,7 +59,14 @@ export const applyParser = (
 		return Number.NaN;
 	}
 
-	return typeFunction(value);
+	try {
+		return typeFunction(value);
+	} catch (error) {
+		throw new TypeError(
+			`Flag "--${flagName}": ${error instanceof Error ? error.message : error}`,
+			{ cause: error },
+		);
+	}
 };
 
 const reservedCharactersPattern = /[\s.:=]/;
