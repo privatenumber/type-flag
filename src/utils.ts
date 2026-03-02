@@ -10,8 +10,9 @@ import type {
  * - (?<=[a-z])(?=[A-Z])  →  after lowercase, before uppercase
  * - (?<=[A-Z])(?=[A-Z][a-z])  →  after uppercase, before uppercase+lowercase
  */
+const camelCasePattern = /(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])/g;
 const camelToKebab = (string: string) => string
-	.replaceAll(/(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])/g, '-')
+	.replaceAll(camelCasePattern, '-')
 	.toLowerCase();
 
 const { hasOwnProperty } = Object.prototype;
