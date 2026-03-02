@@ -37,7 +37,7 @@ importers:
         version: 5.9.3
 
   benchmarks:
-    dependencies:
+    devDependencies:
       arg:
         specifier: ^5.0.2
         version: 5.0.2
