@@ -210,4 +210,13 @@ export type TypeFlagOptions = {
 	 * Optional function to skip certain argv elements from parsing.
 	 */
 	ignore?: IgnoreFunction;
+
+	/**
+	 * Enable `--no-<flag>` negation for boolean flags.
+	 *
+	 * When enabled, `--no-verbose` is equivalent to `--verbose=false`.
+	 * Only applies to flags defined as `Boolean` in the schema.
+	 * Last-wins semantics apply between `--flag` and `--no-flag`.
+	 */
+	booleanNegation?: boolean;
 };

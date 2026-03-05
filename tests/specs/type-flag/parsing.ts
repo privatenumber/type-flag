@@ -860,6 +860,134 @@ describe('Parsing', () => {
 		expect<string[]>(argv).toStrictEqual([]);
 	});
 
+	describe('booleanNegation', () => {
+		const negation = { booleanNegation: true };
+
+		test('basic negation', () => {
+			const parsed = typeFlag({
+				verbose: Boolean,
+			}, ['--no-verbose'], negation);
+
+			expect<boolean | undefined>(parsed.flags.verbose).toBe(false);
+		});
+
+		test('last-wins: --verbose then --no-verbose', () => {
+			const parsed = typeFlag({
+				verbose: Boolean,
+			}, ['--verbose', '--no-verbose'], negation);
+
+			expect<boolean | undefined>(parsed.flags.verbose).toBe(false);
+		});
+
+		test('last-wins: --no-verbose then --verbose', () => {
+			const parsed = typeFlag({
+				verbose: Boolean,
+			}, ['--no-verbose', '--verbose'], negation);
+
+			expect<boolean | undefined>(parsed.flags.verbose).toBe(true);
+		});
+
+		test('array boolean', () => {
+			const parsed = typeFlag({
+				verbose: [Boolean],
+			}, ['--no-verbose', '--verbose'], negation);
+
+			expect<boolean[]>(parsed.flags.verbose).toStrictEqual([false, true]);
+		});
+
+		test('only affects boolean flags', () => {
+			const parsed = typeFlag({
+				verbose: Boolean,
+				count: Number,
+			}, ['--no-verbose', '--no-count'], negation);
+
+			expect<boolean | undefined>(parsed.flags.verbose).toBe(false);
+			expect<number | undefined>(parsed.flags.count).toBe(undefined);
+			expect<Record<string, (string | boolean)[]>>(parsed.unknownFlags).toStrictEqual({
+				'no-count': [true],
+			});
+		});
+
+		test('kebab-case negation', () => {
+			const parsed = typeFlag({
+				someFlag: Boolean,
+			}, ['--no-some-flag'], negation);
+
+			expect<boolean | undefined>(parsed.flags.someFlag).toBe(false);
+		});
+
+		test('argv mutation', () => {
+			const argv = ['--no-verbose', 'arg'];
+			const parsed = typeFlag({
+				verbose: Boolean,
+			}, argv, negation);
+
+			expect<boolean | undefined>(parsed.flags.verbose).toBe(false);
+			expect<string[]>(argv).toStrictEqual([]);
+		});
+
+		test('explicit value is ignored for negation', () => {
+			const parsed = typeFlag({
+				verbose: Boolean,
+			}, ['--no-verbose=true'], negation);
+
+			expect<boolean | undefined>(parsed.flags.verbose).toBe(false);
+		});
+
+		test('schema with alias and default', () => {
+			const parsed = typeFlag({
+				verbose: {
+					type: Boolean,
+					alias: 'v',
+					default: true,
+				},
+			}, ['--no-verbose'], negation);
+
+			expect<boolean>(parsed.flags.verbose).toBe(false);
+		});
+
+		test('no-prefixed flags do not appear in output', () => {
+			const parsed = typeFlag({
+				verbose: Boolean,
+			}, ['--no-verbose'], negation);
+
+			expect(Object.keys(parsed.flags)).toStrictEqual(['verbose']);
+		});
+
+		test('ignore callback receives no- prefixed name as known-flag', () => {
+			const ignoredFlags: [string, string][] = [];
+			typeFlag(
+				{
+					verbose: Boolean,
+				},
+				['--no-verbose', '--no-unknown'],
+				{
+					booleanNegation: true,
+					ignore: (type, flagName) => {
+						ignoredFlags.push([type, flagName]);
+						return false;
+					},
+				},
+			);
+
+			expect(ignoredFlags).toStrictEqual([
+				['known-flag', 'no-verbose'],
+				['unknown-flag', 'no-unknown'],
+			]);
+		});
+
+		test('disabled by default', () => {
+			const parsed = typeFlag({
+				verbose: Boolean,
+			}, ['--no-verbose']);
+
+			expect<boolean | undefined>(parsed.flags.verbose).toBe(undefined);
+			expect<Record<string, (string | boolean)[]>>(parsed.unknownFlags).toStrictEqual({
+				'no-verbose': [true],
+			});
+		});
+	});
+
 	describe('Default flag value', () => {
 		test('Types and parsing', () => {
 			const argv: string[] = [];
