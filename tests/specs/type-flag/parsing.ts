@@ -976,6 +976,24 @@ describe('Parsing', () => {
 			]);
 		});
 
+		test('explicit noFlagName schema takes precedence over negation', () => {
+			const parsed = typeFlag({
+				asdf: Boolean,
+				noAsdf: String,
+			}, ['--no-asdf', 'hello'], negation);
+
+			expect<string | undefined>(parsed.flags.noAsdf).toBe('hello');
+			expect<boolean | undefined>(parsed.flags.asdf).toBe(undefined);
+		});
+
+		test('noPrefix boolean flag is treated as known flag, not negation', () => {
+			const parsed = typeFlag({
+				noCache: Boolean,
+			}, ['--no-cache'], negation);
+
+			expect<boolean | undefined>(parsed.flags.noCache).toBe(true);
+		});
+
 		test('disabled by default', () => {
 			const parsed = typeFlag({
 				verbose: Boolean,
