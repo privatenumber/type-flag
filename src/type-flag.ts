@@ -45,7 +45,7 @@ const parsed = typeFlag({
 export const typeFlag = <Schemas extends Flags>(
 	schemas: Schemas,
 	argv: string[] = process.argv.slice(2),
-	{ ignore }: TypeFlagOptions = {},
+	{ ignore, booleanNegation }: TypeFlagOptions = {},
 ) => {
 	const removeArgvs: Index[] = [];
 	const flagRegistry = createRegistry(schemas);
@@ -58,9 +58,27 @@ export const typeFlag = <Schemas extends Flags>(
 			const isAlias = flagIndex.length === ALIAS_INDEX_LENGTH;
 			const isValid = isAlias || name.length > 1;
 			const isKnownFlag = isValid && hasOwn(flagRegistry, name);
+
+			let negatedBase: string | undefined;
+			if (
+				!isKnownFlag
+				&& booleanNegation
+				&& !isAlias
+				&& name.length > 3
+				&& name.startsWith('no-')
+			) {
+				const baseName = name.slice(3);
+				if (
+					hasOwn(flagRegistry, baseName)
+					&& flagRegistry[baseName][1] === Boolean
+				) {
+					negatedBase = baseName;
+				}
+			}
+
 			if (
 				ignore?.(
-					isKnownFlag ? KNOWN_FLAG : UNKNOWN_FLAG,
+					isKnownFlag || negatedBase ? KNOWN_FLAG : UNKNOWN_FLAG,
 					name,
 					explicitValue,
 				)
@@ -91,6 +109,12 @@ export const typeFlag = <Schemas extends Flags>(
 						? getFollowingValue
 						: getFollowingValue(flagValue)
 				);
+			}
+
+			if (negatedBase) {
+				flagRegistry[negatedBase][0].push(false);
+				removeArgvs.push(flagIndex);
+				return;
 			}
 
 			if (!hasOwn(unknownFlags, name)) {
