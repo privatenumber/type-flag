@@ -369,23 +369,42 @@ env // => { TOKEN: 123, CI: true }
 ```
 
 ### Inverting a boolean
-To invert a boolean flag, `false` must be passed in with the `=` operator (or any other value delimiters).
 
+Enable `booleanNegation` to support `--no-` prefixed flags for boolean negation:
 
 ```ts
+const argv = process.argv.slice(2)
 const parsed = typeFlag({
-    booleanFlag: Boolean
-})
+    verbose: Boolean
+}, argv, { booleanNegation: true })
 
-// $ node ./cli --boolean-flag=false
-parsed.flags.booleanFlag // => false
+// $ node ./cli --no-verbose
+parsed.flags.verbose // => false
 ```
 
-Without explicitly specfying the flag value via `=`, the `false` will be parsed as a separate argument.
+Last-wins semantics apply naturally:
+```ts
+// $ node ./cli --verbose --no-verbose
+parsed.flags.verbose // => false
+
+// $ node ./cli --no-verbose --verbose
+parsed.flags.verbose // => true
+```
+
+The `--no-` prefix only applies to flags defined as `Boolean` in the schema. For non-boolean or unregistered flags, `--no-<name>` is treated as an unknown flag.
+
+You can also invert a boolean by passing `false` explicitly with the `=` operator (or any other value delimiter):
 
 ```ts
-// $ node ./cli --boolean-flag false
-parsed.flags.booleanFlag // => true
+// $ node ./cli --verbose=false
+parsed.flags.verbose // => false
+```
+
+Without explicitly specifying the flag value via `=`, `false` will be parsed as a separate argument:
+
+```ts
+// $ node ./cli --verbose false
+parsed.flags.verbose // => true
 parsed._ // => ['false']
 ```
 
@@ -456,6 +475,9 @@ type Options = {
         flagOrArgv: string,
         value: string | undefined
     ) => boolean | void
+
+    // Enable --no-<flag> negation for boolean flags
+    booleanNegation?: boolean
 }
 ```
 
