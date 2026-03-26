@@ -12,8 +12,8 @@ importers:
         specifier: ^24.10.15
         version: 24.11.0
       clean-pkg-json:
-        specifier: ^1.3.0
-        version: 1.3.0
+        specifier: ^1.4.1
+        version: 1.4.1
       expect-type:
         specifier: ^1.3.0
         version: 1.3.0
@@ -1115,8 +1115,8 @@ packages:
   cjs-module-lexer@2.1.1:
     resolution: {integrity: sha512-+CmxIZ/L2vNcEfvNtLdU0ZQ6mbq3FZnwAP2PPTiKP+1QOoKwlKlPgb8UKV0Dds7QVaMnHm+FwSft2VB0s/SLjQ==}
 
-  clean-pkg-json@1.3.0:
-    resolution: {integrity: sha512-EsOnQbKkrmCTIHCYODpIZ4FS1kP8UqX9fEji5SAA2OhG4K+Z/xuXON53hJdSBroVIpxddrUtR/dbh+QF5Aq7Vw==}
+  clean-pkg-json@1.4.1:
+    resolution: {integrity: sha512-tKXN+XMFG90t5f5kna9wYPvDeNHmBm/Xx81C5c085cwCOMOrZxaqEyF0G0C3i9nZMFhwX5/2euaDUn1h/f1tuA==}
     hasBin: true
 
   clean-regexp@1.0.0:
@@ -3698,7 +3698,7 @@ snapshots:
 
   cjs-module-lexer@2.1.1: {}
 
-  clean-pkg-json@1.3.0: {}
+  clean-pkg-json@1.4.1: {}
 
   clean-regexp@1.0.0:
     dependencies:
