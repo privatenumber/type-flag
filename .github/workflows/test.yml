@@ -34,7 +34,7 @@ jobs:
       - name: Test
         run: |
           pnpm test
-          NODE_OPTIONS='--import=tsx/esm' pnpm run --use-node-version=18.20.3 test
+          pnpm run --use-node-version=22.22.2 test
 
       - name: Lint
         run: pnpm lint

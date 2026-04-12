@@ -2,7 +2,7 @@
  * This example demonstrates how to create a custom type
  *
  * Usage:
- * $ npx tsx ./examples/count-flags --size medium
+ * $ node --conditions=development ./examples/custom-type.ts --size medium
  */
 
 import { typeFlag } from '#type-flag';

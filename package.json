@@ -44,6 +44,9 @@
 		"prepare": "skills-npm",
 		"prepack": "pnpm build && clean-pkg-json"
 	},
+	"engines": {
+		"node": ">=22.22.2"
+	},
 	"devDependencies": {
 		"@types/node": "^24.10.15",
 		"clean-pkg-json": "^1.3.0",
@@ -52,7 +55,6 @@
 		"manten": "^2.0.0",
 		"pkgroll": "^2.21.5",
 		"skills-npm": "^1.0.0",
-		"tsx": "^4.21.0",
 		"typescript": "^5.9.3"
 	}
 }
