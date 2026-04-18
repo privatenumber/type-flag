@@ -377,6 +377,97 @@ describe('Parsing', () => {
 		expect<string | undefined>(parsed.flags.flagD).toBe('x:y=z');
 	});
 
+	describe('single-character flag names', () => {
+		test('parses string value', () => {
+			const parsed = typeFlag({ x: String }, ['-x', 'hello']);
+			expect<string | undefined>(parsed.flags.x).toBe('hello');
+		});
+
+		test('parses boolean value', () => {
+			const parsed = typeFlag({ v: Boolean }, ['-v']);
+			expect<boolean | undefined>(parsed.flags.v).toBe(true);
+		});
+
+		test('groups with multi-char flag alias', () => {
+			const parsed = typeFlag(
+				{
+					a: Boolean,
+					message: {
+						type: String,
+						alias: 'm',
+					},
+				},
+				['-am', 'hello'],
+			);
+			expect<boolean | undefined>(parsed.flags.a).toBe(true);
+			expect<string | undefined>(parsed.flags.message).toBe('hello');
+		});
+
+		test('-h sets only single-char flag', () => {
+			const parsed = typeFlag({
+				h: Boolean,
+				help: Boolean,
+			}, ['-h']);
+			expect<boolean | undefined>(parsed.flags.h).toBe(true);
+			expect<boolean | undefined>(parsed.flags.help).toBe(undefined);
+		});
+
+		test('--help sets only long flag', () => {
+			const parsed = typeFlag({
+				h: Boolean,
+				help: Boolean,
+			}, ['--help']);
+			expect<boolean | undefined>(parsed.flags.h).toBe(undefined);
+			expect<boolean | undefined>(parsed.flags.help).toBe(true);
+		});
+
+		test('both flags distinguishable', () => {
+			const parsed = typeFlag({
+				h: Boolean,
+				help: Boolean,
+			}, ['-h', '--help']);
+			expect<boolean | undefined>(parsed.flags.h).toBe(true);
+			expect<boolean | undefined>(parsed.flags.help).toBe(true);
+		});
+
+		test('--h does not match single-char flag', () => {
+			const parsed = typeFlag({
+				h: Boolean,
+				help: Boolean,
+			}, ['--h']);
+			expect<boolean | undefined>(parsed.flags.h).toBe(undefined);
+			expect<boolean | undefined>(parsed.flags.help).toBe(undefined);
+			expect(parsed.unknownFlags.h).toStrictEqual([true]);
+		});
+
+		test('uppercase single-char flag', () => {
+			const parsed = typeFlag({ X: String }, ['-X', 'hi']);
+			expect<string | undefined>(parsed.flags.X).toBe('hi');
+		});
+
+		test('inline value with = delimiter', () => {
+			const parsed = typeFlag({ x: String }, ['-x=hello']);
+			expect<string | undefined>(parsed.flags.x).toBe('hello');
+		});
+
+		test('array type collects repeated flags', () => {
+			const parsed = typeFlag({ x: [Number] }, ['-x', '1', '-x', '2']);
+			expect<number[]>(parsed.flags.x).toStrictEqual([1, 2]);
+		});
+
+		test('unknown single-char goes to unknownFlags', () => {
+			const parsed = typeFlag({ x: String }, ['-z', 'foo']);
+			expect<string | undefined>(parsed.flags.x).toBe(undefined);
+			expect(parsed.unknownFlags.z).toStrictEqual([true]);
+			expect(parsed._).toStrictEqual(Object.assign(['foo'], { '--': [] }));
+		});
+
+		test('booleanNegation --no-x matches single-char flag', () => {
+			const parsed = typeFlag({ x: Boolean }, ['--no-x'], { booleanNegation: true });
+			expect<boolean | undefined>(parsed.flags.x).toBe(false);
+		});
+	});
+
 	describe('aliases', () => {
 		test('aliases', () => {
 			const argv = ['-s', 'hello', '-b', 'world', '-1', 'goodbye'];
