@@ -57,7 +57,7 @@ Type options:
 | `--flag value` / `--flag=value` | Long form |
 | `-f value` / `-f=value` | Short form (alias or single-char name) |
 | `-abc` | Group: each char matches an alias or single-char name independently |
-| `--some-flag` | kebab-case → camelCase (`someFlag`) unless schema key is kebab |
+| `--some-flag` | kebab-case → camelCase (`someFlag`) unless schema key is kebab; consecutive capitals treated as one unit (`getID` → `--get-id`, `URLParser` → `--url-parser`) |
 | `--flag:value` / `--flag.value` | `:` and `.` also delimit values (useful for `--define:K=V`, `--env.KEY=V`) |
 | `-xvalue` (concatenated) | ⚠️ Parsed as GROUP, not `x=value`. Use `-x value` or `-x=value`. |
 
@@ -141,7 +141,7 @@ Same argv-mutation behavior as `typeFlag`.
 | Reserved chars in names | `\s`, `.`, `:`, `=` forbidden in flag names (they're delimiters). |
 | kebab schema key | If schema key is `'some-flag'`, only `--some-flag` / `--someFlag` both map to it, but output key stays kebab. |
 | Default functions throw | A throwing `default: () => ...` propagates. |
-| Custom-type errors wrap | Parser errors include the flag name in the thrown message. |
+| Custom-type errors wrap | Errors thrown by custom type parsers are wrapped in a `TypeError` with message `Flag "--<name>": <original>`; original error is on `.cause`. |
 
 ## Related
 

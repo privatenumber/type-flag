@@ -202,6 +202,20 @@ const parsed = typeFlag({
 parsed.flags.someString // => ['hello', 'world']
 ```
 
+Acronyms are treated as a single word, so consecutive capitals stay together in the kebab-case form.
+```ts
+const parsed = typeFlag({
+    getID: String,
+    myURL: String,
+    getHTTPResponse: String
+})
+
+// $ node ./cli --get-id 1 --my-url https://example.com --get-http-response foo
+parsed.flags.getID // => '1'
+parsed.flags.myURL // => 'https://example.com'
+parsed.flags.getHTTPResponse // => 'foo'
+```
+
 ### Unknown flags
 When unrecognized flags are passed in, they are interpreted as a boolean, or a string if explicitly passed in. Unknown flags are not converted to camelCase to allow for accurate error handling.
 
@@ -329,6 +343,19 @@ type Parsed = {
         size: 'small' | 'medium' | 'large' | undefined
     }
     // ...
+}
+```
+
+#### Error wrapping
+When a custom type parser throws, the error is wrapped in a `TypeError` whose message identifies the flag by name. The original error is preserved on `.cause`.
+
+```ts
+// $ node ./cli --size huge
+try {
+    typeFlag({ size: Size })
+} catch {
+    // thrown TypeError message      => 'Flag "--size": Invalid size: "huge"'
+    // .cause.message                => 'Invalid size: "huge"'
 }
 ```
 
