@@ -466,6 +466,71 @@ describe('Parsing', () => {
 			const parsed = typeFlag({ x: Boolean }, ['--no-x'], { booleanNegation: true });
 			expect<boolean | undefined>(parsed.flags.x).toBe(false);
 		});
+
+		test('groups two single-char boolean names', () => {
+			const parsed = typeFlag({
+				a: Boolean,
+				b: Boolean,
+			}, ['-ab']);
+			expect<boolean | undefined>(parsed.flags.a).toBe(true);
+			expect<boolean | undefined>(parsed.flags.b).toBe(true);
+			expect<Record<string, (string | boolean)[]>>(parsed.unknownFlags).toStrictEqual({});
+		});
+
+		test('groups three single-char boolean names', () => {
+			const parsed = typeFlag({
+				a: Boolean,
+				b: Boolean,
+				c: Boolean,
+			}, ['-abc']);
+			expect<boolean | undefined>(parsed.flags.a).toBe(true);
+			expect<boolean | undefined>(parsed.flags.b).toBe(true);
+			expect<boolean | undefined>(parsed.flags.c).toBe(true);
+			expect<Record<string, (string | boolean)[]>>(parsed.unknownFlags).toStrictEqual({});
+		});
+
+		test('last char in group takes next-arg value', () => {
+			const parsed = typeFlag({
+				a: Boolean,
+				x: String,
+			}, ['-ax', 'hello']);
+			expect<boolean | undefined>(parsed.flags.a).toBe(true);
+			expect<string | undefined>(parsed.flags.x).toBe('hello');
+		});
+
+		test('last char in group takes inline = value', () => {
+			const parsed = typeFlag({
+				a: Boolean,
+				x: String,
+			}, ['-ax=hello']);
+			expect<boolean | undefined>(parsed.flags.a).toBe(true);
+			expect<string | undefined>(parsed.flags.x).toBe('hello');
+		});
+
+		test('unknown char in group goes to unknownFlags, known chars still set', () => {
+			const parsed = typeFlag({ a: Boolean }, ['-ab']);
+			expect<boolean | undefined>(parsed.flags.a).toBe(true);
+			expect<Record<string, (string | boolean)[]>>(parsed.unknownFlags).toStrictEqual({
+				b: [true],
+			});
+		});
+
+		test('group mixes single-char name, alias, and value-taking flag', () => {
+			const parsed = typeFlag(
+				{
+					a: Boolean,
+					verbose: {
+						type: Boolean,
+						alias: 'v',
+					},
+					x: String,
+				},
+				['-avx', 'hi'],
+			);
+			expect<boolean | undefined>(parsed.flags.a).toBe(true);
+			expect<boolean | undefined>(parsed.flags.verbose).toBe(true);
+			expect<string | undefined>(parsed.flags.x).toBe('hi');
+		});
 	});
 
 	describe('aliases', () => {
