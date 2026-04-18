@@ -27,7 +27,7 @@ jobs:
           node-version-file: .nvmrc
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+        uses: pnpm/action-setup@078e9d416474b29c0c387560859308974f7e9c53 # v6
         with:
           run_install: true
 
