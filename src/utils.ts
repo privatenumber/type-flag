@@ -10,10 +10,22 @@ import type {
  * - (?<=[a-z])(?=[A-Z])  →  after lowercase, before uppercase
  * - (?<=[A-Z])(?=[A-Z][a-z])  →  after uppercase, before uppercase+lowercase
  */
-const camelCasePattern = /(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])/g;
-const camelToKebab = (string: string) => string
-	.replaceAll(camelCasePattern, '-')
-	.toLowerCase();
+const kebabPattern = /(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])/g;
+
+/**
+ * Normalize a schema-declared flag name (e.g. `orgID`, `apiURL`, `fooBar`)
+ * to the kebab-case form that matches argv tokens (`--org-id`, `--api-url`,
+ * `--foo-bar`). Preserves acronyms as single segments.
+ *
+ * @example
+ * ```ts
+ * flagNameToKebab('orgID')         // => 'org-id'
+ * flagNameToKebab('apiURL')        // => 'api-url'
+ * flagNameToKebab('parseJSONData') // => 'parse-json-data'
+ * flagNameToKebab('fooBar')        // => 'foo-bar'
+ * ```
+ */
+export const flagNameToKebab = (name: string): string => name.replaceAll(kebabPattern, '-').toLowerCase();
 
 const { hasOwnProperty } = Object.prototype;
 export const hasOwn = (
@@ -129,7 +141,7 @@ export const createRegistry = (
 
 		setFlag(registry, flagName, flagData);
 
-		const kebabCasing = camelToKebab(flagName);
+		const kebabCasing = flagNameToKebab(flagName);
 		if (flagName !== kebabCasing) {
 			setFlag(registry, kebabCasing, flagData);
 		}
