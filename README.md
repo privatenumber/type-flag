@@ -141,6 +141,33 @@ typeFlag({
 parsed.flags.myFlag // => 'hello'
 ```
 
+#### Single-character flag names
+A flag name can itself be a single character. It matches `-x` but not `--x`.
+
+```ts
+typeFlag({
+    x: Number,
+    y: Number
+})
+
+// $ node ./cli -x 10 -y 20
+parsed.flags.x // => 10
+parsed.flags.y // => 20
+```
+
+Because `--x` is reserved for long flags, you can declare both a single-character and a long-form flag as independent entries — useful when the two forms should behave differently (e.g. `rg`'s `-h` shows short help, `--help` shows full help):
+
+```ts
+typeFlag({
+    h: Boolean,
+    help: Boolean
+})
+```
+
+A single-character flag cannot have an `alias` (it already IS a short flag).
+
+**Single-character names vs aliases:** Both produce short flags that can appear in groups — `-ab`, `-av`, or any mix — regardless of whether each character came from a name or an alias. The difference is where the value lands: a name creates its own key in `flags`, while an alias feeds into the target flag's key. Use a single-character name when the short form IS the flag (`-x`/`-y` coordinates, `-h` vs `--help`); use an alias when `--verbose` and `-v` should set the same value.
+
 #### Default values
 Flags that are not passed in will default to being `undefined`. To set a different default value, use the object syntax and pass in a value as the `default` property. When a default is provided, the return type will reflect that instead of `undefined`.
 
@@ -507,6 +534,9 @@ Default: `process.argv.slice(2)`
 
 The argv array to parse. The array is mutated to remove the parsed flags.
 
+## Agent Skills
+
+This package ships with a built-in [agent skill](https://agentskills.io) for AI coding assistants. Set up [`skills-npm`](https://github.com/antfu/skills-npm) in your project to use it.
 
 ## Sponsors
 <p align="center">
