@@ -56,6 +56,7 @@ export const typeFlag = <Schemas extends Flags>(
 	argvIterator(argv, {
 		onFlag(name, explicitValue, flagIndex) {
 			const isAlias = flagIndex.length === ALIAS_INDEX_LENGTH;
+			// Long-form requires length > 1; single-char names are exclusive to short-form (-h vs --help)
 			const isValid = isAlias || name.length > 1;
 			const isKnownFlag = isValid && hasOwn(flagRegistry, name);
 
