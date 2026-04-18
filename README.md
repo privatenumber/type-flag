@@ -534,6 +534,9 @@ Default: `process.argv.slice(2)`
 
 The argv array to parse. The array is mutated to remove the parsed flags.
 
+## Agent Skills
+
+This package ships with a built-in [agent skill](https://agentskills.io) for AI coding assistants. Set up [`skills-npm`](https://github.com/antfu/skills-npm) in your project to use it.
 
 ## Sponsors
 <p align="center">
