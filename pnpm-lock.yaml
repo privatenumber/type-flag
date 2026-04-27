@@ -12,14 +12,14 @@ importers:
         specifier: ^24.10.15
         version: 24.11.0
       clean-pkg-json:
-        specifier: ^1.4.1
-        version: 1.4.1
+        specifier: ^1.4.2
+        version: 1.4.2
       expect-type:
         specifier: ^1.3.0
         version: 1.3.0
       lintroll:
-        specifier: ^1.30.1
-        version: 1.30.1(@types/estree@1.0.8)(@typescript-eslint/utils@8.48.1(eslint@9.39.3(jiti@2.6.1))(typescript@5.9.3))(jiti@2.6.1)(jsonc-eslint-parser@2.4.1)(typescript@5.9.3)
+        specifier: ^1.30.2
+        version: 1.30.2(@types/estree@1.0.8)(@typescript-eslint/utils@8.48.1(eslint@9.39.3(jiti@2.6.1))(typescript@5.9.3))(jiti@2.6.1)(jsonc-eslint-parser@2.4.1)(typescript@5.9.3)
       manten:
         specifier: ^2.0.0
         version: 2.0.0
@@ -1130,8 +1130,8 @@ packages:
   cjs-module-lexer@2.2.0:
     resolution: {integrity: sha512-4bHTS2YuzUvtoLjdy+98ykbNB5jS0+07EvFNXerqZQJ89F7DI6ET7OQo/HJuW6K0aVsKA9hj9/RVb2kQVOrPDQ==}
 
-  clean-pkg-json@1.4.1:
-    resolution: {integrity: sha512-tKXN+XMFG90t5f5kna9wYPvDeNHmBm/Xx81C5c085cwCOMOrZxaqEyF0G0C3i9nZMFhwX5/2euaDUn1h/f1tuA==}
+  clean-pkg-json@1.4.2:
+    resolution: {integrity: sha512-o201s9wWOYoZSRui4QyARSFc3n0IcYDu62hkJCQGX1eshSSQ/90QhS/KveWp/QlXSqcF/g/q2+IINj25V1BMKw==}
     hasBin: true
 
   clean-regexp@1.0.0:
@@ -2002,8 +2002,8 @@ packages:
     resolution: {integrity: sha512-+bT2uH4E5LGE7h/n3evcS/sQlJXCpIp6ym8OWJ5eV6+67Dsql/LaaT7qJBAt2rzfoa/5QBGBhxDix1dMt2kQKQ==}
     engines: {node: '>= 0.8.0'}
 
-  lintroll@1.30.1:
-    resolution: {integrity: sha512-Faem2ZC68pr7XkBJPEl9VWdZEaIiGZLkHalm64doBpiueKSLJ0zRVxw+8SpdsmvngeUdpc9glKPruBpzg1WxXQ==}
+  lintroll@1.30.2:
+    resolution: {integrity: sha512-v5ecCdW2qnyjneYh7ymPkQEvMLlMj+mu6SwzOA8KBgHhqnKTKlBxCDH51YU53nW+Gg/gH6VXEkYkE74TcInnRg==}
     hasBin: true
 
   locate-path@6.0.0:
@@ -3722,7 +3722,7 @@ snapshots:
 
   cjs-module-lexer@2.2.0: {}
 
-  clean-pkg-json@1.4.1: {}
+  clean-pkg-json@1.4.2: {}
 
   clean-regexp@1.0.0:
     dependencies:
@@ -4787,7 +4787,7 @@ snapshots:
       prelude-ls: 1.2.1
       type-check: 0.4.0
 
-  lintroll@1.30.1(@types/estree@1.0.8)(@typescript-eslint/utils@8.48.1(eslint@9.39.3(jiti@2.6.1))(typescript@5.9.3))(jiti@2.6.1)(jsonc-eslint-parser@2.4.1)(typescript@5.9.3):
+  lintroll@1.30.2(@types/estree@1.0.8)(@typescript-eslint/utils@8.48.1(eslint@9.39.3(jiti@2.6.1))(typescript@5.9.3))(jiti@2.6.1)(jsonc-eslint-parser@2.4.1)(typescript@5.9.3):
     dependencies:
       '@eslint-community/eslint-plugin-eslint-comments': 4.5.0(eslint@9.39.3(jiti@2.6.1))
       '@eslint/js': 9.39.3
