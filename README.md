@@ -12,6 +12,8 @@ Strongly typed command-line arguments parser.
 No dependencies & tree-shakable (Max 1.4 kB).
 
 → [Try it out online](https://stackblitz.com/edit/type-flag-demo?devtoolsheight=50&file=src/type-flag.ts&view=editor)
+
+How does _type-flag_ differ from Node's [`util.parseArgs()`](https://nodejs.org/api/util.html#utilparseargsconfig)? [See the comparison](#type-flag-vs-utilparseargs).
 </div>
 
 
@@ -533,6 +535,43 @@ Type: `string[]`
 Default: `process.argv.slice(2)`
 
 The argv array to parse. The array is mutated to remove the parsed flags.
+
+## type-flag vs. util.parseArgs()
+
+Node.js ships a good built-in parser in [`util.parseArgs()`](https://nodejs.org/api/util.html#utilparseargsconfig). Use it when you want a zero-dependency, strict parser for `string` and `boolean` options.
+
+Use _type-flag_ when you want the schema itself to produce typed values:
+
+```ts
+import { parseArgs } from 'node:util'
+import { typeFlag } from 'type-flag'
+
+parseArgs({
+    options: {
+        // parseArgs only supports 'string' and 'boolean'
+        age: { type: 'string' }
+    }
+}).values.age // string | undefined
+
+typeFlag({
+    age: Number
+}).flags.age // number | undefined
+```
+
+| Feature | type-flag | util.parseArgs() |
+| --- | --- | --- |
+| Runtime dependency | Tiny package, no dependencies | Built into Node.js |
+| Value types | Any parser function, e.g. `Number`, `Date`, custom validators | `string` and `boolean` |
+| TypeScript output | Infers from parser return types and defaults | Infers `string`/`boolean` option shapes |
+| Multiple values | `[String]`, `[Number]`, `[CustomType]` | `multiple: true` for strings/booleans |
+| Unknown flags | Returned separately in `unknownFlags` | Throws by default, or mixes into `values` with `strict: false` |
+| Forwarding args | Mutates `argv`; `ignore` can leave selected tokens behind | Does not mutate `args`; use `tokens: true` to inspect |
+| Flag spelling | camelCase schema also accepts kebab-case input | Option names are literal |
+| Value delimiters | Supports `=`, `:`, and `.` | Supports `=` for inline long option values |
+| Short value form | Use `-o value` or `-o=value` | Also supports POSIX-style `-ovalue` |
+| Token stream | No token stream | `tokens: true` exposes detailed parse tokens |
+
+In short: `util.parseArgs()` is best when Node's built-in strict string/boolean parser is enough. _type-flag_ is best when your CLI wants to parse directly into the types your program actually uses.
 
 ## Agent Skills
 
