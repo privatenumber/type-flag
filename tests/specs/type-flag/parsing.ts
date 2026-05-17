@@ -223,6 +223,19 @@ describe('Parsing', () => {
 				),
 			);
 		});
+
+		test('matches typeFlag positional output', () => {
+			const argvCases = [
+				[],
+				['one', 'two'],
+				['one', '--', 'two'],
+				['one', '--', 'two', '--', 'three'],
+			];
+
+			for (const argv of argvCases) {
+				expect(createPositionalArguments(argv)).toStrictEqual(typeFlag({}, [...argv])._);
+			}
+		});
 	});
 
 	test('strings, booleans, numbers', () => {

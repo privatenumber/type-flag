@@ -14,9 +14,8 @@ import {
 	applyParser,
 	finalizeFlags,
 } from './utils.ts';
-import { createPositionalArguments } from './positional-arguments.ts';
+import { createPositionalArgumentsFromParts } from './positional-arguments.ts';
 import {
-	DOUBLE_DASH,
 	ALIAS_INDEX_LENGTH,
 	argvIterator,
 	spliceFromArgv,
@@ -51,7 +50,8 @@ export const typeFlag = <Schemas extends Flags>(
 	const removeArgvs: Index[] = [];
 	const flagRegistry = createRegistry(schemas);
 	const unknownFlags: TypeFlag['unknownFlags'] = {};
-	const positionalArgv: string[] = [];
+	const positionals: string[] = [];
+	let doubleDashArguments: string[] = [];
 
 	argvIterator(argv, {
 		onFlag(name, explicitValue, flagIndex) {
@@ -133,11 +133,12 @@ export const typeFlag = <Schemas extends Flags>(
 				return;
 			}
 
+			positionals.push(...args);
+
 			if (isEoF) {
-				positionalArgv.push(DOUBLE_DASH, ...args);
+				doubleDashArguments = args;
 				argv.splice(index[0]);
 			} else {
-				positionalArgv.push(...args);
 				removeArgvs.push(index);
 			}
 		},
@@ -148,6 +149,6 @@ export const typeFlag = <Schemas extends Flags>(
 	return {
 		flags: finalizeFlags(schemas, flagRegistry),
 		unknownFlags,
-		_: createPositionalArguments(positionalArgv),
+		_: createPositionalArgumentsFromParts(positionals, doubleDashArguments),
 	} as Simplify<TypeFlag<Schemas>>;
 };
