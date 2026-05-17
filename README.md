@@ -319,16 +319,7 @@ parsed._['--'] // ['--my-flag', 'world']
 
 For `['one', '--', 'two']`, `parsed._.slice()` is `['one', 'two']` and `parsed._['--']` is `['two']`.
 
-If you preserve argv yourself and need to rebuild this shape, use `createPositionalArguments()`. It returns a new array and does not mutate the input.
-
-```ts
-import { createPositionalArguments } from 'type-flag'
-
-const positionals = createPositionalArguments(['one', '--', 'two'])
-
-positionals.slice() // ['one', 'two']
-positionals['--'] // ['two']
-```
+Parser and framework integrations that need to rebuild this shape can use `createPositionalArguments()`; see the API reference below.
 
 ### Value Delimiters
 
@@ -565,7 +556,7 @@ The argv array to parse. If you pass your own array, it is mutated to remove the
 
 ### createPositionalArguments(argv)
 
-Builds the same positional argument shape returned as `parsed._`.
+Builds the same positional argument shape returned as `parsed._`. This is mainly useful for parser or framework integrations that already preserved an argv tail and need to expose type-flag-compatible positionals.
 
 Type:
 

@@ -1,9 +1,10 @@
+import { DOUBLE_DASH } from './argv-iterator.ts';
 import type { PositionalArguments } from './types.ts';
 
 export const createPositionalArguments = (
 	argv: readonly string[],
 ): PositionalArguments => {
-	const delimiterIndex = argv.indexOf('--');
+	const delimiterIndex = argv.indexOf(DOUBLE_DASH);
 
 	if (delimiterIndex === -1) {
 		return Object.assign(
