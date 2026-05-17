@@ -236,6 +236,39 @@ describe('Parsing', () => {
 				expect(createPositionalArguments(argv)).toStrictEqual(typeFlag({}, [...argv])._);
 			}
 		});
+
+		test('rebuilds positionals from an ignored command tail', () => {
+			const argv = ['--verbose', 'typo', '--', 'after'];
+			let preserveTail = false;
+
+			const parsed = typeFlag(
+				{
+					verbose: Boolean,
+				},
+				argv,
+				{
+					ignore: (type) => {
+						if (preserveTail) {
+							return true;
+						}
+
+						if (type === 'argument') {
+							preserveTail = true;
+							return true;
+						}
+					},
+				},
+			);
+
+			expect<boolean | undefined>(parsed.flags.verbose).toBe(true);
+			expect(argv).toStrictEqual(['typo', '--', 'after']);
+			expect(createPositionalArguments(argv)).toStrictEqual(
+				Object.assign(
+					['typo', 'after'],
+					{ '--': ['after'] },
+				),
+			);
+		});
 	});
 
 	test('strings, booleans, numbers', () => {
