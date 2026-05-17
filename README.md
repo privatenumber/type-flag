@@ -250,6 +250,8 @@ parsed.unknownFlags // { 'some-flag': [true, '1234'] }
 
 Wrapper CLIs often need to consume their own flags and pass everything else to another command. If you pass your own argv array, _type-flag_ removes parsed tokens and leaves ignored tokens behind.
 
+Ignored tokens are left in `argv` exactly as passed, so an `ignore` callback can stop parsing at a command name and preserve the full command tail for another parser.
+
 ```ts
 const argv = process.argv.slice(2)
 
@@ -302,7 +304,7 @@ argv // ['./file.js', '--verbose']
 
 Arguments are values that are not associated with a flag. They are stored in `_`.
 
-Everything after `--` is treated as an argument and is also stored in `_['--']`.
+Everything after the first `--` is treated as an argument and is also stored in `_['--']`. The `--` sentinel itself is omitted; later `--` tokens are ordinary arguments inside `_['--']`.
 
 ```ts
 const parsed = typeFlag({
@@ -314,6 +316,8 @@ parsed.flags.myFlag // ['value']
 parsed._ // ['arg1', '--my-flag', 'world']
 parsed._['--'] // ['--my-flag', 'world']
 ```
+
+For `['one', '--', 'two']`, `parsed._.slice()` is `['one', 'two']` and `parsed._['--']` is `['two']`.
 
 ### Value Delimiters
 
