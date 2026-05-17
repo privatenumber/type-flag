@@ -2,6 +2,7 @@ import { describe, test } from 'manten';
 import { expectTypeOf } from 'expect-type';
 import {
 	typeFlag,
+	createPositionalArguments,
 	type Flags,
 	type TypeFlag,
 	type TypeFlagOptions,
@@ -414,5 +415,13 @@ describe('Types', () => {
 		expectTypeOf(argv.flags.booleanFlag).toEqualTypeOf<boolean | undefined>();
 		expectTypeOf(argv.flags.booleanFlagDefault).toBeBoolean();
 		expectTypeOf(argv.flags.booleanArray).toEqualTypeOf<boolean[]>();
+	});
+
+	test('createPositionalArguments', () => {
+		const readonlyArgv = ['one', '--', 'two'] as const;
+		const parsed = createPositionalArguments(readonlyArgv);
+
+		expectTypeOf(parsed).toEqualTypeOf<PositionalArguments>();
+		expectTypeOf(parsed['--']).toEqualTypeOf<string[]>();
 	});
 });
