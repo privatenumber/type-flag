@@ -319,6 +319,17 @@ parsed._['--'] // ['--my-flag', 'world']
 
 For `['one', '--', 'two']`, `parsed._.slice()` is `['one', 'two']` and `parsed._['--']` is `['two']`.
 
+If you preserve argv yourself and need to rebuild this shape, use `createPositionalArguments()`. It returns a new array and does not mutate the input.
+
+```ts
+import { createPositionalArguments } from 'type-flag'
+
+const positionals = createPositionalArguments(['one', '--', 'two'])
+
+positionals.slice() // ['one', 'two']
+positionals['--'] // ['two']
+```
+
 ### Value Delimiters
 
 The characters `=`, `:`, and `.` delimit a value from a flag.
@@ -551,6 +562,24 @@ Type: `string[]`
 Default: `process.argv.slice(2)`
 
 The argv array to parse. If you pass your own array, it is mutated to remove the parsed flag and its value.
+
+### createPositionalArguments(argv)
+
+Builds the same positional argument shape returned as `parsed._`.
+
+Type:
+
+```ts
+const createPositionalArguments: (argv: readonly string[]) => PositionalArguments
+
+type PositionalArguments = string[] & {
+    '--': string[]
+}
+```
+
+The first `--` token is the delimiter. It is omitted from the returned array, and everything after it is also exposed on `positionals['--']`.
+
+`createPositionalArguments()` does not mutate the input array.
 
 ## Comparison With Other Parsers
 

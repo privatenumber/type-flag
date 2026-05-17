@@ -1,5 +1,8 @@
 import { describe, test, expect } from 'manten';
-import { typeFlag } from '#type-flag';
+import {
+	typeFlag,
+	createPositionalArguments,
+} from '#type-flag';
 
 describe('Parsing', () => {
 	describe('edge-cases', () => {
@@ -167,6 +170,59 @@ describe('Parsing', () => {
 			),
 		);
 		expect<string[]>(argv).toStrictEqual([]);
+	});
+
+	describe('createPositionalArguments', () => {
+		test('returns arguments without a double-dash delimiter', () => {
+			const argv = ['one', 'two'];
+			const parsed = createPositionalArguments(argv);
+
+			expect(parsed).toStrictEqual(
+				Object.assign(
+					['one', 'two'],
+					{ '--': [] },
+				),
+			);
+			expect(Object.prototype.propertyIsEnumerable.call(parsed, '--')).toBe(true);
+			expect(argv).toStrictEqual(['one', 'two']);
+		});
+
+		test('moves post-delimiter arguments into the double-dash property', () => {
+			const argv = ['one', '--', 'two'];
+			const parsed = createPositionalArguments(argv);
+
+			expect(parsed).toStrictEqual(
+				Object.assign(
+					['one', 'two'],
+					{ '--': ['two'] },
+				),
+			);
+			expect(parsed.slice()).toStrictEqual(['one', 'two']);
+			expect(parsed['--']).toStrictEqual(['two']);
+			expect(argv).toStrictEqual(['one', '--', 'two']);
+		});
+
+		test('treats only the first double-dash as the delimiter', () => {
+			const parsed = createPositionalArguments(['one', '--', 'two', '--', 'three']);
+
+			expect(parsed).toStrictEqual(
+				Object.assign(
+					['one', 'two', '--', 'three'],
+					{ '--': ['two', '--', 'three'] },
+				),
+			);
+		});
+
+		test('supports empty argv', () => {
+			const parsed = createPositionalArguments([]);
+
+			expect(parsed).toStrictEqual(
+				Object.assign(
+					[],
+					{ '--': [] },
+				),
+			);
+		});
 	});
 
 	test('strings, booleans, numbers', () => {
