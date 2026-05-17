@@ -6,6 +6,7 @@ import {
 	type TypeFlag,
 	type TypeFlagOptions,
 	type IgnoreFunction,
+	type PositionalArguments,
 } from '#type-flag';
 
 // Test Helpers
@@ -127,8 +128,10 @@ describe('Types', () => {
 				unknownFlags: {
 					[flag: string]: (string | boolean)[];
 				};
-				_: string[] & { '--': string[] };
+				_: PositionalArguments;
 			}>();
+
+			expectTypeOf(parsed._).toEqualTypeOf<PositionalArguments>();
 		});
 
 		test('Schema with as const assertion', () => {
@@ -265,7 +268,7 @@ describe('Types', () => {
 				unknownFlags: {
 					[flagName: string]: (string | boolean)[];
 				};
-				_: string[] & { '--': string[] };
+				_: PositionalArguments;
 			}>();
 		});
 
@@ -277,7 +280,7 @@ describe('Types', () => {
 				unknownFlags: {
 					[flagName: string]: (string | boolean)[];
 				};
-				_: string[] & { '--': string[] };
+				_: PositionalArguments;
 			}>();
 		});
 

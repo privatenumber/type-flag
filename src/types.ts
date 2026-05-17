@@ -1,5 +1,3 @@
-import type { DOUBLE_DASH } from './argv-iterator.ts';
-
 // Expand the type of a given object to include all its properties.
 export type Simplify<T> = { [Key in keyof T]: T[Key] } & {};
 
@@ -98,6 +96,15 @@ export type Flags<ExtraOptions = Record<string, unknown>> = {
 	[flagName: string]: FlagTypeOrSchema<ExtraOptions>;
 };
 
+/**
+ * Positional arguments with post-`--` values exposed separately.
+ */
+export type PositionalArguments = string[] & {
+
+	/** Arguments that appeared after the `--` separator. */
+	'--': string[];
+};
+
 // Infers the type from the default value of a flag schema.
 // Note: Preserves literal types from default functions (e.g., () => 'hello' infers 'hello').
 // Users can widen types explicitly with type assertions (e.g., 'hello' as string).
@@ -145,11 +152,7 @@ export type TypeFlag<Schemas extends Flags = Flags> = {
 	 * Positional arguments (non-flag values).
 	 * Includes a special `"--"` key for arguments after the double dash.
 	 */
-	_: string[] & {
-
-		/** Arguments that appeared after the `--` separator. */
-		[DOUBLE_DASH]: string[];
-	};
+	_: PositionalArguments;
 };
 
 /** Constant indicating a known flag token type. */

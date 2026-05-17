@@ -5,4 +5,5 @@ export type {
 	TypeFlagOptions,
 	Flags,
 	IgnoreFunction,
+	PositionalArguments,
 } from './types.ts';
