@@ -2,10 +2,12 @@ import { describe, test } from 'manten';
 import { expectTypeOf } from 'expect-type';
 import {
 	typeFlag,
+	createPositionalArguments,
 	type Flags,
 	type TypeFlag,
 	type TypeFlagOptions,
 	type IgnoreFunction,
+	type PositionalArguments,
 } from '#type-flag';
 
 // Test Helpers
@@ -127,8 +129,10 @@ describe('Types', () => {
 				unknownFlags: {
 					[flag: string]: (string | boolean)[];
 				};
-				_: string[] & { '--': string[] };
+				_: PositionalArguments;
 			}>();
+
+			expectTypeOf(parsed._).toEqualTypeOf<PositionalArguments>();
 		});
 
 		test('Schema with as const assertion', () => {
@@ -265,7 +269,7 @@ describe('Types', () => {
 				unknownFlags: {
 					[flagName: string]: (string | boolean)[];
 				};
-				_: string[] & { '--': string[] };
+				_: PositionalArguments;
 			}>();
 		});
 
@@ -277,7 +281,7 @@ describe('Types', () => {
 				unknownFlags: {
 					[flagName: string]: (string | boolean)[];
 				};
-				_: string[] & { '--': string[] };
+				_: PositionalArguments;
 			}>();
 		});
 
@@ -411,5 +415,13 @@ describe('Types', () => {
 		expectTypeOf(argv.flags.booleanFlag).toEqualTypeOf<boolean | undefined>();
 		expectTypeOf(argv.flags.booleanFlagDefault).toBeBoolean();
 		expectTypeOf(argv.flags.booleanArray).toEqualTypeOf<boolean[]>();
+	});
+
+	test('createPositionalArguments', () => {
+		const readonlyArgv = ['one', '--', 'two'] as const;
+		const parsed = createPositionalArguments(readonlyArgv);
+
+		expectTypeOf(parsed).toEqualTypeOf<PositionalArguments>();
+		expectTypeOf(parsed['--']).toEqualTypeOf<string[]>();
 	});
 });
