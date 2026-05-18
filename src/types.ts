@@ -105,6 +105,47 @@ export type PositionalArguments = string[] & {
 	'--': string[];
 };
 
+/**
+ * Options for inspecting the accepted flag surface for a schema.
+ */
+export type InspectFlagsOptions = {
+
+	/**
+	 * Include `--no-<flag>` tokens for boolean flags when they would be parsed as negation.
+	 */
+	booleanNegation?: boolean;
+};
+
+/**
+ * Public metadata describing one schema flag's accepted argv surface.
+ */
+export type InspectedFlag = {
+
+	/** The original schema key and parsed output key. */
+	name: string;
+
+	/** The kebab-case long-form name derived from the schema key. */
+	kebabName: string;
+
+	/** Long-form names accepted after `--`, without the `--` prefix. */
+	longNames: string[];
+
+	/** Single-character short alias accepted after `-`, if one is configured. */
+	alias?: string;
+
+	/** Accepted argv tokens, including prefixes and boolean negation tokens when enabled. */
+	tokens: string[];
+
+	/** Accepted boolean-negation argv tokens, including the `--` prefix. */
+	negatedTokens: string[];
+
+	/** Whether this flag collects multiple values. */
+	isArray: boolean;
+
+	/** Whether this flag uses `Boolean` as its parser. */
+	isBoolean: boolean;
+};
+
 // Infers the type from the default value of a flag schema.
 // Note: Preserves literal types from default functions (e.g., () => 'hello' infers 'hello').
 // Users can widen types explicitly with type assertions (e.g., 'hello' as string).

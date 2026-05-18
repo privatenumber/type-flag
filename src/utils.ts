@@ -98,6 +98,46 @@ const validateFlagName = (
 	}
 };
 
+export const getFlagLongNames = (
+	flagName: string,
+) => {
+	validateFlagName(flagName);
+
+	const kebabName = flagNameToKebab(flagName);
+
+	return (
+		flagName === kebabName
+			? [flagName]
+			: [flagName, kebabName]
+	);
+};
+
+export const getFlagAlias = (
+	flagName: string,
+	schema: FlagTypeOrSchema,
+) => {
+	if (!('alias' in schema) || typeof schema.alias !== 'string') {
+		return;
+	}
+
+	const { alias } = schema;
+	const errorPrefix = `Flag alias "${alias}" for flag "${flagName}"`;
+
+	if (flagName.length === 1) {
+		throw new Error(`${errorPrefix} cannot be defined for a single-character flag`);
+	}
+
+	if (alias.length === 0) {
+		throw new Error(`${errorPrefix} cannot be empty`);
+	}
+
+	if (alias.length > 1) {
+		throw new Error(`${errorPrefix} must be a single character`);
+	}
+
+	return alias;
+};
+
 type FlagParsingData = [
 	values: unknown[],
 	parser: TypeFunction,
@@ -109,10 +149,10 @@ type FlagRegistry = {
 	[flagName: string]: FlagParsingData;
 };
 
-const setFlag = (
-	registry: FlagRegistry,
+export const setFlag = <FlagData>(
+	registry: Record<string, FlagData>,
 	flagName: string,
-	data: FlagParsingData,
+	data: FlagData,
 ) => {
 	if (hasOwn(registry, flagName)) {
 		throw new Error(`Duplicate flags named "${flagName}"`);
@@ -130,7 +170,6 @@ export const createRegistry = (
 		if (!hasOwn(schemas, flagName)) {
 			continue;
 		}
-		validateFlagName(flagName);
 
 		const schema = schemas[flagName];
 		const flagData: FlagParsingData = [
@@ -139,29 +178,12 @@ export const createRegistry = (
 			schema,
 		];
 
-		setFlag(registry, flagName, flagData);
-
-		const kebabCasing = flagNameToKebab(flagName);
-		if (flagName !== kebabCasing) {
-			setFlag(registry, kebabCasing, flagData);
+		for (const longName of getFlagLongNames(flagName)) {
+			setFlag(registry, longName, flagData);
 		}
 
-		if ('alias' in schema && typeof schema.alias === 'string') {
-			const { alias } = schema;
-			const errorPrefix = `Flag alias "${alias}" for flag "${flagName}"`;
-
-			if (flagName.length === 1) {
-				throw new Error(`${errorPrefix} cannot be defined for a single-character flag`);
-			}
-
-			if (alias.length === 0) {
-				throw new Error(`${errorPrefix} cannot be empty`);
-			}
-
-			if (alias.length > 1) {
-				throw new Error(`${errorPrefix} must be a single character`);
-			}
-
+		const alias = getFlagAlias(flagName, schema);
+		if (alias) {
 			setFlag(registry, alias, flagData);
 		}
 	}
