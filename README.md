@@ -644,6 +644,47 @@ The first `--` token is the delimiter. It is omitted from the returned array, an
 
 `createPositionalArguments()` does not mutate the input array.
 
+### inspectFlags(flagSchema, options)
+
+Inspects the flag names that `typeFlag()` accepts for a schema. This is mainly useful for parser or framework integrations that need to avoid duplicating type-flag's flag recognition rules for conflict checks, suggestions, or help metadata.
+
+Type:
+
+```ts
+const inspectFlags: (
+    flagSchema: Flags,
+    options?: { booleanNegation?: boolean }
+) => InspectedFlag[]
+
+type InspectedFlag = {
+    name: string
+    kebabName: string
+    longNames: string[]
+    alias?: string
+    tokens: string[]
+    negatedTokens: string[]
+    isArray: boolean
+    isBoolean: boolean
+}
+```
+
+Example:
+
+```ts
+const inspected = inspectFlags({
+    getID: String,
+    verbose: {
+        type: Boolean,
+        alias: 'v'
+    }
+}, { booleanNegation: true })
+
+inspected[0].tokens // ['--getID', '--get-id']
+inspected[1].tokens // ['--verbose', '-v', '--no-verbose', '--no-v']
+```
+
+`inspectFlags()` validates the schema with the same flag-name and alias rules used by `typeFlag()`.
+
 ## Comparison With Other Parsers
 
 Choose _type-flag_ when you want a tiny parser whose schema returns the values your app actually uses.

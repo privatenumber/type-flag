@@ -3,11 +3,14 @@ import { expectTypeOf } from 'expect-type';
 import {
 	typeFlag,
 	createPositionalArguments,
+	inspectFlags,
 	type Flags,
 	type TypeFlag,
 	type TypeFlagOptions,
 	type IgnoreFunction,
 	type PositionalArguments,
+	type InspectFlagsOptions,
+	type InspectedFlag,
 } from '#type-flag';
 
 // Test Helpers
@@ -423,5 +426,22 @@ describe('Types', () => {
 
 		expectTypeOf(parsed).toEqualTypeOf<PositionalArguments>();
 		expectTypeOf(parsed['--']).toEqualTypeOf<string[]>();
+	});
+
+	test('inspectFlags', () => {
+		const options: InspectFlagsOptions = {
+			booleanNegation: true,
+		};
+		const inspected = inspectFlags({
+			verbose: {
+				type: Boolean,
+				alias: 'v',
+			},
+		}, options);
+
+		expectTypeOf(options).toEqualTypeOf<InspectFlagsOptions>();
+		expectTypeOf(inspected).toEqualTypeOf<InspectedFlag[]>();
+		expectTypeOf(inspected[0].name).toEqualTypeOf<string>();
+		expectTypeOf(inspected[0].tokens).toEqualTypeOf<string[]>();
 	});
 });
