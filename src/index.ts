@@ -1,7 +1,7 @@
 export { typeFlag } from './type-flag.ts';
 export { getFlag } from './get-flag.ts';
 export { createPositionalArguments } from './positional-arguments.ts';
-export { isStandardSchema } from './standard-schema.ts';
+export { isStandardSchema, type StandardSchemaV1 } from './standard-schema.ts';
 export type {
 	TypeFlag,
 	TypeFlagOptions,
@@ -9,4 +9,3 @@ export type {
 	IgnoreFunction,
 	PositionalArguments,
 } from './types.ts';
-export type { StandardSchemaV1 } from './standard-schema.ts';
