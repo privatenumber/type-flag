@@ -197,6 +197,7 @@ Schemas work everywhere a flag type is accepted, including arrays (`[z.string()]
 A few things to keep in mind:
 
 - **Numbers need coercion.** CLI values are always strings, so `z.number()` rejects `"3000"`. Use `z.coerce.number()` (or your library's equivalent), then chain validators like `.int()`, `.min()`, and `.max()`.
+- **For multiple values, wrap the schema in `[ ]`.** `[z.string()]` collects repeated flags into an array, validating each value. A schema that itself outputs an array (e.g. `z.array(...)`) does not do this: it validates a single CLI token against the array, so it type-checks as an array but throws at runtime. To split one value into an array, use a transform such as `z.string().transform(value => value.split(','))`.
 - **Keep booleans native.** Use `Boolean` rather than a schema for boolean flags, so valueless `--flag`, `--no-flag` negation, and short-flag grouping keep working.
 - **Use type-flag's `default`.** type-flag only runs the parser when a flag is present, so a schema-level `.default()` never fires for an absent flag. Set [`default`](#default-values) on the flag instead.
 - **Schemas must be synchronous.** Flag parsing is synchronous, so an async schema throws.
