@@ -3,7 +3,12 @@ import { expectTypeOf } from 'expect-type';
 import * as z from 'zod';
 import * as v from 'valibot';
 import { type } from 'arktype';
-import { typeFlag, getFlag } from '#type-flag';
+import {
+	typeFlag,
+	getFlag,
+	isStandardSchema,
+	type StandardSchemaV1,
+} from '#type-flag';
 
 describe('standard-schema', () => {
 	describe('Zod', () => {
@@ -295,6 +300,34 @@ describe('standard-schema', () => {
 				// @ts-expect-error only one element is allowed in the array form
 				tags: [z.string(), z.string()],
 			}, []);
+		});
+	});
+
+	describe('isStandardSchema', () => {
+		test('detects schemas (Zod, Valibot, ArkType)', () => {
+			expect(isStandardSchema(z.string())).toBe(true);
+			expect(isStandardSchema(v.string())).toBe(true);
+			// ArkType schemas are callable, exercising the function branch
+			expect(isStandardSchema(type('string'))).toBe(true);
+		});
+
+		test('rejects parser functions, plain objects, and primitives', () => {
+			expect(isStandardSchema((value: string) => value)).toBe(false);
+			expect(isStandardSchema(String)).toBe(false);
+			expect(isStandardSchema({ type: String })).toBe(false);
+			expect(isStandardSchema(null)).toBe(false);
+			expect(isStandardSchema(undefined)).toBe(false);
+			expect(isStandardSchema('string')).toBe(false);
+		});
+
+		test('StandardSchemaV1 type and InferOutput are exported and usable', () => {
+			const sizeSchema = z.enum(['small', 'large']);
+			expectTypeOf<StandardSchemaV1.InferOutput<typeof sizeSchema>>().toEqualTypeOf<'small' | 'large'>();
+
+			const value: unknown = sizeSchema;
+			if (isStandardSchema(value)) {
+				expectTypeOf(value).toEqualTypeOf<StandardSchemaV1>();
+			}
 		});
 	});
 });

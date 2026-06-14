@@ -4,7 +4,7 @@ import type {
 	Flags,
 	FlagSchema,
 } from './types.ts';
-import type { StandardSchemaV1 } from './standard-schema.ts';
+import { isStandardSchema, schemaToParser } from './standard-schema.ts';
 
 const camelCasePattern = /\B([A-Z])/g;
 const camelToKebab = (string: string) => string.replaceAll(camelCasePattern, '-$1').toLowerCase();
@@ -14,39 +14,6 @@ export const hasOwn = (
 	object: unknown,
 	property: PropertyKey,
 ) => hasOwnProperty.call(object, property);
-
-const isStandardSchema = (
-	value: unknown,
-): value is StandardSchemaV1 => (
-	// Some schemas (e.g. ArkType) are callable, so check functions too
-	(typeof value === 'object' || typeof value === 'function')
-	&& value !== null
-	&& '~standard' in value
-);
-
-/**
- * Adapt a Standard Schema (Zod, Valibot, ArkType, ...) into a parser function.
- *
- * Flag parsing is synchronous, so schemas that validate asynchronously throw.
- * On validation failure, throws the first issue's message.
- */
-const schemaToParser = (
-	schema: StandardSchemaV1,
-): TypeFunction => (
-	(value: string) => {
-		const result = schema['~standard'].validate(value);
-
-		if (result instanceof Promise) {
-			throw new TypeError('Async schemas are not supported');
-		}
-
-		if (result.issues) {
-			throw new Error(result.issues[0]?.message ?? 'Validation failed');
-		}
-
-		return result.value;
-	}
-);
 
 export const parseFlagType = (
 	flagSchema: FlagTypeOrSchema,
