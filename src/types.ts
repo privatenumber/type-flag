@@ -14,17 +14,21 @@ export type Simplify<T> = { [Key in keyof T]: T[Key] } & {};
 export type TypeFunction<ReturnType = unknown> = (...args: any[]) => ReturnType;
 
 /**
+ * The value used to type a flag: a parser function or a Standard Schema.
+ */
+type FlagTypeValue = TypeFunction | StandardSchemaV1;
+
+/**
  * A shorthand for defining a flag's type.
  *
- * - Use a single `TypeFunction` to accept one value.
- * - Use a readonly tuple `[TypeFunction]` to accept multiple values (as an array).
+ * - Use a single `TypeFunction` or Standard Schema to accept one value.
+ * - Use a readonly tuple (e.g. `[TypeFunction]`) to accept multiple values (as an array).
  *
  * @see FlagSchema
  */
 export type FlagType = (
-	TypeFunction
-	| StandardSchemaV1
-	| readonly [TypeFunction | StandardSchemaV1]
+	FlagTypeValue
+	| readonly [FlagTypeValue]
 );
 
 /**
@@ -119,32 +123,67 @@ type InferDefaultType<
 	: Fallback;
 
 /**
+ * Resolves the output type of a single flag-type element: a parser function's
+ * return type, or a Standard Schema's output type.
+ */
+type InferType<Element> = (
+	Element extends StandardSchemaV1
+		? StandardSchemaV1.InferOutput<Element>
+		: Element extends TypeFunction<infer Return>
+			? Return
+			: never
+);
+
+/**
  * Infers the final JavaScript type of a flag from its schema.
+ *
+ * Matched by structural shape (array vs scalar, bare vs `{ type }`), with
+ * `InferType` resolving each element whether it is a function or a schema.
+ *
+ * Bare and `{ type }` forms are kept as separate conditionals on purpose:
+ * sharing one `infer Element` across a union widens the inference.
  */
 export type InferFlagType<
 	Flag extends FlagTypeOrSchema,
 > = (
-	Flag extends (
-		readonly [TypeFunction<infer T>]
-		| { type: readonly [TypeFunction<infer T>] } & AnyObject
-	)
-		? (T[] | InferDefaultType<Flag, never>)
-		// Standard Schema array forms. Bare and `{ type }` are kept as separate
-		// conditionals because sharing one `infer Schema` across a union widens it.
-		: Flag extends readonly [infer Schema extends StandardSchemaV1]
-			? (StandardSchemaV1.InferOutput<Schema>[] | InferDefaultType<Flag, never>)
-			: Flag extends { type: readonly [infer Schema extends StandardSchemaV1] } & AnyObject
-				? (StandardSchemaV1.InferOutput<Schema>[] | InferDefaultType<Flag, never>)
-				: Flag extends TypeFunction<infer T> | ({ type: TypeFunction<infer T> } & AnyObject)
-					// Tuple trick: [T] extends [never] prevents distributive conditional types,
-					// preserving never instead of widening to undefined
-					? ([T] extends [never] ? T : (T | InferDefaultType<Flag, undefined>))
-					// Standard Schema scalar forms, split for the same reason as above.
-					: Flag extends (infer Schema extends StandardSchemaV1)
-						? (StandardSchemaV1.InferOutput<Schema> | InferDefaultType<Flag, undefined>)
-						: Flag extends { type: infer Schema extends StandardSchemaV1 } & AnyObject
-							? (StandardSchemaV1.InferOutput<Schema> | InferDefaultType<Flag, undefined>)
-							: never
+	// Array forms collect the element's output into an array.
+	Flag extends readonly [infer Element extends FlagTypeValue]
+		? InferArrayType<Flag, Element>
+		: Flag extends { type: readonly [infer Element extends FlagTypeValue] } & AnyObject
+			? InferArrayType<Flag, Element>
+			// Scalar forms.
+			: Flag extends infer Element extends FlagTypeValue
+				? InferScalarType<Flag, Element>
+				: Flag extends { type: infer Element extends FlagTypeValue } & AnyObject
+					? InferScalarType<Flag, Element>
+					: never
+);
+
+// `InferType<Element> extends infer Output` forces the output type to resolve
+// before it is unioned with the default, so e.g. `string[] | string[]` collapses
+// to `string[]` instead of lingering as an un-reduced union.
+type InferArrayType<
+	Flag extends FlagTypeOrSchema,
+	Element,
+> = (
+	InferType<Element> extends infer Output
+		? (Output[] | InferDefaultType<Flag, never>)
+		: never
+);
+
+// The `[Output] extends [never]` tuple trick prevents distributive conditional
+// types, preserving `never` instead of widening it to `undefined`.
+type InferScalarType<
+	Flag extends FlagTypeOrSchema,
+	Element,
+> = (
+	InferType<Element> extends infer Output
+		? (
+			[Output] extends [never]
+				? Output
+				: (Output | InferDefaultType<Flag, undefined>)
+		)
+		: never
 );
 
 /**
