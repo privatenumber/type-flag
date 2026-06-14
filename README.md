@@ -163,6 +163,44 @@ const parsed = typeFlag({
 parsed.flags.env // Array<Record<string, string | boolean>>
 ```
 
+### Standard Schema (Zod, Valibot, ArkType)
+
+Bring your own schema library instead of hand-rolling a parser. `schemaType` adapts any [Standard Schema](https://standardschema.dev) (Zod, Valibot, ArkType, and others) into a parser function, inferring the flag type from the schema's output.
+
+```ts
+import * as z from 'zod'
+import { typeFlag, schemaType } from 'type-flag'
+
+const parsed = typeFlag({
+    size: schemaType(z.enum(['small', 'medium', 'large'])),
+    port: schemaType(z.coerce.number())
+})
+
+parsed.flags.size // 'small' | 'medium' | 'large' | undefined
+parsed.flags.port // number | undefined
+```
+
+It is library-agnostic, so any compliant schema works the same way:
+
+```ts
+import * as v from 'valibot'
+
+const parsed = typeFlag({
+    mode: schemaType(v.picklist(['dev', 'prod']))
+})
+
+parsed.flags.mode // 'dev' | 'prod' | undefined
+```
+
+On validation failure, the schema's message is surfaced through type-flag's [error wrapping](#error-wrapping) as `Flag "--<name>": <message>`. `schemaType` adds no runtime dependency: the Standard Schema spec is types-only and vendored in.
+
+A few things to keep in mind:
+
+- **Numbers need coercion.** CLI values are always strings, so `schemaType(z.number())` rejects `"3000"`. Use `z.coerce.number()` (or your library's equivalent), then chain validators like `.int()`, `.min()`, and `.max()`.
+- **Keep booleans native.** Use `Boolean` rather than a schema for boolean flags, so valueless `--flag`, `--no-flag` negation, and short-flag grouping keep working.
+- **Use type-flag's `default`.** type-flag only runs the parser when a flag is present, so a schema-level `.default()` never fires for an absent flag. Set [`default`](#default-values) on the flag instead.
+- **Schemas must be synchronous.** Flag parsing is synchronous, so an async schema throws.
+
 ### Multiple Values
 
 Wrap a parser function in an array to collect repeated values.
