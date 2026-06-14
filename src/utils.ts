@@ -57,7 +57,7 @@ const schemaToParser = (
 		const result = schema['~standard'].validate(value);
 
 		if (result instanceof Promise) {
-			throw new TypeError('Async schema validation is not supported');
+			throw new TypeError('Async schema validation is not supported (parsing is synchronous)');
 		}
 
 		if (result.issues) {
