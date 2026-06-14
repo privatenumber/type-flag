@@ -37,7 +37,8 @@ export const hasOwn = (
 const isStandardSchema = (
 	value: unknown,
 ): value is StandardSchemaV1 => (
-	typeof value === 'object'
+	// Some schemas (e.g. ArkType) are callable, so check functions too
+	(typeof value === 'object' || typeof value === 'function')
 	&& value !== null
 	&& '~standard' in value
 );
@@ -70,12 +71,14 @@ const schemaToParser = (
 export const parseFlagType = (
 	flagSchema: FlagTypeOrSchema,
 ): [parser: TypeFunction, isArray: boolean] => {
-	if (typeof flagSchema === 'function') {
-		return [flagSchema, false];
-	}
-
+	// Must run before the function check: callable schemas (e.g. ArkType) are
+	// functions, but should validate via `~standard`, not be used as raw parsers.
 	if (isStandardSchema(flagSchema)) {
 		return [schemaToParser(flagSchema), false];
+	}
+
+	if (typeof flagSchema === 'function') {
+		return [flagSchema, false];
 	}
 
 	if (Array.isArray(flagSchema)) {
@@ -221,6 +224,9 @@ export const finalizeFlags = (
 		const [values, , isArray, schema] = registry[flagName];
 		if (
 			values.length === 0
+			// A raw schema (e.g. Zod, ArkType) can have its own `.default`; only a
+			// flag-schema object's `default` is a type-flag default.
+			&& !isStandardSchema(schema)
 			&& 'default' in schema
 		) {
 			let { default: defaultValue } = schema;

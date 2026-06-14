@@ -2,6 +2,7 @@ import { describe, test } from 'manten';
 import { expectTypeOf } from 'expect-type';
 import * as z from 'zod';
 import * as v from 'valibot';
+import { type } from 'arktype';
 import { typeFlag, getFlag } from '#type-flag';
 
 describe('types', () => {
@@ -56,6 +57,14 @@ describe('types', () => {
 		});
 
 		expectTypeOf(parsed.flags.mode).toEqualTypeOf<'dev' | 'prod' | undefined>();
+	});
+
+	test('infers from a callable schema (ArkType)', () => {
+		const parsed = typeFlag({
+			size: type("'small' | 'large'"),
+		});
+
+		expectTypeOf(parsed.flags.size).toEqualTypeOf<'small' | 'large' | undefined>();
 	});
 
 	test('getFlag infers from a schema', () => {

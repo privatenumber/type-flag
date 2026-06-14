@@ -1,6 +1,7 @@
 import { describe, test, expect } from 'manten';
 import * as z from 'zod';
 import * as v from 'valibot';
+import { type } from 'arktype';
 import { typeFlag, getFlag } from '#type-flag';
 
 describe('parsing', () => {
@@ -92,6 +93,14 @@ describe('parsing', () => {
 
 			expect(parsed.flags.size).toBe('small');
 		});
+
+		test('absent raw schema flag is undefined (schema .default is not a type-flag default)', () => {
+			const parsed = typeFlag({
+				size: z.enum(['small', 'large']),
+			}, []);
+
+			expect(parsed.flags.size).toBe(undefined);
+		});
 	});
 
 	// Proves the adapter is library-agnostic, not coupled to Zod
@@ -126,6 +135,34 @@ describe('parsing', () => {
 					email: v.pipe(v.string(), v.email()),
 				}, ['--email', 'not-an-email']);
 			}).toThrow('Flag "--email": Invalid email');
+		});
+	});
+
+	// ArkType schemas are callable (typeof === 'function') yet implement Standard
+	// Schema, so they must still route through validation, not the raw-parser path.
+	describe('ArkType (callable schema)', () => {
+		test('returns the matched value', () => {
+			const parsed = typeFlag({
+				size: type("'small' | 'large'"),
+			}, ['--size', 'small']);
+
+			expect(parsed.flags.size).toBe('small');
+		});
+
+		test('rejects an invalid value', () => {
+			expect(() => {
+				typeFlag({
+					size: type("'small' | 'large'"),
+				}, ['--size', 'huge']);
+			}).toThrow('Flag "--size":');
+		});
+
+		test('absent flag is undefined (callable schema is not treated as a default)', () => {
+			const parsed = typeFlag({
+				size: type("'small' | 'large'"),
+			}, []);
+
+			expect(parsed.flags.size).toBe(undefined);
 		});
 	});
 
