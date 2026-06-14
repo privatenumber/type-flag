@@ -4,6 +4,7 @@ import type {
 	Flags,
 	FlagSchema,
 } from './types.ts';
+import type { StandardSchemaV1 } from './standard-schema.ts';
 
 const camelCasePattern = /\B([A-Z])/g;
 const camelToKebab = (string: string) => string.replaceAll(camelCasePattern, '-$1').toLowerCase();
@@ -14,15 +15,54 @@ export const hasOwn = (
 	property: PropertyKey,
 ) => hasOwnProperty.call(object, property);
 
+const isStandardSchema = (
+	value: unknown,
+): value is StandardSchemaV1 => (
+	// Some schemas (e.g. ArkType) are callable, so check functions too
+	(typeof value === 'object' || typeof value === 'function')
+	&& value !== null
+	&& '~standard' in value
+);
+
+/**
+ * Adapt a Standard Schema (Zod, Valibot, ArkType, ...) into a parser function.
+ *
+ * Flag parsing is synchronous, so schemas that validate asynchronously throw.
+ * On validation failure, throws the first issue's message.
+ */
+const schemaToParser = (
+	schema: StandardSchemaV1,
+): TypeFunction => (
+	(value: string) => {
+		const result = schema['~standard'].validate(value);
+
+		if (result instanceof Promise) {
+			throw new TypeError('Async schemas are not supported');
+		}
+
+		if (result.issues) {
+			throw new Error(result.issues[0]?.message ?? 'Validation failed');
+		}
+
+		return result.value;
+	}
+);
+
 export const parseFlagType = (
 	flagSchema: FlagTypeOrSchema,
 ): [parser: TypeFunction, isArray: boolean] => {
+	// Must run before the function check: callable schemas (e.g. ArkType) are
+	// functions, but should validate via `~standard`, not be used as raw parsers.
+	if (isStandardSchema(flagSchema)) {
+		return [schemaToParser(flagSchema), false];
+	}
+
 	if (typeof flagSchema === 'function') {
 		return [flagSchema, false];
 	}
 
 	if (Array.isArray(flagSchema)) {
-		return [flagSchema[0], true];
+		return [parseFlagType(flagSchema[0])[0], true];
 	}
 
 	return parseFlagType((flagSchema as FlagSchema).type);
@@ -156,6 +196,9 @@ export const finalizeFlags = (
 		const [values, , isArray, schema] = registry[flagName];
 		if (
 			values.length === 0
+			// A raw schema (e.g. Zod, ArkType) can have its own `.default`; only a
+			// flag-schema object's `default` is a type-flag default.
+			&& !isStandardSchema(schema)
 			&& 'default' in schema
 		) {
 			let { default: defaultValue } = schema;

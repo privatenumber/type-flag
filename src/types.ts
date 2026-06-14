@@ -1,3 +1,5 @@
+import type { StandardSchemaV1 } from './standard-schema.ts';
+
 // Expand the type of a given object to include all its properties.
 export type Simplify<T> = { [Key in keyof T]: T[Key] } & {};
 
@@ -12,16 +14,21 @@ export type Simplify<T> = { [Key in keyof T]: T[Key] } & {};
 export type TypeFunction<ReturnType = unknown> = (...args: any[]) => ReturnType;
 
 /**
+ * The value used to type a flag: a parser function or a Standard Schema.
+ */
+type FlagTypeValue = TypeFunction | StandardSchemaV1;
+
+/**
  * A shorthand for defining a flag's type.
  *
- * - Use a single `TypeFunction` to accept one value.
- * - Use a readonly tuple `[TypeFunction]` to accept multiple values (as an array).
+ * - Use a single `TypeFunction` or Standard Schema to accept one value.
+ * - Use a readonly tuple (e.g. `[TypeFunction]`) to accept multiple values (as an array).
  *
  * @see FlagSchema
  */
 export type FlagType = (
-	TypeFunction
-	| readonly [TypeFunction]
+	FlagTypeValue
+	| readonly [FlagTypeValue]
 );
 
 /**
@@ -116,21 +123,68 @@ type InferDefaultType<
 	: Fallback;
 
 /**
+ * Resolves the output type of a single flag-type element: a parser function's
+ * return type, or a Standard Schema's output type.
+ */
+type InferType<Element> = (
+	Element extends StandardSchemaV1
+		? StandardSchemaV1.InferOutput<Element>
+		: Element extends TypeFunction<infer Return>
+			? Return
+			: never
+);
+
+// Unwrap a `{ type: ... }` flag-schema object to its underlying flag type.
+// `& AnyObject` works around a TS bug where `Readonly<T>` in parameter position
+// breaks conditional matching (see AnyObject above).
+type FlagTypeOf<Flag> = (
+	Flag extends { type: infer Type extends FlagType } & AnyObject ? Type : Flag
+);
+
+/**
  * Infers the final JavaScript type of a flag from its schema.
+ *
+ * `FlagTypeOf` unwraps the `{ type }` object form first, so only the two
+ * underlying shapes (array vs scalar) need matching. `InferType` then resolves
+ * each element whether it is a function or a schema.
  */
 export type InferFlagType<
 	Flag extends FlagTypeOrSchema,
 > = (
-	Flag extends (
-		readonly [TypeFunction<infer T>]
-		| { type: readonly [TypeFunction<infer T>] } & AnyObject
-	)
-		? (T[] | InferDefaultType<Flag, never>)
-		: Flag extends TypeFunction<infer T> | ({ type: TypeFunction<infer T> } & AnyObject)
-			// Tuple trick: [T] extends [never] prevents distributive conditional types,
-			// preserving never instead of widening to undefined
-			? ([T] extends [never] ? T : (T | InferDefaultType<Flag, undefined>))
-			: never
+	FlagTypeOf<Flag> extends readonly [infer Element extends FlagTypeValue]
+		? InferArrayType<Flag, Element>
+		: FlagTypeOf<Flag> extends infer Element extends FlagTypeValue
+			? InferScalarType<Flag, Element>
+			// Falls through for an untyped `Flags` index signature (a union that
+			// matches neither shape), where the flag type is `unknown`.
+			: unknown
+);
+
+// `InferType<Element> extends infer Output` forces the output type to resolve
+// before it is unioned with the default, so e.g. `string[] | string[]` collapses
+// to `string[]` instead of lingering as an un-reduced union.
+type InferArrayType<
+	Flag extends FlagTypeOrSchema,
+	Element,
+> = (
+	InferType<Element> extends infer Output
+		? (Output[] | InferDefaultType<Flag, never>)
+		: never
+);
+
+// The `[Output] extends [never]` tuple trick prevents distributive conditional
+// types, preserving `never` instead of widening it to `undefined`.
+type InferScalarType<
+	Flag extends FlagTypeOrSchema,
+	Element,
+> = (
+	InferType<Element> extends infer Output
+		? (
+			[Output] extends [never]
+				? Output
+				: (Output | InferDefaultType<Flag, undefined>)
+		)
+		: never
 );
 
 /**
