@@ -2,13 +2,13 @@ import { describe, test } from 'manten';
 import { expectTypeOf } from 'expect-type';
 import {
 	typeFlag,
-	createPositionalArguments,
 	type Flags,
 	type TypeFlag,
 	type TypeFlagOptions,
 	type IgnoreFunction,
 	type PositionalArguments,
 } from '#type-flag';
+import { createPositionalArguments } from '#type-flag/internal';
 
 // Test Helpers
 const toDate = (s: string) => new Date(s);

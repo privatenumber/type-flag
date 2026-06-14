@@ -6,9 +6,8 @@ import { type } from 'arktype';
 import {
 	typeFlag,
 	getFlag,
-	isStandardSchema,
-	type StandardSchemaV1,
 } from '#type-flag';
+import { isStandardSchema, type StandardSchemaV1 } from '#type-flag/internal';
 
 describe('standard-schema', () => {
 	describe('Zod', () => {

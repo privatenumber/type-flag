@@ -25,14 +25,25 @@
 	],
 	"type": "module",
 	"exports": {
-		"types": "./dist/index.d.ts",
-		"default": "./dist/index.mjs"
+		".": {
+			"types": "./dist/index.d.ts",
+			"default": "./dist/index.mjs"
+		},
+		"./internal": {
+			"types": "./dist/internal.d.ts",
+			"default": "./dist/internal.mjs"
+		}
 	},
 	"imports": {
 		"#type-flag": {
 			"types": "./src/index.ts",
 			"development": "./src/index.ts",
 			"default": "./dist/index.mjs"
+		},
+		"#type-flag/internal": {
+			"types": "./src/internal.ts",
+			"development": "./src/internal.ts",
+			"default": "./dist/internal.mjs"
 		}
 	},
 	"packageManager": "pnpm@10.13.1",

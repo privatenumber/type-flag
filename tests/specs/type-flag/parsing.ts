@@ -1,8 +1,6 @@
 import { describe, test, expect } from 'manten';
-import {
-	typeFlag,
-	createPositionalArguments,
-} from '#type-flag';
+import { typeFlag } from '#type-flag';
+import { createPositionalArguments } from '#type-flag/internal';
 
 describe('Parsing', () => {
 	describe('edge-cases', () => {

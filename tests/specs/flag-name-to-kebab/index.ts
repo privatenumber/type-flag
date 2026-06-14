@@ -1,5 +1,6 @@
 import { test, expect } from 'manten';
-import { flagNameToKebab, typeFlag } from '#type-flag';
+import { typeFlag } from '#type-flag';
+import { flagNameToKebab } from '#type-flag/internal';
 
 test('standard camelCase', () => {
 	expect(flagNameToKebab('fooBar')).toBe('foo-bar');
