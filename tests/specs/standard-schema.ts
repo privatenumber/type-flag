@@ -251,7 +251,7 @@ describe('standard-schema', () => {
 				typeFlag({
 					asyncFlag: asyncSchema,
 				}, ['--async-flag', 'value']);
-			}).toThrow('Flag "--async-flag": Async schema validation is not supported');
+			}).toThrow('Flag "--async-flag": Async schemas are not supported');
 		});
 	});
 
