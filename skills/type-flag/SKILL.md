@@ -1,6 +1,6 @@
 ---
 name: type-flag
-description: Strongly-typed Node.js argv parser. Schema syntax (String/Number/Boolean, arrays, custom types, aliases, defaults, single-char names), return shape (flags/unknownFlags/positional args), flag forms (long/short/grouping, = : . delimiters, kebab↔camelCase), boolean negation via `--no-`, and the `ignore` callback for multi-command dispatch. Use when working with type-flag or building CLIs on top of it (e.g. cleye).
+description: "Use when working with type-flag or building CLIs on top of it (e.g. cleye). Strongly-typed Node.js argv parser: schema syntax (String/Number/Boolean, arrays, custom parser functions, Standard Schema validators like Zod/Valibot/ArkType, aliases, defaults, single-char names), return shape (flags/unknownFlags/positional args), flag forms (long/short/grouping, =/:/. delimiters, kebab/camelCase), boolean negation via `--no-`, and the `ignore` callback for multi-command dispatch."
 ---
 
 # type-flag
@@ -29,7 +29,8 @@ parsed._            // []  (positional args, with _['--'] for post-`--`)
 | Shorthand | `flag: String` | Type only |
 | Object | `flag: { type: String, alias: 'f', default: 'x' }` | Type + options |
 | Array | `flag: [String]` or `{ type: [String] }` | Collect multiple values |
-| Custom type | `flag: (raw: string) => MyType` | Any `(string) => T` |
+| Custom parser | `flag: (raw: string) => MyType` | Any `(string) => T` (see below) |
+| Standard Schema | `flag: z.enum([...])` / `[z.string()]` | Validate via a Zod/Valibot/ArkType schema (see below) |
 | Single-char name | `x: Number` | Matches `-x`, NOT `--x` |
 
 Type options:
@@ -39,6 +40,36 @@ Type options:
 | `type` | `TypeFunction \| [TypeFunction]` | Parser; wrap in `[]` for arrays |
 | `alias` | `string` (1 char) | Forbidden when flag name is 1 char |
 | `default` | `T \| (() => T)` | Use a function for mutable defaults (objects/arrays) |
+
+## Custom parsers & Standard Schema
+
+A flag type is any `(value: string) => T`; the return type becomes the flag type. Use it to validate, narrow, or transform:
+
+```ts
+const Size = (value: string) => {
+    if (value !== 'small' && value !== 'large') {
+        throw new Error(`Invalid size: ${value}`)
+    }
+    return value as 'small' | 'large'
+}
+
+typeFlag({ size: Size }) // flags.size: 'small' | 'large' | undefined
+```
+
+Or pass a **Standard Schema** (Zod, Valibot, ArkType) directly — type-flag validates it and infers the flag type from the schema's output, no wrapper:
+
+```ts
+typeFlag({
+    size: z.enum(['small', 'large']), // 'small' | 'large' | undefined
+    port: z.coerce.number(),          // number | undefined
+    tags: [z.string()],               // string[]
+})
+```
+
+- Multiple values: wrap in `[schema]`, NOT `z.array(...)` (it validates a single token and throws).
+- Numbers: CLI values are strings, so coerce (`z.coerce.number()`).
+- Booleans: keep native `Boolean` (a schema loses `--no-` negation and short grouping).
+- Sync only: async schemas throw. A failed schema or parser propagates the raw error.
 
 ## Return shape
 
@@ -141,7 +172,7 @@ Same argv-mutation behavior as `typeFlag`.
 | Reserved chars in names | `\s`, `.`, `:`, `=` forbidden in flag names (they're delimiters). |
 | kebab schema key | If schema key is `'some-flag'`, only `--some-flag` / `--someFlag` both map to it, but output key stays kebab. |
 | Default functions throw | A throwing `default: () => ...` propagates. |
-| Custom-type errors wrap | Parser errors include the flag name in the thrown message. |
+| Parser/schema errors propagate raw | A throwing parser or failed schema surfaces its own error message (no flag-name wrapping). |
 
 ## Related
 
