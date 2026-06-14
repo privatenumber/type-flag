@@ -1,13 +1,13 @@
 import { describe, test, expect } from 'manten';
 import * as z from 'zod';
 import * as v from 'valibot';
-import { typeFlag, schemaType } from '#type-flag';
+import { typeFlag, getFlag } from '#type-flag';
 
 describe('parsing', () => {
 	describe('Zod', () => {
 		test('enum returns the matched value', () => {
 			const parsed = typeFlag({
-				size: schemaType(z.enum(['small', 'medium', 'large'])),
+				size: z.enum(['small', 'medium', 'large']),
 			}, ['--size', 'medium']);
 
 			expect(parsed.flags.size).toBe('medium');
@@ -17,7 +17,7 @@ describe('parsing', () => {
 			let thrown: unknown;
 			try {
 				typeFlag({
-					size: schemaType(z.enum(['small', 'medium', 'large'])),
+					size: z.enum(['small', 'medium', 'large']),
 				}, ['--size', 'huge']);
 			} catch (error) {
 				thrown = error;
@@ -34,21 +34,17 @@ describe('parsing', () => {
 		});
 
 		test('coerced number validates the range', () => {
-			const schema = z.coerce.number().int().min(1).max(65_535);
-
 			const parsed = typeFlag({
-				port: schemaType(schema),
+				port: z.coerce.number().int().min(1).max(65_535),
 			}, ['--port', '8080']);
 
 			expect(parsed.flags.port).toBe(8080);
 		});
 
 		test('coerced number rejects out-of-range values', () => {
-			const schema = z.coerce.number().int().min(1).max(65_535);
-
 			expect(() => {
 				typeFlag({
-					port: schemaType(schema),
+					port: z.coerce.number().int().min(1).max(65_535),
 				}, ['--port', '99999']);
 			}).toThrow('Flag "--port": Too big');
 		});
@@ -57,14 +53,14 @@ describe('parsing', () => {
 			// The CLI value is always a string, so a plain number schema rejects it
 			expect(() => {
 				typeFlag({
-					port: schemaType(z.number()),
+					port: z.number(),
 				}, ['--port', '3000']);
 			}).toThrow('Flag "--port":');
 		});
 
 		test('transform maps the value', () => {
 			const parsed = typeFlag({
-				list: schemaType(z.string().transform(value => value.split(','))),
+				list: z.string().transform(value => value.split(',')),
 			}, ['--list', 'a,b,c']);
 
 			expect(parsed.flags.list).toStrictEqual(['a', 'b', 'c']);
@@ -72,7 +68,7 @@ describe('parsing', () => {
 
 		test('repeated flag collects and validates each element', () => {
 			const parsed = typeFlag({
-				tag: [schemaType(z.enum(['debug', 'info', 'warn']))],
+				tag: [z.enum(['debug', 'info', 'warn'])],
 			}, ['--tag', 'debug', '--tag', 'warn']);
 
 			expect(parsed.flags.tag).toStrictEqual(['debug', 'warn']);
@@ -81,7 +77,7 @@ describe('parsing', () => {
 		test('repeated flag rejects an invalid element', () => {
 			expect(() => {
 				typeFlag({
-					tag: [schemaType(z.enum(['debug', 'info', 'warn']))],
+					tag: [z.enum(['debug', 'info', 'warn'])],
 				}, ['--tag', 'debug', '--tag', 'nope']);
 			}).toThrow('Flag "--tag": Invalid option');
 		});
@@ -89,7 +85,7 @@ describe('parsing', () => {
 		test('type-flag default applies when the flag is absent', () => {
 			const parsed = typeFlag({
 				size: {
-					type: schemaType(z.enum(['small', 'large'])),
+					type: z.enum(['small', 'large']),
 					default: 'small',
 				},
 			}, []);
@@ -102,7 +98,7 @@ describe('parsing', () => {
 	describe('Valibot', () => {
 		test('picklist returns the matched value', () => {
 			const parsed = typeFlag({
-				mode: schemaType(v.picklist(['dev', 'prod'])),
+				mode: v.picklist(['dev', 'prod']),
 			}, ['--mode', 'dev']);
 
 			expect(parsed.flags.mode).toBe('dev');
@@ -111,14 +107,14 @@ describe('parsing', () => {
 		test('picklist rejects an invalid value', () => {
 			expect(() => {
 				typeFlag({
-					mode: schemaType(v.picklist(['dev', 'prod'])),
+					mode: v.picklist(['dev', 'prod']),
 				}, ['--mode', 'staging']);
 			}).toThrow('Flag "--mode": Invalid type');
 		});
 
 		test('email validates the string', () => {
 			const parsed = typeFlag({
-				email: schemaType(v.pipe(v.string(), v.email())),
+				email: v.pipe(v.string(), v.email()),
 			}, ['--email', 'user@example.com']);
 
 			expect(parsed.flags.email).toBe('user@example.com');
@@ -127,9 +123,23 @@ describe('parsing', () => {
 		test('email rejects an invalid string', () => {
 			expect(() => {
 				typeFlag({
-					email: schemaType(v.pipe(v.string(), v.email())),
+					email: v.pipe(v.string(), v.email()),
 				}, ['--email', 'not-an-email']);
 			}).toThrow('Flag "--email": Invalid email');
+		});
+	});
+
+	describe('getFlag', () => {
+		test('parses and validates with a schema', () => {
+			const size = getFlag('--size', z.enum(['small', 'large']), ['--size', 'small']);
+
+			expect(size).toBe('small');
+		});
+
+		test('rejects an invalid value', () => {
+			expect(() => {
+				getFlag('--size', z.enum(['small', 'large']), ['--size', 'huge']);
+			}).toThrow('Flag "--size": Invalid option');
 		});
 	});
 
@@ -144,9 +154,11 @@ describe('parsing', () => {
 				},
 			};
 
-			const parser = schemaType(asyncSchema);
-
-			expect(() => parser('value')).toThrow('Async schema validation is not supported');
+			expect(() => {
+				typeFlag({
+					asyncFlag: asyncSchema,
+				}, ['--async-flag', 'value']);
+			}).toThrow('Flag "--async-flag": Async schema validation is not supported');
 		});
 	});
 });

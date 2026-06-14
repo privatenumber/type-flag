@@ -4,6 +4,7 @@ import type {
 	Flags,
 	FlagSchema,
 } from './types.ts';
+import type { StandardSchemaV1 } from './standard-schema.ts';
 
 /**
  * Regex uses zero-width assertions to find positions for hyphen insertion:
@@ -33,6 +34,39 @@ export const hasOwn = (
 	property: PropertyKey,
 ) => hasOwnProperty.call(object, property);
 
+const isStandardSchema = (
+	value: unknown,
+): value is StandardSchemaV1 => (
+	typeof value === 'object'
+	&& value !== null
+	&& '~standard' in value
+);
+
+/**
+ * Adapt a Standard Schema (Zod, Valibot, ArkType, ...) into a parser function.
+ *
+ * Flag parsing is synchronous, so schemas that validate asynchronously throw.
+ * On validation failure, throws the first issue's message; `applyParser` adds
+ * the `Flag "--<name>": ...` context and keeps the original on `.cause`.
+ */
+const schemaToParser = (
+	schema: StandardSchemaV1,
+): TypeFunction => (
+	(value: string) => {
+		const result = schema['~standard'].validate(value);
+
+		if (result instanceof Promise) {
+			throw new TypeError('Async schema validation is not supported');
+		}
+
+		if (result.issues) {
+			throw new Error(result.issues[0]?.message ?? 'Validation failed');
+		}
+
+		return result.value;
+	}
+);
+
 export const parseFlagType = (
 	flagSchema: FlagTypeOrSchema,
 ): [parser: TypeFunction, isArray: boolean] => {
@@ -40,8 +74,12 @@ export const parseFlagType = (
 		return [flagSchema, false];
 	}
 
+	if (isStandardSchema(flagSchema)) {
+		return [schemaToParser(flagSchema), false];
+	}
+
 	if (Array.isArray(flagSchema)) {
-		return [flagSchema[0], true];
+		return [parseFlagType(flagSchema[0])[0], true];
 	}
 
 	return parseFlagType((flagSchema as FlagSchema).type);

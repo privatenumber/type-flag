@@ -1,3 +1,5 @@
+import type { StandardSchemaV1 } from './standard-schema.ts';
+
 // Expand the type of a given object to include all its properties.
 export type Simplify<T> = { [Key in keyof T]: T[Key] } & {};
 
@@ -21,7 +23,8 @@ export type TypeFunction<ReturnType = unknown> = (...args: any[]) => ReturnType;
  */
 export type FlagType = (
 	TypeFunction
-	| readonly [TypeFunction]
+	| StandardSchemaV1
+	| readonly [TypeFunction | StandardSchemaV1]
 );
 
 /**
@@ -126,11 +129,22 @@ export type InferFlagType<
 		| { type: readonly [TypeFunction<infer T>] } & AnyObject
 	)
 		? (T[] | InferDefaultType<Flag, never>)
-		: Flag extends TypeFunction<infer T> | ({ type: TypeFunction<infer T> } & AnyObject)
-			// Tuple trick: [T] extends [never] prevents distributive conditional types,
-			// preserving never instead of widening to undefined
-			? ([T] extends [never] ? T : (T | InferDefaultType<Flag, undefined>))
-			: never
+		// Standard Schema array forms. Bare and `{ type }` are kept as separate
+		// conditionals because sharing one `infer Schema` across a union widens it.
+		: Flag extends readonly [infer Schema extends StandardSchemaV1]
+			? (StandardSchemaV1.InferOutput<Schema>[] | InferDefaultType<Flag, never>)
+			: Flag extends { type: readonly [infer Schema extends StandardSchemaV1] } & AnyObject
+				? (StandardSchemaV1.InferOutput<Schema>[] | InferDefaultType<Flag, never>)
+				: Flag extends TypeFunction<infer T> | ({ type: TypeFunction<infer T> } & AnyObject)
+					// Tuple trick: [T] extends [never] prevents distributive conditional types,
+					// preserving never instead of widening to undefined
+					? ([T] extends [never] ? T : (T | InferDefaultType<Flag, undefined>))
+					// Standard Schema scalar forms, split for the same reason as above.
+					: Flag extends (infer Schema extends StandardSchemaV1)
+						? (StandardSchemaV1.InferOutput<Schema> | InferDefaultType<Flag, undefined>)
+						: Flag extends { type: infer Schema extends StandardSchemaV1 } & AnyObject
+							? (StandardSchemaV1.InferOutput<Schema> | InferDefaultType<Flag, undefined>)
+							: never
 );
 
 /**

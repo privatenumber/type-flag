@@ -2,12 +2,12 @@ import { describe, test } from 'manten';
 import { expectTypeOf } from 'expect-type';
 import * as z from 'zod';
 import * as v from 'valibot';
-import { typeFlag, schemaType } from '#type-flag';
+import { typeFlag, getFlag } from '#type-flag';
 
 describe('types', () => {
 	test('enum infers a string-literal union', () => {
 		const parsed = typeFlag({
-			size: schemaType(z.enum(['small', 'medium', 'large'])),
+			size: z.enum(['small', 'medium', 'large']),
 		});
 
 		expectTypeOf(parsed.flags.size).toEqualTypeOf<'small' | 'medium' | 'large' | undefined>();
@@ -15,7 +15,7 @@ describe('types', () => {
 
 	test('coerced number infers number', () => {
 		const parsed = typeFlag({
-			port: schemaType(z.coerce.number()),
+			port: z.coerce.number(),
 		});
 
 		expectTypeOf(parsed.flags.port).toEqualTypeOf<number | undefined>();
@@ -23,7 +23,7 @@ describe('types', () => {
 
 	test('transform infers the transformed output', () => {
 		const parsed = typeFlag({
-			list: schemaType(z.string().transform(value => value.split(','))),
+			list: z.string().transform(value => value.split(',')),
 		});
 
 		expectTypeOf(parsed.flags.list).toEqualTypeOf<string[] | undefined>();
@@ -31,7 +31,7 @@ describe('types', () => {
 
 	test('repeated flag infers an array', () => {
 		const parsed = typeFlag({
-			level: [schemaType(z.enum(['debug', 'info', 'warn']))],
+			level: [z.enum(['debug', 'info', 'warn'])],
 		});
 
 		expectTypeOf(parsed.flags.level).toEqualTypeOf<('debug' | 'info' | 'warn')[]>();
@@ -40,7 +40,7 @@ describe('types', () => {
 	test('default removes undefined from the inferred type', () => {
 		const parsed = typeFlag({
 			size: {
-				type: schemaType(z.enum(['a', 'b'])),
+				type: z.enum(['a', 'b']),
 
 				// `as const` preserves the literal union; a plain default widens to string
 				default: 'a' as const,
@@ -52,9 +52,15 @@ describe('types', () => {
 
 	test('inference is library-agnostic (Valibot)', () => {
 		const parsed = typeFlag({
-			mode: schemaType(v.picklist(['dev', 'prod'])),
+			mode: v.picklist(['dev', 'prod']),
 		});
 
 		expectTypeOf(parsed.flags.mode).toEqualTypeOf<'dev' | 'prod' | undefined>();
+	});
+
+	test('getFlag infers from a schema', () => {
+		const size = getFlag('--size', z.enum(['small', 'large']), ['--size', 'small']);
+
+		expectTypeOf(size).toEqualTypeOf<'small' | 'large' | undefined>();
 	});
 });
