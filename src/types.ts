@@ -134,29 +134,30 @@ type InferType<Element> = (
 			: never
 );
 
+// Unwrap a `{ type: ... }` flag-schema object to its underlying flag type.
+// `& AnyObject` works around a TS bug where `Readonly<T>` in parameter position
+// breaks conditional matching (see AnyObject above).
+type FlagTypeOf<Flag> = (
+	Flag extends { type: infer Type extends FlagType } & AnyObject ? Type : Flag
+);
+
 /**
  * Infers the final JavaScript type of a flag from its schema.
  *
- * Matched by structural shape (array vs scalar, bare vs `{ type }`), with
- * `InferType` resolving each element whether it is a function or a schema.
- *
- * Bare and `{ type }` forms are kept as separate conditionals on purpose:
- * sharing one `infer Element` across a union widens the inference.
+ * `FlagTypeOf` unwraps the `{ type }` object form first, so only the two
+ * underlying shapes (array vs scalar) need matching. `InferType` then resolves
+ * each element whether it is a function or a schema.
  */
 export type InferFlagType<
 	Flag extends FlagTypeOrSchema,
 > = (
-	// Array forms collect the element's output into an array.
-	Flag extends readonly [infer Element extends FlagTypeValue]
+	FlagTypeOf<Flag> extends readonly [infer Element extends FlagTypeValue]
 		? InferArrayType<Flag, Element>
-		: Flag extends { type: readonly [infer Element extends FlagTypeValue] } & AnyObject
-			? InferArrayType<Flag, Element>
-			// Scalar forms.
-			: Flag extends infer Element extends FlagTypeValue
-				? InferScalarType<Flag, Element>
-				: Flag extends { type: infer Element extends FlagTypeValue } & AnyObject
-					? InferScalarType<Flag, Element>
-					: never
+		: FlagTypeOf<Flag> extends infer Element extends FlagTypeValue
+			? InferScalarType<Flag, Element>
+			// Falls through for an untyped `Flags` index signature (a union that
+			// matches neither shape), where the flag type is `unknown`.
+			: unknown
 );
 
 // `InferType<Element> extends infer Output` forces the output type to resolve
