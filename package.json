@@ -57,7 +57,7 @@
 		"lintroll": "^1.30.2",
 		"manten": "^2.0.0",
 		"pkgroll": "^2.27.0",
-		"skills-npm": "^1.0.0",
+		"skills-npm": "^1.2.0",
 		"tsx": "^4.21.0",
 		"typescript": "^5.9.3",
 		"valibot": "^1.4.1",
