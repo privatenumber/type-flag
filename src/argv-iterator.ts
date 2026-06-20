@@ -25,6 +25,34 @@ type onArgument = (
 
 const isFlagPattern = /^-{1,2}\w/;
 
+const negativeNumberPattern = /^-(?:\d+(?:\.\d*)?|\.\d+)(?:e[-+]?\d+)?$/i;
+
+/**
+ * Whether a flag-shaped token should be consumed as the value of a
+ * value-expecting flag: it must look like a single-dash negative number
+ * (e.g. `-5`, `-5.5`, `-5e3`) and NOT fully resolve to defined flags.
+ *
+ * `isKnownFlag` reports whether a single character is a defined flag/alias.
+ * If every character after the dash is known, the token wins as a flag/alias
+ * group instead (e.g. `-512` when 5, 1, and 2 are all defined).
+ */
+export const isNegativeNumberValue = (
+	argvElement: string,
+	isKnownFlag: (flagName: string) => boolean,
+) => {
+	if (!negativeNumberPattern.test(argvElement)) {
+		return false;
+	}
+
+	for (let i = 1; i < argvElement.length; i += 1) {
+		if (!isKnownFlag(argvElement[i])) {
+			return true;
+		}
+	}
+
+	return false;
+};
+
 export const parseFlagArgv = (
 	flagArgv: string,
 ): [
@@ -63,9 +91,16 @@ export const argvIterator = (
 	{
 		onFlag,
 		onArgument,
+		isValueToken,
 	}: {
 		onFlag?: onFlag;
 		onArgument?: onArgument;
+
+		/**
+		 * Returns whether a flag-shaped token should instead be consumed as the
+		 * value of a value-expecting flag (e.g. a negative number like `-5`).
+		 */
+		isValueToken?: (argvElement: string) => boolean;
 	},
 ) => {
 	let onValueCallback: void | onValueCallbackType;
@@ -80,6 +115,7 @@ export const argvIterator = (
 		onValueCallback(value, index);
 		onValueCallback = undefined;
 	};
+	const hasPendingValue = () => typeof onValueCallback === 'function';
 
 	for (let i = 0; i < argv.length; i += 1) {
 		const argvElement = argv[i];
@@ -90,6 +126,16 @@ export const argvIterator = (
 			const remaining = argv.slice(i + 1);
 			onArgument?.(remaining, [i], true);
 			break;
+		}
+
+		// A value-expecting flag consumes a negative-number token as its value,
+		// unless the token resolves to defined flags (decided by isValueToken).
+		if (
+			hasPendingValue()
+			&& isValueToken?.(argvElement)
+		) {
+			triggerValueCallback(argvElement, [i]);
+			continue;
 		}
 
 		const parsedFlag = parseFlagArgv(argvElement);

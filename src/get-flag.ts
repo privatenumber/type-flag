@@ -9,6 +9,7 @@ import {
 } from './utils.ts';
 import {
 	argvIterator,
+	isNegativeNumberValue,
 	parseFlagArgv,
 	spliceFromArgv,
 	type Index,
@@ -27,6 +28,10 @@ export const getFlag = <Type extends FlagType>(
 	const removeArgvs: Index[] = [];
 
 	argvIterator(argv, {
+		isValueToken: argvElement => isNegativeNumberValue(
+			argvElement,
+			flagName => flags.has(flagName),
+		),
 		onFlag: (name, explicitValue, flagIndex) => {
 			if (
 				!flags.has(name)

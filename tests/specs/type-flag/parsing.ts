@@ -168,7 +168,12 @@ describe('Parsing', () => {
 		});
 
 		test('consumes negative via alias', () => {
-			const parsed = typeFlag({ retry: { type: Number, alias: 'r' } }, ['-r', '-5']);
+			const parsed = typeFlag({
+				retry: {
+					type: Number,
+					alias: 'r',
+				},
+			}, ['-r', '-5']);
 
 			expect<{ retry?: number }>(parsed.flags).toStrictEqual({ retry: -5 });
 		});
@@ -195,64 +200,126 @@ describe('Parsing', () => {
 			test('-5 resolves to the defined flag, not a value', () => {
 				const parsed = typeFlag({
 					retry: Number,
-					fast: { type: Boolean, alias: '5' },
-					name: { type: String, alias: 'n' },
+					fast: {
+						type: Boolean,
+						alias: '5',
+					},
+					name: {
+						type: String,
+						alias: 'n',
+					},
 				}, ['--retry', '-5']);
 
-				expect(parsed.flags).toStrictEqual({ retry: Number.NaN, fast: true, name: undefined });
+				expect(parsed.flags).toStrictEqual({
+					retry: Number.NaN,
+					fast: true,
+					name: undefined,
+				});
 				expect(parsed.unknownFlags).toStrictEqual({});
 			});
 
 			test('-5 then -n value', () => {
 				const parsed = typeFlag({
 					retry: Number,
-					fast: { type: Boolean, alias: '5' },
-					name: { type: String, alias: 'n' },
+					fast: {
+						type: Boolean,
+						alias: '5',
+					},
+					name: {
+						type: String,
+						alias: 'n',
+					},
 				}, ['--retry', '-5', '-n', 'Hiroki']);
 
-				expect(parsed.flags).toStrictEqual({ retry: Number.NaN, fast: true, name: 'Hiroki' });
+				expect(parsed.flags).toStrictEqual({
+					retry: Number.NaN,
+					fast: true,
+					name: 'Hiroki',
+				});
 			});
 
 			test('alias group -5n', () => {
 				const parsed = typeFlag({
 					retry: Number,
-					fast: { type: Boolean, alias: '5' },
-					name: { type: String, alias: 'n' },
+					fast: {
+						type: Boolean,
+						alias: '5',
+					},
+					name: {
+						type: String,
+						alias: 'n',
+					},
 				}, ['--retry', '-5n', 'Hiroki']);
 
-				expect(parsed.flags).toStrictEqual({ retry: Number.NaN, fast: true, name: 'Hiroki' });
+				expect(parsed.flags).toStrictEqual({
+					retry: Number.NaN,
+					fast: true,
+					name: 'Hiroki',
+				});
 			});
 
 			test('partial match -50 is a number', () => {
 				const parsed = typeFlag({
 					retry: Number,
-					fast: { type: Boolean, alias: '5' },
-					name: { type: String, alias: 'n' },
+					fast: {
+						type: Boolean,
+						alias: '5',
+					},
+					name: {
+						type: String,
+						alias: 'n',
+					},
 				}, ['--retry', '-50']);
 
-				expect(parsed.flags).toStrictEqual({ retry: -50, fast: undefined, name: undefined });
+				expect(parsed.flags).toStrictEqual({
+					retry: -50,
+					fast: undefined,
+					name: undefined,
+				});
 			});
 
 			test('decimal -5.5 is a number even when 5 is a flag', () => {
 				const parsed = typeFlag({
 					retry: Number,
-					fast: { type: Boolean, alias: '5' },
-					name: { type: String, alias: 'n' },
+					fast: {
+						type: Boolean,
+						alias: '5',
+					},
+					name: {
+						type: String,
+						alias: 'n',
+					},
 				}, ['--retry', '-5.5']);
 
-				expect(parsed.flags).toStrictEqual({ retry: -5.5, fast: undefined, name: undefined });
+				expect(parsed.flags).toStrictEqual({
+					retry: -5.5,
+					fast: undefined,
+					name: undefined,
+				});
 			});
 
 			test('all-digit alias group -512', () => {
 				const parsed = typeFlag({
 					retry: Number,
-					alpha: { type: Boolean, alias: '5' },
-					beta: { type: Boolean, alias: '1' },
-					gamma: { type: Boolean, alias: '2' },
+					alpha: {
+						type: Boolean,
+						alias: '5',
+					},
+					beta: {
+						type: Boolean,
+						alias: '1',
+					},
+					gamma: {
+						type: Boolean,
+						alias: '2',
+					},
 				}, ['--retry', '-512']);
 
 				expect(parsed.flags).toStrictEqual({
-					retry: Number.NaN, alpha: true, beta: true, gamma: true,
+					retry: Number.NaN,
+					alpha: true,
+					beta: true,
+					gamma: true,
 				});
 			});
 		});
@@ -261,37 +328,61 @@ describe('Parsing', () => {
 			test('unregistered negative is a value', () => {
 				const parsed = typeFlag({
 					retry: Number,
-					one: { type: Boolean, alias: '1' },
+					one: {
+						type: Boolean,
+						alias: '1',
+					},
 				}, ['--retry', '-5']);
 
-				expect(parsed.flags).toStrictEqual({ retry: -5, one: undefined });
+				expect(parsed.flags).toStrictEqual({
+					retry: -5,
+					one: undefined,
+				});
 			});
 
 			test('registered -1 standalone is the flag', () => {
 				const parsed = typeFlag({
 					retry: Number,
-					one: { type: Boolean, alias: '1' },
+					one: {
+						type: Boolean,
+						alias: '1',
+					},
 				}, ['-1']);
 
-				expect(parsed.flags).toStrictEqual({ retry: undefined, one: true });
+				expect(parsed.flags).toStrictEqual({
+					retry: undefined,
+					one: true,
+				});
 			});
 
 			test('value and flag in one command', () => {
 				const parsed = typeFlag({
 					retry: Number,
-					one: { type: Boolean, alias: '1' },
+					one: {
+						type: Boolean,
+						alias: '1',
+					},
 				}, ['-1', '--retry', '-5']);
 
-				expect(parsed.flags).toStrictEqual({ retry: -5, one: true });
+				expect(parsed.flags).toStrictEqual({
+					retry: -5,
+					one: true,
+				});
 			});
 
 			test('registered -1 wins after a value flag', () => {
 				const parsed = typeFlag({
 					retry: Number,
-					one: { type: Boolean, alias: '1' },
+					one: {
+						type: Boolean,
+						alias: '1',
+					},
 				}, ['--retry', '-1']);
 
-				expect(parsed.flags).toStrictEqual({ retry: Number.NaN, one: true });
+				expect(parsed.flags).toStrictEqual({
+					retry: Number.NaN,
+					one: true,
+				});
 			});
 		});
 

@@ -18,6 +18,7 @@ import { createPositionalArgumentsFromParts } from './positional-arguments.ts';
 import {
 	ALIAS_INDEX_LENGTH,
 	argvIterator,
+	isNegativeNumberValue,
 	spliceFromArgv,
 	type Index,
 } from './argv-iterator.ts';
@@ -54,6 +55,10 @@ export const typeFlag = <Schemas extends Flags>(
 	let doubleDashArguments: string[] = [];
 
 	argvIterator(argv, {
+		isValueToken: argvElement => isNegativeNumberValue(
+			argvElement,
+			flagName => hasOwn(flagRegistry, flagName),
+		),
 		onFlag(name, explicitValue, flagIndex) {
 			const isAlias = flagIndex.length === ALIAS_INDEX_LENGTH;
 			// Long-form requires length > 1; single-char names are exclusive to short-form (-h vs --help)
