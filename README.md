@@ -683,7 +683,7 @@ A few trade-offs are intentional:
 
 - It does not parse POSIX-style short string values like `-ovalue`.
 - It treats missing string values as `""`; strict parsers like `parseArgs()` and `arg` throw.
-- For negative numeric values, use inline values like `--count=-1`; space-separated `--count -1` is parsed as a flag-like token today.
+- Negative numbers are accepted as flag values (`--count -1`); but a number that is itself a defined flag (e.g. a `-1` alias) is treated as that flag, so use `--count=-1` for it. A bare negative (not after a value-taking flag) and `-Infinity` also need the `=` form.
 
 ## Agent Skills
 
