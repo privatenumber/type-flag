@@ -31,6 +31,23 @@ test('single word', () => {
 	expect(flagNameToKebab('simple')).toBe('simple');
 });
 
+test('digit before uppercase', () => {
+	expect(flagNameToKebab('oauth2Bearer')).toBe('oauth2-bearer');
+});
+
+test('acronym followed by digit then uppercase', () => {
+	expect(flagNameToKebab('openAPI3Key')).toBe('open-api3-key');
+});
+
+test('parses digit-boundary flag names from argv', () => {
+	const parsed = typeFlag({
+		oauth2Bearer: String,
+	}, [
+		'--oauth2-bearer=X',
+	]);
+	expect<string | undefined>(parsed.flags.oauth2Bearer).toBe('X');
+});
+
 test('parses acronym flag names from argv', () => {
 	const parsed = typeFlag({
 		orgID: String,
