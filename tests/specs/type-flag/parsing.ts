@@ -65,25 +65,23 @@ describe('Parsing', () => {
 		});
 
 		test('Negative number with flag', () => {
+			const argv = ['--number', '-123'];
 			const parsed = typeFlag({
 				number: Number,
-			}, ['--number', '-123']);
+			}, argv);
 
-			// -123 is parsed as flag group -1 -2 -3, leaving number with no value
+			// -123 is consumed as the value for --number
 			expect<{ number?: number }>(parsed.flags).toStrictEqual({
-				number: Number.NaN,
+				number: -123,
 			});
-			expect<Record<string, (string | boolean)[]>>(parsed.unknownFlags).toStrictEqual({
-				1: [true],
-				2: [true],
-				3: [true],
-			});
+			expect<Record<string, (string | boolean)[]>>(parsed.unknownFlags).toStrictEqual({});
 			expect<string[] & { '--': string[] }>(parsed._).toStrictEqual(
 				Object.assign(
 					[],
 					{ '--': [] },
 				),
 			);
+			expect<string[]>(argv).toStrictEqual([]);
 		});
 
 		test('Negative number with equals', () => {
@@ -144,6 +142,281 @@ describe('Parsing', () => {
 				8: [true],
 				a: [true],
 			});
+		});
+	});
+
+	describe('negative number values', () => {
+		test('consumes negative integer', () => {
+			const argv = ['--retry', '-5'];
+			const parsed = typeFlag({ retry: Number }, argv);
+
+			expect<{ retry?: number }>(parsed.flags).toStrictEqual({ retry: -5 });
+			expect(parsed.unknownFlags).toStrictEqual({});
+			expect<string[]>(argv).toStrictEqual([]);
+		});
+
+		test('consumes negative decimal', () => {
+			const parsed = typeFlag({ retry: Number }, ['--retry', '-5.5']);
+
+			expect<{ retry?: number }>(parsed.flags).toStrictEqual({ retry: -5.5 });
+		});
+
+		test('consumes negative scientific notation', () => {
+			const parsed = typeFlag({ retry: Number }, ['--retry', '-5e3']);
+
+			expect<{ retry?: number }>(parsed.flags).toStrictEqual({ retry: -5000 });
+		});
+
+		test('consumes negative via alias', () => {
+			const parsed = typeFlag({
+				retry: {
+					type: Number,
+					alias: 'r',
+				},
+			}, ['-r', '-5']);
+
+			expect<{ retry?: number }>(parsed.flags).toStrictEqual({ retry: -5 });
+		});
+
+		test('explicit = value still works', () => {
+			const parsed = typeFlag({ retry: Number }, ['--retry=-5']);
+
+			expect<{ retry?: number }>(parsed.flags).toStrictEqual({ retry: -5 });
+		});
+
+		test('string flag consumes negative-number token', () => {
+			const parsed = typeFlag({ name: String }, ['--name', '-5']);
+
+			expect<{ name?: string }>(parsed.flags).toStrictEqual({ name: '-5' });
+		});
+
+		test('array of numbers consumes negatives', () => {
+			const parsed = typeFlag({ nums: [Number] }, ['--nums', '-1', '--nums', '-2']);
+
+			expect<{ nums: number[] }>(parsed.flags).toStrictEqual({ nums: [-1, -2] });
+		});
+
+		describe('defined flags take precedence', () => {
+			test('-5 resolves to the defined flag, not a value', () => {
+				const parsed = typeFlag({
+					retry: Number,
+					fast: {
+						type: Boolean,
+						alias: '5',
+					},
+					name: {
+						type: String,
+						alias: 'n',
+					},
+				}, ['--retry', '-5']);
+
+				expect(parsed.flags).toStrictEqual({
+					retry: Number.NaN,
+					fast: true,
+					name: undefined,
+				});
+				expect(parsed.unknownFlags).toStrictEqual({});
+			});
+
+			test('-5 then -n value', () => {
+				const parsed = typeFlag({
+					retry: Number,
+					fast: {
+						type: Boolean,
+						alias: '5',
+					},
+					name: {
+						type: String,
+						alias: 'n',
+					},
+				}, ['--retry', '-5', '-n', 'Hiroki']);
+
+				expect(parsed.flags).toStrictEqual({
+					retry: Number.NaN,
+					fast: true,
+					name: 'Hiroki',
+				});
+			});
+
+			test('alias group -5n', () => {
+				const parsed = typeFlag({
+					retry: Number,
+					fast: {
+						type: Boolean,
+						alias: '5',
+					},
+					name: {
+						type: String,
+						alias: 'n',
+					},
+				}, ['--retry', '-5n', 'Hiroki']);
+
+				expect(parsed.flags).toStrictEqual({
+					retry: Number.NaN,
+					fast: true,
+					name: 'Hiroki',
+				});
+			});
+
+			test('partial match -50 is a number', () => {
+				const parsed = typeFlag({
+					retry: Number,
+					fast: {
+						type: Boolean,
+						alias: '5',
+					},
+					name: {
+						type: String,
+						alias: 'n',
+					},
+				}, ['--retry', '-50']);
+
+				expect(parsed.flags).toStrictEqual({
+					retry: -50,
+					fast: undefined,
+					name: undefined,
+				});
+			});
+
+			test('decimal -5.5 is a number even when 5 is a flag', () => {
+				const parsed = typeFlag({
+					retry: Number,
+					fast: {
+						type: Boolean,
+						alias: '5',
+					},
+					name: {
+						type: String,
+						alias: 'n',
+					},
+				}, ['--retry', '-5.5']);
+
+				expect(parsed.flags).toStrictEqual({
+					retry: -5.5,
+					fast: undefined,
+					name: undefined,
+				});
+			});
+
+			test('all-digit alias group -512', () => {
+				const parsed = typeFlag({
+					retry: Number,
+					alpha: {
+						type: Boolean,
+						alias: '5',
+					},
+					beta: {
+						type: Boolean,
+						alias: '1',
+					},
+					gamma: {
+						type: Boolean,
+						alias: '2',
+					},
+				}, ['--retry', '-512']);
+
+				expect(parsed.flags).toStrictEqual({
+					retry: Number.NaN,
+					alpha: true,
+					beta: true,
+					gamma: true,
+				});
+			});
+		});
+
+		describe('coexists with numeric flags', () => {
+			test('unregistered negative is a value', () => {
+				const parsed = typeFlag({
+					retry: Number,
+					one: {
+						type: Boolean,
+						alias: '1',
+					},
+				}, ['--retry', '-5']);
+
+				expect(parsed.flags).toStrictEqual({
+					retry: -5,
+					one: undefined,
+				});
+			});
+
+			test('registered -1 standalone is the flag', () => {
+				const parsed = typeFlag({
+					retry: Number,
+					one: {
+						type: Boolean,
+						alias: '1',
+					},
+				}, ['-1']);
+
+				expect(parsed.flags).toStrictEqual({
+					retry: undefined,
+					one: true,
+				});
+			});
+
+			test('value and flag in one command', () => {
+				const parsed = typeFlag({
+					retry: Number,
+					one: {
+						type: Boolean,
+						alias: '1',
+					},
+				}, ['-1', '--retry', '-5']);
+
+				expect(parsed.flags).toStrictEqual({
+					retry: -5,
+					one: true,
+				});
+			});
+
+			test('registered -1 wins after a value flag', () => {
+				const parsed = typeFlag({
+					retry: Number,
+					one: {
+						type: Boolean,
+						alias: '1',
+					},
+				}, ['--retry', '-1']);
+
+				expect(parsed.flags).toStrictEqual({
+					retry: Number.NaN,
+					one: true,
+				});
+			});
+		});
+
+		describe('value-slot only', () => {
+			test('standalone negative is an unknown flag', () => {
+				const parsed = typeFlag({ retry: Number }, ['-7']);
+
+				expect(parsed.flags).toStrictEqual({ retry: undefined });
+				expect(parsed.unknownFlags).toStrictEqual({ 7: [true] });
+			});
+
+			test('boolean flag does not consume a following negative', () => {
+				const parsed = typeFlag({ verbose: Boolean }, ['--verbose', '-5']);
+
+				expect(parsed.flags).toStrictEqual({ verbose: true });
+				expect(parsed.unknownFlags).toStrictEqual({ 5: [true] });
+			});
+
+			test('array consumes one value; trailing negative is an unknown flag', () => {
+				const parsed = typeFlag({ nums: [Number] }, ['--nums', '-1', '-2']);
+
+				expect(parsed.flags).toStrictEqual({ nums: [-1] });
+				expect(parsed.unknownFlags).toStrictEqual({ 2: [true] });
+			});
+		});
+
+		test('end of flags wins over value consumption', () => {
+			const argv = ['--retry', '--', '-5'];
+			const parsed = typeFlag({ retry: Number }, argv);
+
+			expect<{ retry?: number }>(parsed.flags).toStrictEqual({ retry: Number.NaN });
+			expect<string[] & { '--': string[] }>(parsed._).toStrictEqual(
+				Object.assign(['-5'], { '--': ['-5'] }),
+			);
 		});
 	});
 
@@ -306,7 +579,7 @@ describe('Parsing', () => {
 		);
 
 		expect<number | undefined>(parsed.flags.infinity).toBe(Number.POSITIVE_INFINITY);
-		// Negative numbers must use = delimiter to avoid being parsed as flags
+		// -Infinity has no leading digit, so it still needs the = delimiter
 		expect<number | undefined>(parsed.flags.negInfinity).toBe(Number.NEGATIVE_INFINITY);
 		expect<number | undefined>(parsed.flags.scientific).toBe(1.5e10);
 		expect<number | undefined>(parsed.flags.negScientific).toBe(-2.3e-5);

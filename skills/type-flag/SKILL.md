@@ -165,7 +165,7 @@ Same argv-mutation behavior as `typeFlag`.
 
 | Gotcha | Detail |
 |--------|--------|
-| Negative numbers look like flag groups | `--num -123` is parsed as `-1 -2 -3` (char group). Use `--num=-123` or `--num=-Inf`. |
+| Negative numbers as values | `--num -5` is taken as `--num`'s value. Value-slot only: a standalone `-5`, or a `-5` that resolves to defined flags, still parses as a flag. `-Infinity`/`-NaN` (no leading digit) need `--num=-Infinity`. |
 | `argv` is mutated | Parsed tokens are spliced out. Don't share argv with other parsers after. |
 | Frozen argv throws | `Object.freeze(argv)` breaks the splice. Pass a mutable copy. |
 | `unknownFlags` keys are raw | NOT camelCased — so you can distinguish `--some-flag` from `--someFlag`. |

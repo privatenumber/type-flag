@@ -25,6 +25,45 @@ type onArgument = (
 
 const isFlagPattern = /^-{1,2}\w/;
 
+const negativeNumberPattern = /^-(?:\d+(?:\.\d*)?|\.\d+)(?:e[-+]?\d+)?$/i;
+
+/**
+ * A membership-checkable collection of defined flag/alias names. Both the
+ * `typeFlag` registry (a `Map`) and `getFlag`'s searched names (a `Set`)
+ * satisfy this, so neither call site needs a wrapper or conversion.
+ */
+type KnownFlags = {
+	has: (flagName: string) => boolean;
+};
+
+/**
+ * Whether a flag-shaped token should be consumed as the value of a
+ * value-expecting flag: it must look like a single-dash negative number
+ * (e.g. `-5`, `-5.5`, `-5e3`) and NOT fully resolve to defined flags.
+ *
+ * If every character after the dash is a known flag, the token wins as a
+ * flag/alias group instead (e.g. `-512` when 5, 1, and 2 are all defined).
+ */
+const isNegativeNumberValue = (
+	argvElement: string,
+	knownFlags: KnownFlags,
+) => {
+	if (!negativeNumberPattern.test(argvElement)) {
+		return false;
+	}
+
+	// A flag/alias group requires EVERY character to be a defined flag, so the
+	// first non-flag character means the token is a value (e.g. the `0` in `-50`).
+	for (let i = 1; i < argvElement.length; i += 1) {
+		if (!knownFlags.has(argvElement[i])) {
+			return true;
+		}
+	}
+
+	// Every character is a defined flag (e.g. `-512` when 5, 1, 2 are defined).
+	return false;
+};
+
 export const parseFlagArgv = (
 	flagArgv: string,
 ): [
@@ -63,12 +102,20 @@ export const argvIterator = (
 	{
 		onFlag,
 		onArgument,
+		knownFlags,
 	}: {
 		onFlag?: onFlag;
 		onArgument?: onArgument;
+
+		/**
+		 * Defined flag/alias names. Used to decide whether a negative-number
+		 * token (e.g. `-5`) should be consumed as a flag's value rather than
+		 * parsed as a flag. A `Map` registry and a `Set` of names both satisfy it.
+		 */
+		knownFlags?: KnownFlags;
 	},
 ) => {
-	let onValueCallback: void | onValueCallbackType;
+	let onValueCallback!: void | onValueCallbackType;
 	const triggerValueCallback = (
 		value?: string,
 		index?: Index,
@@ -90,6 +137,17 @@ export const argvIterator = (
 			const remaining = argv.slice(i + 1);
 			onArgument?.(remaining, [i], true);
 			break;
+		}
+
+		// A value-expecting flag consumes a negative-number token as its value,
+		// unless the token resolves to defined flags.
+		if (
+			onValueCallback
+			&& knownFlags
+			&& isNegativeNumberValue(argvElement, knownFlags)
+		) {
+			triggerValueCallback(argvElement, [i]);
+			continue;
 		}
 
 		const parsedFlag = parseFlagArgv(argvElement);

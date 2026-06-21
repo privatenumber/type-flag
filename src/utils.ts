@@ -112,26 +112,24 @@ type FlagParsingData = [
 	schema: FlagTypeOrSchema,
 ];
 
-type FlagRegistry = {
-	[flagName: string]: FlagParsingData;
-};
+type FlagRegistry = Map<string, FlagParsingData>;
 
 const setFlag = (
 	registry: FlagRegistry,
 	flagName: string,
 	data: FlagParsingData,
 ) => {
-	if (hasOwn(registry, flagName)) {
+	if (registry.has(flagName)) {
 		throw new Error(`Duplicate flags named "${flagName}"`);
 	}
 
-	registry[flagName] = data;
+	registry.set(flagName, data);
 };
 
 export const createRegistry = (
 	schemas: Flags,
 ) => {
-	const registry: FlagRegistry = {};
+	const registry: FlagRegistry = new Map();
 
 	for (const flagName in schemas) {
 		if (!hasOwn(schemas, flagName)) {
@@ -187,7 +185,12 @@ export const finalizeFlags = (
 			continue;
 		}
 
-		const [values, , isArray, schema] = registry[flagName];
+		const flagData = registry.get(flagName);
+		if (!flagData) {
+			continue;
+		}
+
+		const [values, , isArray, schema] = flagData;
 		if (
 			values.length === 0
 			// A raw schema (e.g. Zod, ArkType) can have its own `.default`; only a

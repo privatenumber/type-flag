@@ -27,6 +27,7 @@ export const getFlag = <Type extends FlagType>(
 	const removeArgvs: Index[] = [];
 
 	argvIterator(argv, {
+		knownFlags: flags,
 		onFlag: (name, explicitValue, flagIndex) => {
 			if (
 				!flags.has(name)
