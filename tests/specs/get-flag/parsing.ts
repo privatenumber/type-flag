@@ -76,6 +76,14 @@ describe('Parsing', () => {
 			expect<boolean[]>(flagValue).toStrictEqual([true, true]);
 			expect(argv).toStrictEqual(['--unknown']);
 		});
+
+		test('flag named __proto__', () => {
+			const argv = ['--__proto__'];
+			const flagValue = getFlag('--__proto__', Boolean, argv);
+
+			expect<boolean | undefined>(flagValue).toBe(true);
+			expect(argv).toStrictEqual([]);
+		});
 	});
 
 	test('ignores argv', () => {

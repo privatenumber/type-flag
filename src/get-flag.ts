@@ -21,7 +21,8 @@ export const getFlag = <Type extends FlagType>(
 	flagType: Type,
 	argv = process.argv.slice(2),
 ) => {
-	const flags: Record<string, true> = {};
+	// Null-prototype map so flag names like `__proto__` are stored as own keys.
+	const flags: Record<string, true> = Object.create(null);
 	for (const flagName of flagNames.split(',')) {
 		const parsedName = parseFlagArgv(flagName)?.[0];
 		if (parsedName) {
