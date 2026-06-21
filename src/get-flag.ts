@@ -28,7 +28,7 @@ export const getFlag = <Type extends FlagType>(
 	const removeArgvs: Index[] = [];
 
 	argvIterator(argv, {
-		isValueToken: argvElement => isNegativeNumberValue(
+		isFlagValue: argvElement => isNegativeNumberValue(
 			argvElement,
 			flagName => flags.has(flagName),
 		),

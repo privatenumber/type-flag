@@ -55,7 +55,7 @@ export const typeFlag = <Schemas extends Flags>(
 	let doubleDashArguments: string[] = [];
 
 	argvIterator(argv, {
-		isValueToken: argvElement => isNegativeNumberValue(
+		isFlagValue: argvElement => isNegativeNumberValue(
 			argvElement,
 			flagName => hasOwn(flagRegistry, flagName),
 		),

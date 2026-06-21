@@ -91,7 +91,7 @@ export const argvIterator = (
 	{
 		onFlag,
 		onArgument,
-		isValueToken,
+		isFlagValue,
 	}: {
 		onFlag?: onFlag;
 		onArgument?: onArgument;
@@ -100,7 +100,7 @@ export const argvIterator = (
 		 * Returns whether a flag-shaped token should instead be consumed as the
 		 * value of a value-expecting flag (e.g. a negative number like `-5`).
 		 */
-		isValueToken?: (argvElement: string) => boolean;
+		isFlagValue?: (argvElement: string) => boolean;
 	},
 ) => {
 	let onValueCallback: void | onValueCallbackType;
@@ -129,10 +129,10 @@ export const argvIterator = (
 		}
 
 		// A value-expecting flag consumes a negative-number token as its value,
-		// unless the token resolves to defined flags (decided by isValueToken).
+		// unless the token resolves to defined flags (decided by isFlagValue).
 		if (
 			hasPendingValue()
-			&& isValueToken?.(argvElement)
+			&& isFlagValue?.(argvElement)
 		) {
 			triggerValueCallback(argvElement, [i]);
 			continue;
