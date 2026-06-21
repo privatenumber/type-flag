@@ -28,9 +28,9 @@ const hasUpperCasePattern = /[A-Z]/;
  * ```
  */
 export const flagNameToKebab = (name: string): string => (
-	// Skip the look-around regex when there's no ASCII uppercase to split on.
-	// `toLowerCase()` is still needed for non-ASCII uppercase (e.g. `İ`) that
-	// `/[A-Z]/` doesn't detect.
+	// Perf: skip the costly look-around regex when there's no ASCII uppercase
+	// to split on (the common case). `toLowerCase()` is still needed for
+	// non-ASCII uppercase (e.g. `İ`) that `/[A-Z]/` doesn't detect.
 	hasUpperCasePattern.test(name)
 		? name.replaceAll(kebabPattern, '-').toLowerCase()
 		: name.toLowerCase()
