@@ -52,12 +52,15 @@ const isNegativeNumberValue = (
 		return false;
 	}
 
+	// A flag/alias group requires EVERY character to be a defined flag, so the
+	// first non-flag character means the token is a value (e.g. the `0` in `-50`).
 	for (let i = 1; i < argvElement.length; i += 1) {
 		if (!knownFlags.has(argvElement[i])) {
 			return true;
 		}
 	}
 
+	// Every character is a defined flag (e.g. `-512` when 5, 1, 2 are defined).
 	return false;
 };
 
