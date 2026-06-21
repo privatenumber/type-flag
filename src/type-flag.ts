@@ -55,10 +55,7 @@ export const typeFlag = <Schemas extends Flags>(
 	let doubleDashArguments: string[] = [];
 
 	argvIterator(argv, {
-		isFlagValue: argvElement => isNegativeNumberValue(
-			argvElement,
-			flagName => hasOwn(flagRegistry, flagName),
-		),
+		isFlagValue: argvElement => isNegativeNumberValue(argvElement, flagRegistry),
 		onFlag(name, explicitValue, flagIndex) {
 			const isAlias = flagIndex.length === ALIAS_INDEX_LENGTH;
 			// Long-form requires length > 1; single-char names are exclusive to short-form (-h vs --help)

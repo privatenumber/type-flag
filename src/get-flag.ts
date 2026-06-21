@@ -6,6 +6,7 @@ import {
 	parseFlagType,
 	normalizeBoolean,
 	applyParser,
+	hasOwn,
 } from './utils.ts';
 import {
 	argvIterator,
@@ -20,21 +21,22 @@ export const getFlag = <Type extends FlagType>(
 	flagType: Type,
 	argv = process.argv.slice(2),
 ) => {
-	const flags = new Set(
-		flagNames.split(',').map(name => parseFlagArgv(name)?.[0]),
-	);
+	const flags: Record<string, true> = {};
+	for (const flagName of flagNames.split(',')) {
+		const parsedName = parseFlagArgv(flagName)?.[0];
+		if (parsedName) {
+			flags[parsedName] = true;
+		}
+	}
 	const [parser, gatherAll] = parseFlagType(flagType);
 	const results: unknown[] = [];
 	const removeArgvs: Index[] = [];
 
 	argvIterator(argv, {
-		isFlagValue: argvElement => isNegativeNumberValue(
-			argvElement,
-			flagName => flags.has(flagName),
-		),
+		isFlagValue: argvElement => isNegativeNumberValue(argvElement, flags),
 		onFlag: (name, explicitValue, flagIndex) => {
 			if (
-				!flags.has(name)
+				!hasOwn(flags, name)
 				|| (!gatherAll && results.length > 0)
 			) {
 				return;

@@ -1,3 +1,5 @@
+import { hasOwn } from './utils.ts';
+
 export const DOUBLE_DASH = '--';
 
 export const ALIAS_INDEX_LENGTH = 3;
@@ -32,20 +34,21 @@ const negativeNumberPattern = /^-(?:\d+(?:\.\d*)?|\.\d+)(?:e[-+]?\d+)?$/i;
  * value-expecting flag: it must look like a single-dash negative number
  * (e.g. `-5`, `-5.5`, `-5e3`) and NOT fully resolve to defined flags.
  *
- * `isKnownFlag` reports whether a single character is a defined flag/alias.
- * If every character after the dash is known, the token wins as a flag/alias
- * group instead (e.g. `-512` when 5, 1, and 2 are all defined).
+ * `knownFlags` is the set of defined flag/alias names (the flag registry, or
+ * getFlag's searched names). If every character after the dash is a known
+ * flag, the token wins as a flag/alias group instead (e.g. `-512` when 5, 1,
+ * and 2 are all defined).
  */
 export const isNegativeNumberValue = (
 	argvElement: string,
-	isKnownFlag: (flagName: string) => boolean,
+	knownFlags: Record<string, unknown>,
 ) => {
 	if (!negativeNumberPattern.test(argvElement)) {
 		return false;
 	}
 
 	for (let i = 1; i < argvElement.length; i += 1) {
-		if (!isKnownFlag(argvElement[i])) {
+		if (!hasOwn(knownFlags, argvElement[i])) {
 			return true;
 		}
 	}
