@@ -103,7 +103,7 @@ export const argvIterator = (
 		isFlagValue?: (argvElement: string) => boolean;
 	},
 ) => {
-	let onValueCallback: void | onValueCallbackType;
+	let onValueCallback!: void | onValueCallbackType;
 	const triggerValueCallback = (
 		value?: string,
 		index?: Index,
@@ -115,7 +115,6 @@ export const argvIterator = (
 		onValueCallback(value, index);
 		onValueCallback = undefined;
 	};
-	const hasPendingValue = () => typeof onValueCallback === 'function';
 
 	for (let i = 0; i < argv.length; i += 1) {
 		const argvElement = argv[i];
@@ -131,7 +130,7 @@ export const argvIterator = (
 		// A value-expecting flag consumes a negative-number token as its value,
 		// unless the token resolves to defined flags (decided by isFlagValue).
 		if (
-			hasPendingValue()
+			onValueCallback
 			&& isFlagValue?.(argvElement)
 		) {
 			triggerValueCallback(argvElement, [i]);
