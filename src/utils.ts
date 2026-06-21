@@ -12,6 +12,7 @@ import { isStandardSchema, schemaToParser } from './standard-schema.ts';
  * - (?<=[A-Z])(?=[A-Z][a-z])  →  after uppercase, before uppercase+lowercase
  */
 const kebabPattern = /(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])/g;
+const hasUpperCasePattern = /[A-Z]/;
 
 /**
  * Normalize a schema-declared flag name (e.g. `orgID`, `apiURL`, `fooBar`)
@@ -26,7 +27,13 @@ const kebabPattern = /(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])/g;
  * flagNameToKebab('fooBar')        // => 'foo-bar'
  * ```
  */
-export const flagNameToKebab = (name: string): string => name.replaceAll(kebabPattern, '-').toLowerCase();
+export const flagNameToKebab = (name: string): string => (
+	// No uppercase means no boundary to split on, so skip the costly
+	// look-around regex; `toLowerCase()` alone matches its result.
+	hasUpperCasePattern.test(name)
+		? name.replaceAll(kebabPattern, '-').toLowerCase()
+		: name.toLowerCase()
+);
 
 const { hasOwnProperty } = Object.prototype;
 export const hasOwn = (
