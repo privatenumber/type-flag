@@ -6,11 +6,9 @@ import {
 	parseFlagType,
 	normalizeBoolean,
 	applyParser,
-	hasOwn,
 } from './utils.ts';
 import {
 	argvIterator,
-	isNegativeNumberValue,
 	parseFlagArgv,
 	spliceFromArgv,
 	type Index,
@@ -21,23 +19,18 @@ export const getFlag = <Type extends FlagType>(
 	flagType: Type,
 	argv = process.argv.slice(2),
 ) => {
-	// Null-prototype map so flag names like `__proto__` are stored as own keys.
-	const flags: Record<string, true> = Object.create(null);
-	for (const flagName of flagNames.split(',')) {
-		const parsedName = parseFlagArgv(flagName)?.[0];
-		if (parsedName) {
-			flags[parsedName] = true;
-		}
-	}
+	const flags = new Set(
+		flagNames.split(',').map(name => parseFlagArgv(name)?.[0]),
+	);
 	const [parser, gatherAll] = parseFlagType(flagType);
 	const results: unknown[] = [];
 	const removeArgvs: Index[] = [];
 
 	argvIterator(argv, {
-		isFlagValue: argvElement => isNegativeNumberValue(argvElement, flags),
+		knownFlags: flags,
 		onFlag: (name, explicitValue, flagIndex) => {
 			if (
-				!hasOwn(flags, name)
+				!flags.has(name)
 				|| (!gatherAll && results.length > 0)
 			) {
 				return;

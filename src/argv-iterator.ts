@@ -1,5 +1,3 @@
-import { hasOwn } from './utils.ts';
-
 export const DOUBLE_DASH = '--';
 
 export const ALIAS_INDEX_LENGTH = 3;
@@ -30,25 +28,32 @@ const isFlagPattern = /^-{1,2}\w/;
 const negativeNumberPattern = /^-(?:\d+(?:\.\d*)?|\.\d+)(?:e[-+]?\d+)?$/i;
 
 /**
+ * A membership-checkable collection of defined flag/alias names. Both the
+ * `typeFlag` registry (a `Map`) and `getFlag`'s searched names (a `Set`)
+ * satisfy this, so neither call site needs a wrapper or conversion.
+ */
+type KnownFlags = {
+	has: (flagName: string) => boolean;
+};
+
+/**
  * Whether a flag-shaped token should be consumed as the value of a
  * value-expecting flag: it must look like a single-dash negative number
  * (e.g. `-5`, `-5.5`, `-5e3`) and NOT fully resolve to defined flags.
  *
- * `knownFlags` is the set of defined flag/alias names (the flag registry, or
- * getFlag's searched names). If every character after the dash is a known
- * flag, the token wins as a flag/alias group instead (e.g. `-512` when 5, 1,
- * and 2 are all defined).
+ * If every character after the dash is a known flag, the token wins as a
+ * flag/alias group instead (e.g. `-512` when 5, 1, and 2 are all defined).
  */
-export const isNegativeNumberValue = (
+const isNegativeNumberValue = (
 	argvElement: string,
-	knownFlags: Record<string, unknown>,
+	knownFlags: KnownFlags,
 ) => {
 	if (!negativeNumberPattern.test(argvElement)) {
 		return false;
 	}
 
 	for (let i = 1; i < argvElement.length; i += 1) {
-		if (!hasOwn(knownFlags, argvElement[i])) {
+		if (!knownFlags.has(argvElement[i])) {
 			return true;
 		}
 	}
@@ -94,16 +99,17 @@ export const argvIterator = (
 	{
 		onFlag,
 		onArgument,
-		isFlagValue,
+		knownFlags,
 	}: {
 		onFlag?: onFlag;
 		onArgument?: onArgument;
 
 		/**
-		 * Returns whether a flag-shaped token should instead be consumed as the
-		 * value of a value-expecting flag (e.g. a negative number like `-5`).
+		 * Defined flag/alias names. Used to decide whether a negative-number
+		 * token (e.g. `-5`) should be consumed as a flag's value rather than
+		 * parsed as a flag. A `Map` registry and a `Set` of names both satisfy it.
 		 */
-		isFlagValue?: (argvElement: string) => boolean;
+		knownFlags?: KnownFlags;
 	},
 ) => {
 	let onValueCallback!: void | onValueCallbackType;
@@ -131,10 +137,11 @@ export const argvIterator = (
 		}
 
 		// A value-expecting flag consumes a negative-number token as its value,
-		// unless the token resolves to defined flags (decided by isFlagValue).
+		// unless the token resolves to defined flags.
 		if (
 			onValueCallback
-			&& isFlagValue?.(argvElement)
+			&& knownFlags
+			&& isNegativeNumberValue(argvElement, knownFlags)
 		) {
 			triggerValueCallback(argvElement, [i]);
 			continue;

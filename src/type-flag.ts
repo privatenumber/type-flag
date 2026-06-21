@@ -18,7 +18,6 @@ import { createPositionalArgumentsFromParts } from './positional-arguments.ts';
 import {
 	ALIAS_INDEX_LENGTH,
 	argvIterator,
-	isNegativeNumberValue,
 	spliceFromArgv,
 	type Index,
 } from './argv-iterator.ts';
@@ -55,33 +54,30 @@ export const typeFlag = <Schemas extends Flags>(
 	let doubleDashArguments: string[] = [];
 
 	argvIterator(argv, {
-		isFlagValue: argvElement => isNegativeNumberValue(argvElement, flagRegistry),
+		knownFlags: flagRegistry,
 		onFlag(name, explicitValue, flagIndex) {
 			const isAlias = flagIndex.length === ALIAS_INDEX_LENGTH;
 			// Long-form requires length > 1; single-char names are exclusive to short-form (-h vs --help)
 			const isValid = isAlias || name.length > 1;
-			const isKnownFlag = isValid && hasOwn(flagRegistry, name);
+			const flagData = isValid ? flagRegistry.get(name) : undefined;
 
-			let negatedBase: string | undefined;
+			let negatedBaseValues: unknown[] | undefined;
 			if (
-				!isKnownFlag
+				!flagData
 				&& booleanNegation
 				&& !isAlias
 				&& name.length > 3
 				&& name.startsWith('no-')
 			) {
-				const baseName = name.slice(3);
-				if (
-					hasOwn(flagRegistry, baseName)
-					&& flagRegistry[baseName][1] === Boolean
-				) {
-					negatedBase = baseName;
+				const baseData = flagRegistry.get(name.slice(3));
+				if (baseData && baseData[1] === Boolean) {
+					negatedBaseValues = baseData[0];
 				}
 			}
 
 			if (
 				ignore?.(
-					isKnownFlag || negatedBase ? KNOWN_FLAG : UNKNOWN_FLAG,
+					flagData || negatedBaseValues ? KNOWN_FLAG : UNKNOWN_FLAG,
 					name,
 					explicitValue,
 				)
@@ -89,8 +85,8 @@ export const typeFlag = <Schemas extends Flags>(
 				return;
 			}
 
-			if (isKnownFlag) {
-				const [values, parser] = flagRegistry[name];
+			if (flagData) {
+				const [values, parser] = flagData;
 				const flagValue = normalizeBoolean(parser, explicitValue);
 				const getFollowingValue = (
 					value?: string | boolean,
@@ -114,8 +110,8 @@ export const typeFlag = <Schemas extends Flags>(
 				);
 			}
 
-			if (negatedBase) {
-				flagRegistry[negatedBase][0].push(false);
+			if (negatedBaseValues) {
+				negatedBaseValues.push(false);
 				removeArgvs.push(flagIndex);
 				return;
 			}
