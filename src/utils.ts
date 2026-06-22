@@ -1,10 +1,14 @@
-import type {
-	TypeFunction,
-	FlagTypeOrSchema,
-	Flags,
-	FlagSchema,
+import {
+	type TypeFunction,
+	type FlagTypeOrSchema,
+	type Flags,
+	type FlagSchema,
+	type ConsumedArgvItem,
+	KNOWN_FLAG,
+	UNKNOWN_FLAG,
 } from './types.ts';
 import { isStandardSchema, schemaToParser } from './standard-schema.ts';
+import { createPositionalArgumentsFromParts } from './positional-arguments.ts';
 
 /**
  * Regex uses zero-width assertions to find positions for hyphen insertion:
@@ -115,14 +119,14 @@ const validateFlagName = (
 	}
 };
 
-type FlagParsingData = [
-	values: unknown[],
+export type FlagParsingData = [
+	name: string,
 	parser: TypeFunction,
 	isArray: boolean,
 	schema: FlagTypeOrSchema,
 ];
 
-type FlagRegistry = Map<string, FlagParsingData>;
+export type FlagRegistry = Map<string, FlagParsingData>;
 
 const setFlag = (
 	registry: FlagRegistry,
@@ -149,7 +153,7 @@ export const createRegistry = (
 
 		const schema = schemas[flagName];
 		const flagData: FlagParsingData = [
-			[],
+			flagName,
 			...parseFlagType(schema),
 			schema,
 		];
@@ -184,12 +188,93 @@ export const createRegistry = (
 	return registry;
 };
 
-export const finalizeFlags = (
+/**
+ * Bucket the ordered `consumed` stream by item kind: known-flag values grouped
+ * by canonical name (order preserved), unknown flags grouped by raw name, and
+ * positionals (tracking which appeared after `--`).
+ */
+const groupConsumed = (
+	consumed: ConsumedArgvItem[],
+) => {
+	const knownFlagValues = new Map<string, unknown[]>();
+	const unknownFlags: Record<string, (string | boolean)[]> = {};
+	const positionals: string[] = [];
+	const doubleDashArguments: string[] = [];
+
+	for (const item of consumed) {
+		if (item.type === KNOWN_FLAG) {
+			let values = knownFlagValues.get(item.name);
+			if (!values) {
+				values = [];
+				knownFlagValues.set(item.name, values);
+			}
+			values.push(item.value);
+		} else if (item.type === UNKNOWN_FLAG) {
+			if (!hasOwn(unknownFlags, item.name)) {
+				unknownFlags[item.name] = [];
+			}
+			unknownFlags[item.name].push(item.value);
+		} else {
+			positionals.push(item.value);
+			if (item.afterDoubleDash) {
+				doubleDashArguments.push(item.value);
+			}
+		}
+	}
+
+	return {
+		knownFlagValues,
+		unknownFlags,
+		positionals,
+		doubleDashArguments,
+	};
+};
+
+/**
+ * Resolve a single flag's final value from its collected occurrences: fall back
+ * to the schema default when absent, return the full array for array flags, or
+ * the last occurrence for scalar flags (last-wins).
+ */
+const resolveFlagValue = (
+	schema: FlagTypeOrSchema,
+	isArray: boolean,
+	values: unknown[] | undefined,
+) => {
+	if (
+		(!values || values.length === 0)
+		// A raw schema (e.g. Zod, ArkType) can have its own `.default`; only a
+		// flag-schema object's `default` is a type-flag default.
+		&& !isStandardSchema(schema)
+		&& 'default' in schema
+	) {
+		const { default: defaultValue } = schema;
+		return typeof defaultValue === 'function' ? defaultValue() : defaultValue;
+	}
+
+	if (isArray) {
+		return values ?? [];
+	}
+
+	return values && values.at(-1);
+};
+
+/**
+ * Derive the public result (`flags`, `unknownFlags`, `_`) from the ordered
+ * `consumed` stream — the parser's single source of truth.
+ */
+export const finalizeParsed = (
 	schemas: Flags,
 	registry: FlagRegistry,
+	consumed: ConsumedArgvItem[],
 ) => {
-	const flags: Record<string, unknown> = {};
+	const {
+		knownFlagValues,
+		unknownFlags,
+		positionals,
+		doubleDashArguments,
+	} = groupConsumed(consumed);
 
+	const flags: Record<string, unknown> = {};
 	for (const flagName in schemas) {
 		if (!hasOwn(schemas, flagName)) {
 			continue;
@@ -200,23 +285,16 @@ export const finalizeFlags = (
 			continue;
 		}
 
-		const [values, , isArray, schema] = flagData;
-		if (
-			values.length === 0
-			// A raw schema (e.g. Zod, ArkType) can have its own `.default`; only a
-			// flag-schema object's `default` is a type-flag default.
-			&& !isStandardSchema(schema)
-			&& 'default' in schema
-		) {
-			let { default: defaultValue } = schema;
-			if (typeof defaultValue === 'function') {
-				defaultValue = defaultValue();
-			}
-			flags[flagName] = defaultValue;
-		} else {
-			flags[flagName] = isArray ? values : values.pop();
-		}
+		flags[flagName] = resolveFlagValue(
+			flagData[3],
+			flagData[2],
+			knownFlagValues.get(flagName),
+		);
 	}
 
-	return flags;
+	return {
+		flags,
+		unknownFlags,
+		_: createPositionalArgumentsFromParts(positionals, doubleDashArguments),
+	};
 };

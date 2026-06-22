@@ -379,6 +379,38 @@ For `['one', '--', 'two']`, `parsed._.slice()` is `['one', 'two']` and `parsed._
 
 Parser and framework integrations that need to rebuild this shape can use `createPositionalArguments()`; see the API reference below.
 
+### Consumed (command-line order)
+
+> [!NOTE]
+> Advanced. Most CLIs only need `flags`. Reach for `consumed` when the order of operations _across_ different flags matters.
+
+`flags` groups values by flag name, which discards how occurrences of different flags interleaved on the command line. `consumed` is the ordered stream of every interpreted argv element, so that relative order is preserved.
+
+```ts
+const parsed = typeFlag({
+    data: { type: [String], alias: 'd' },
+    dataUrlencode: [String]
+})
+
+// $ my-script -d a=1 --data-urlencode b=2 -d c=3
+parsed.flags // { data: ['a=1', 'c=3'], dataUrlencode: ['b=2'] }
+
+parsed.consumed
+// [
+//   { type: 'known-flag', name: 'data', value: 'a=1' },
+//   { type: 'known-flag', name: 'dataUrlencode', value: 'b=2' },
+//   { type: 'known-flag', name: 'data', value: 'c=3' }
+// ]
+```
+
+Each entry is discriminated by `type`:
+
+- `known-flag` — a flag defined in the schema. `name` is the **canonical schema key** (regardless of whether the alias, kebab-case, or camelCase form was used), and `value` is the parsed value for that single occurrence.
+- `unknown-flag` — a flag not in the schema. `name` is the raw argv name; `value` is the explicit value or `true`.
+- `argument` — a positional value. `afterDoubleDash` is `true` when it appeared after `--`.
+
+This is useful for curl-style data assembly (`-d` / `--data-urlencode` joined in argv order), debugging "which occurrence won", or any CLI where flags are an ordered instruction log rather than independent settings.
+
 ### Value Delimiters
 
 The characters `=`, `:`, and `.` delimit a value from a flag.
