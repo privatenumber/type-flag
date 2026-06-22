@@ -8,16 +8,17 @@ import { isStandardSchema, schemaToParser } from './standard-schema.ts';
 
 /**
  * Regex uses zero-width assertions to find positions for hyphen insertion:
- * - (?<=[a-z])(?=[A-Z])  →  after lowercase, before uppercase
+ * - (?<=[a-z0-9])(?=[A-Z])  →  after lowercase or digit, before uppercase
  * - (?<=[A-Z])(?=[A-Z][a-z])  →  after uppercase, before uppercase+lowercase
  */
-const kebabPattern = /(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])/g;
+const kebabPattern = /(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])/g;
 const hasUpperCasePattern = /[A-Z]/;
 
 /**
- * Normalize a schema-declared flag name (e.g. `orgID`, `apiURL`, `fooBar`)
- * to the kebab-case form that matches argv tokens (`--org-id`, `--api-url`,
- * `--foo-bar`). Preserves acronyms as single segments.
+ * Normalize a schema-declared flag name (e.g. `orgID`, `apiURL`, `fooBar`,
+ * `oauth2Bearer`) to the kebab-case form that matches argv tokens
+ * (`--org-id`, `--api-url`, `--foo-bar`, `--oauth2-bearer`).
+ * Preserves acronyms as single segments.
  *
  * @example
  * ```ts
@@ -25,6 +26,7 @@ const hasUpperCasePattern = /[A-Z]/;
  * flagNameToKebab('apiURL')        // => 'api-url'
  * flagNameToKebab('parseJSONData') // => 'parse-json-data'
  * flagNameToKebab('fooBar')        // => 'foo-bar'
+ * flagNameToKebab('oauth2Bearer')  // => 'oauth2-bearer'
  * ```
  */
 export const flagNameToKebab = (name: string): string => (
