@@ -388,7 +388,10 @@ Parser and framework integrations that need to rebuild this shape can use `creat
 
 ```ts
 const parsed = typeFlag({
-    data: { type: [String], alias: 'd' },
+    data: {
+        type: [String],
+        alias: 'd'
+    },
     dataUrlencode: [String]
 })
 
