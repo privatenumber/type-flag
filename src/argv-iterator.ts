@@ -6,16 +6,18 @@ export type Index =
 	| [index: number]
 	| [index: number, aliasIndex: number, isLast: boolean];
 
-type onValueCallbackType = (
-	value?: string,
-	index?: Index,
+type onValueCallback = (
+	value: string | undefined,
+	index: Index | undefined,
 ) => void;
 
+// Return `true` to signal the flag expects a following token as its value
+// (delivered via `onValue`). Avoids allocating a per-occurrence callback closure.
 type onFlag = (
 	name: string,
 	value: string | undefined,
 	index: Index,
-) => void | onValueCallbackType;
+) => boolean | void;
 
 type onArgument = (
 	args: string[],
@@ -101,10 +103,12 @@ export const argvIterator = (
 	argv: string[],
 	{
 		onFlag,
+		onValue,
 		onArgument,
 		knownFlags,
 	}: {
 		onFlag?: onFlag;
+		onValue?: onValueCallback;
 		onArgument?: onArgument;
 
 		/**
@@ -115,17 +119,20 @@ export const argvIterator = (
 		knownFlags?: KnownFlags;
 	},
 ) => {
-	let onValueCallback!: void | onValueCallbackType;
+	// Whether the previous flag expects the next token as its value. A boolean
+	// flag (rather than storing a per-occurrence callback closure) keeps the
+	// value-delivery call site monomorphic and allocation-free.
+	let expectingValue = false;
 	const triggerValueCallback = (
 		value?: string,
 		index?: Index,
 	) => {
-		if (typeof onValueCallback !== 'function') {
+		if (!expectingValue) {
 			return true;
 		}
 
-		onValueCallback(value, index);
-		onValueCallback = undefined;
+		expectingValue = false;
+		onValue?.(value, index);
 	};
 
 	for (let i = 0; i < argv.length; i += 1) {
@@ -142,7 +149,7 @@ export const argvIterator = (
 		// A value-expecting flag consumes a negative-number token as its value,
 		// unless the token resolves to defined flags.
 		if (
-			onValueCallback
+			expectingValue
 			&& knownFlags
 			&& isNegativeNumberValue(argvElement, knownFlags)
 		) {
@@ -167,18 +174,18 @@ export const argvIterator = (
 					triggerValueCallback();
 
 					const isLastAlias = j === flagName.length - 1;
-					onValueCallback = onFlag(
+					expectingValue = onFlag(
 						flagName[j],
 						isLastAlias ? flagValue : undefined,
 						[i, j + 1, isLastAlias],
-					);
+					) === true;
 				}
 			} else {
-				onValueCallback = onFlag(
+				expectingValue = onFlag(
 					flagName,
 					flagValue,
 					[i],
-				);
+				) === true;
 			}
 		} else if (triggerValueCallback(argvElement, [i])) { // if no callback was set
 			onArgument?.([argvElement], [i]);

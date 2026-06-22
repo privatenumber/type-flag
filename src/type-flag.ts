@@ -53,6 +53,27 @@ export const typeFlag = <Schemas extends Flags>(
 	const positionals: string[] = [];
 	let doubleDashArguments: string[] = [];
 
+	// Pending value-expecting flag, read by `flushFlagValue`. Hoisted so
+	// value-taking flags don't allocate a callback closure per occurrence
+	// (and keep the value-delivery call site monomorphic).
+	let pendingValues: unknown[];
+	let pendingParser: Parameters<typeof applyParser>[0];
+	let pendingFlagIndex: Index;
+	let pendingName: string;
+
+	const flushFlagValue = (
+		value: string | boolean | undefined,
+		valueIndex?: Index,
+	) => {
+		// Remove parsed elements from the argv array
+		removeArgvs.push(pendingFlagIndex);
+		if (valueIndex) {
+			removeArgvs.push(valueIndex);
+		}
+
+		pendingValues.push(applyParser(pendingParser, value || '', pendingName));
+	};
+
 	argvIterator(argv, {
 		knownFlags: flagRegistry,
 		onFlag(name, explicitValue, flagIndex) {
@@ -87,27 +108,19 @@ export const typeFlag = <Schemas extends Flags>(
 
 			if (flagData) {
 				const [values, parser] = flagData;
+				pendingValues = values;
+				pendingParser = parser;
+				pendingFlagIndex = flagIndex;
+				pendingName = name;
+
 				const flagValue = normalizeBoolean(parser, explicitValue);
-				const getFollowingValue = (
-					value?: string | boolean,
-					valueIndex?: Index,
-				) => {
-					// Remove elements from argv array
-					removeArgvs.push(flagIndex);
-					if (valueIndex) {
-						removeArgvs.push(valueIndex);
-					}
+				if (flagValue === undefined) {
+					// No inline value: expect the next token as this flag's value.
+					return true;
+				}
 
-					values.push(
-						applyParser(parser, value || '', name),
-					);
-				};
-
-				return (
-					flagValue === undefined
-						? getFollowingValue
-						: getFollowingValue(flagValue)
-				);
+				flushFlagValue(flagValue);
+				return;
 			}
 
 			if (negatedBaseValues) {
@@ -125,6 +138,8 @@ export const typeFlag = <Schemas extends Flags>(
 			);
 			removeArgvs.push(flagIndex);
 		},
+
+		onValue: flushFlagValue,
 
 		onArgument: (args, index, isEoF) => {
 			if (ignore?.(ARGUMENT, argv[index[0]])) {
