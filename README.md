@@ -588,8 +588,11 @@ type Parsed = {
     _: string[] & {
         '--': string[]
     }
+    consumed: ConsumedArgvItem[]
 }
 ```
+
+See [Consumed (command-line order)](#consumed-command-line-order) for the `ConsumedArgvItem` shape.
 
 #### flagSchema
 
