@@ -197,7 +197,10 @@ const groupEntries = (
 	entries: ParsedArgvEntry[],
 ) => {
 	const knownFlagValues = new Map<string, unknown[]>();
-	const unknownFlags: Record<string, (string | boolean)[]> = {};
+	// Null-prototype: this is a dictionary keyed by raw argv names, so a flag
+	// literally named `__proto__` must become an own key rather than hit the
+	// `Object.prototype` `__proto__` setter (which would pollute the result).
+	const unknownFlags: Record<string, (string | boolean)[]> = Object.create(null);
 	const positionals: string[] = [];
 
 	for (const entry of entries) {
@@ -270,7 +273,10 @@ export const finalizeParsed = (
 		positionals,
 	} = groupEntries(entries);
 
-	const flags: Record<string, unknown> = {};
+	// Null-prototype for consistency with `unknownFlags` and to keep the result
+	// a clean dictionary (a computed `{ ['__proto__']: ... }` schema key can't
+	// reach `Object.prototype`'s setter here).
+	const flags: Record<string, unknown> = Object.create(null);
 	for (const flagName in schemas) {
 		if (!hasOwn(schemas, flagName)) {
 			continue;

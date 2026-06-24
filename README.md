@@ -596,6 +596,8 @@ type Parsed = {
 
 See [Ordered Entries](#ordered-entries) for the `ParsedArgvEntry` shape.
 
+`flags` and `unknownFlags` are null-prototype objects. Read them with `name in flags` or `Object.hasOwn(flags, name)`.
+
 #### flagSchema
 
 Type:
