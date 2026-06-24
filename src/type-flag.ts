@@ -4,7 +4,7 @@ import {
 	type TypeFlagOptions,
 	type Simplify,
 	type ParsedArgvEntry,
-	KNOWN_FLAG,
+	FLAG,
 	UNKNOWN_FLAG,
 	ARGUMENT,
 } from './types.ts';
@@ -76,7 +76,7 @@ export const typeFlag = <Schemas extends Flags>(
 		}
 
 		entries.push({
-			type: KNOWN_FLAG,
+			type: FLAG,
 			name: pendingName,
 			value: applyParser(pendingParser, value || '', pendingRawName),
 		});
@@ -106,7 +106,7 @@ export const typeFlag = <Schemas extends Flags>(
 
 			if (
 				ignore?.(
-					flagData || negatedBaseName ? KNOWN_FLAG : UNKNOWN_FLAG,
+					flagData || negatedBaseName ? FLAG : UNKNOWN_FLAG,
 					name,
 					explicitValue,
 				)
@@ -133,7 +133,7 @@ export const typeFlag = <Schemas extends Flags>(
 
 			if (negatedBaseName) {
 				entries.push({
-					type: KNOWN_FLAG,
+					type: FLAG,
 					name: negatedBaseName,
 					value: false,
 				});

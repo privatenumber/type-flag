@@ -4,7 +4,7 @@ import {
 	type Flags,
 	type FlagSchema,
 	type ParsedArgvEntry,
-	KNOWN_FLAG,
+	FLAG,
 	UNKNOWN_FLAG,
 } from './types.ts';
 import { isStandardSchema, schemaToParser } from './standard-schema.ts';
@@ -189,7 +189,7 @@ export const createRegistry = (
 };
 
 /**
- * Bucket the ordered `entries` stream by kind: known-flag values grouped by
+ * Bucket the ordered `entries` stream by kind: defined-flag values grouped by
  * canonical name (order preserved), unknown flags grouped by raw name, and
  * positional arguments. Post-`--` tokens are not in `entries`.
  */
@@ -201,7 +201,7 @@ const groupEntries = (
 	const positionals: string[] = [];
 
 	for (const entry of entries) {
-		if (entry.type === KNOWN_FLAG) {
+		if (entry.type === FLAG) {
 			let values = knownFlagValues.get(entry.name);
 			if (!values) {
 				values = [];
