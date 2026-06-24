@@ -596,7 +596,7 @@ type Parsed = {
 
 See [Ordered Entries](#ordered-entries) for the `ParsedArgvEntry` shape.
 
-`flags` and `unknownFlags` are null-prototype objects (`Object.create(null)`), so a flag named `__proto__` is a normal key and the result can't be prototype-polluted. Read them as plain dictionaries (`name in flags`, `Object.hasOwn(flags, name)`) rather than via inherited methods like `flags.hasOwnProperty(name)`.
+`flags` and `unknownFlags` are null-prototype objects, so a flag named `__proto__` is a normal key and the result can't be prototype-polluted. Read them as plain dictionaries with `name in flags` or `Object.hasOwn(flags, name)`.
 
 #### flagSchema
 

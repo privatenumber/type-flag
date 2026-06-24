@@ -82,7 +82,7 @@ typeFlag({
 }
 ```
 
-`flags` and `unknownFlags` are `Object.create(null)` dictionaries (so `--__proto__` is a safe own key, no prototype pollution). Use `name in flags` / `Object.hasOwn`, not `flags.hasOwnProperty`.
+`flags` and `unknownFlags` are null-prototype dictionaries, so `--__proto__` is a safe own key with no prototype pollution. Use `name in flags` or `Object.hasOwn(flags, name)`.
 
 ### `entries` (advanced)
 
