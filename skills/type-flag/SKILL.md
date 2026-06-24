@@ -93,7 +93,7 @@ type ParsedArgvEntry =
     | { type: 'argument'; value: string }
 ```
 
-`-d a=1 --data-urlencode b=2 -d c=3` → three `known-flag` items in argv order, each `name` being the canonical schema key. Ignored elements (via `ignore`) are excluded. Tokens after `--` are not parsed, so they don't appear here (use `_['--']`).
+`-d a --data-urlencode b -d c` → three `known-flag` items in argv order, each `name` being the canonical schema key. Ignored elements (via `ignore`) are excluded. Tokens after `--` are not parsed, so they don't appear here (use `_['--']`).
 
 ## Flag forms
 

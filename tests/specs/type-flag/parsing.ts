@@ -1588,13 +1588,13 @@ describe('Parsing', () => {
 					},
 					dataUrlencode: [String],
 				},
-				['-d', 'a=1', '--data-urlencode', 'b=2', '-d', 'c=3'],
+				['-d', 'a', '--data-urlencode', 'b', '-d', 'c'],
 			);
 
 			// `flags` groups by name, losing the interleaving...
 			expect(parsed.flags).toStrictEqual({
-				data: ['a=1', 'c=3'],
-				dataUrlencode: ['b=2'],
+				data: ['a', 'c'],
+				dataUrlencode: ['b'],
 			});
 
 			// ...but `entries` preserves the command-line order.
@@ -1602,17 +1602,17 @@ describe('Parsing', () => {
 				{
 					type: 'known-flag',
 					name: 'data',
-					value: 'a=1',
+					value: 'a',
 				},
 				{
 					type: 'known-flag',
 					name: 'dataUrlencode',
-					value: 'b=2',
+					value: 'b',
 				},
 				{
 					type: 'known-flag',
 					name: 'data',
-					value: 'c=3',
+					value: 'c',
 				},
 			]);
 		});

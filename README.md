@@ -395,14 +395,14 @@ const parsed = typeFlag({
     dataUrlencode: [String]
 })
 
-// $ my-script -d a=1 --data-urlencode b=2 -d c=3
-parsed.flags // { data: ['a=1', 'c=3'], dataUrlencode: ['b=2'] }
+// $ my-script -d a --data-urlencode b -d c
+parsed.flags // { data: ['a', 'c'], dataUrlencode: ['b'] }
 
 parsed.entries
 // [
-//   { type: 'known-flag', name: 'data', value: 'a=1' },
-//   { type: 'known-flag', name: 'dataUrlencode', value: 'b=2' },
-//   { type: 'known-flag', name: 'data', value: 'c=3' }
+//   { type: 'known-flag', name: 'data', value: 'a' },
+//   { type: 'known-flag', name: 'dataUrlencode', value: 'b' },
+//   { type: 'known-flag', name: 'data', value: 'c' }
 // ]
 ```
 
