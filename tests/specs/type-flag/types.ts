@@ -7,6 +7,7 @@ import {
 	type TypeFlagOptions,
 	type IgnoreFunction,
 	type PositionalArguments,
+	type ParsedArgvEntry,
 } from '#type-flag';
 import { createPositionalArguments } from '#type-flag/internal';
 
@@ -130,6 +131,7 @@ describe('Types', () => {
 					[flag: string]: (string | boolean)[];
 				};
 				_: PositionalArguments;
+				entries: ParsedArgvEntry[];
 			}>();
 
 			expectTypeOf(parsed._).toEqualTypeOf<PositionalArguments>();
@@ -270,6 +272,7 @@ describe('Types', () => {
 					[flagName: string]: (string | boolean)[];
 				};
 				_: PositionalArguments;
+				entries: ParsedArgvEntry[];
 			}>();
 		});
 
@@ -282,6 +285,7 @@ describe('Types', () => {
 					[flagName: string]: (string | boolean)[];
 				};
 				_: PositionalArguments;
+				entries: ParsedArgvEntry[];
 			}>();
 		});
 

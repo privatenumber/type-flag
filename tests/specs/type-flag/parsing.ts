@@ -99,23 +99,17 @@ describe('Parsing', () => {
 				{}, ['-invalidAlias'],
 			);
 
-			expect<{
-				_: string[] & { '--': string[] };
-				flags: Record<PropertyKey, never>;
-				unknownFlags: Record<string, (string | boolean)[]>;
-			}>(parsed).toStrictEqual({
-				_: Object.assign([], { '--': [] }),
-				flags: {},
-				unknownFlags: {
-					i: [true, true, true],
-					n: [true],
-					v: [true],
-					a: [true, true],
-					l: [true, true],
-					d: [true],
-					A: [true],
-					s: [true],
-				},
+			expect<string[] & { '--': string[] }>(parsed._).toStrictEqual(Object.assign([], { '--': [] }));
+			expect<Record<PropertyKey, never>>(parsed.flags).toStrictEqual({});
+			expect<Record<string, (string | boolean)[]>>(parsed.unknownFlags).toStrictEqual({
+				i: [true, true, true],
+				n: [true],
+				v: [true],
+				a: [true, true],
+				l: [true, true],
+				d: [true],
+				A: [true],
+				s: [true],
 			});
 		});
 
@@ -1176,26 +1170,18 @@ describe('Parsing', () => {
 				},
 			);
 
-			expect<{
-				flags: {
-					string: string[];
-				};
-				unknownFlags: Record<string, (string | boolean)[]>;
-				_: string[] & { '--': string[] };
-			}>(parsed).toStrictEqual({
-				flags: {
-					string: [],
-				},
-				unknownFlags: {
-					unknown: [true, 'd'],
-					u: [true],
-					v: [true, true, '1'],
-				},
-				_: Object.assign(
-					['a', 'c'],
-					{ '--': [] },
-				),
+			expect<{ string: string[] }>(parsed.flags).toStrictEqual({
+				string: [],
 			});
+			expect<Record<string, (string | boolean)[]>>(parsed.unknownFlags).toStrictEqual({
+				unknown: [true, 'd'],
+				u: [true],
+				v: [true, true, '1'],
+			});
+			expect<string[] & { '--': string[] }>(parsed._).toStrictEqual(Object.assign(
+				['a', 'c'],
+				{ '--': [] },
+			));
 			expect<string[]>(argv).toStrictEqual(['--string', '--string=b']);
 		});
 
@@ -1218,24 +1204,16 @@ describe('Parsing', () => {
 				},
 			);
 
-			expect<{
-				flags: {
-					string: string[];
-					boolean: boolean | undefined;
-				};
-				unknownFlags: Record<string, (string | boolean)[]>;
-				_: string[] & { '--': string[] };
-			}>(parsed).toStrictEqual({
-				flags: {
-					string: ['a', 'b', 'd'],
-					boolean: true,
-				},
-				unknownFlags: {},
-				_: Object.assign(
-					['c'],
-					{ '--': [] },
-				),
+			expect<{ string: string[];
+				boolean: boolean | undefined; }>(parsed.flags).toStrictEqual({
+				string: ['a', 'b', 'd'],
+				boolean: true,
 			});
+			expect<Record<string, (string | boolean)[]>>(parsed.unknownFlags).toStrictEqual({});
+			expect<string[] & { '--': string[] }>(parsed._).toStrictEqual(Object.assign(
+				['c'],
+				{ '--': [] },
+			));
 			expect<string[]>(argv).toStrictEqual(['--unknown', '--unknown=d', '-u', '-vv=1', '-u']);
 		});
 
@@ -1263,22 +1241,14 @@ describe('Parsing', () => {
 				},
 			);
 
-			expect<{
-				flags: {
-					string: string[];
-				};
-				unknownFlags: Record<string, (string | boolean)[]>;
-				_: string[] & { '--': string[] };
-			}>(parsed).toStrictEqual({
-				flags: {
-					string: ['value'],
-				},
-				unknownFlags: {},
-				_: Object.assign(
-					[],
-					{ '--': [] },
-				),
+			expect<{ string: string[] }>(parsed.flags).toStrictEqual({
+				string: ['value'],
 			});
+			expect<Record<string, (string | boolean)[]>>(parsed.unknownFlags).toStrictEqual({});
+			expect<string[] & { '--': string[] }>(parsed._).toStrictEqual(Object.assign(
+				[],
+				{ '--': [] },
+			));
 			expect<string[]>(argv).toStrictEqual(['first-arg', '--string=b', '--string', 'c', '--unknown=d', '-u', '--', 'hello']);
 		});
 
@@ -1301,24 +1271,16 @@ describe('Parsing', () => {
 				},
 			);
 
-			expect<{
-				flags: {
-					string: string | undefined;
-					boolean: boolean | undefined;
-				};
-				unknownFlags: Record<string, (string | boolean)[]>;
-				_: string[] & { '--': string[] };
-			}>(parsed).toStrictEqual({
-				flags: {
-					string: 'hello',
-					boolean: undefined,
-				},
-				unknownFlags: {},
-				_: Object.assign(
-					['a'],
-					{ '--': [] },
-				),
+			expect<{ string: string | undefined;
+				boolean: boolean | undefined; }>(parsed.flags).toStrictEqual({
+				string: 'hello',
+				boolean: undefined,
 			});
+			expect<Record<string, (string | boolean)[]>>(parsed.unknownFlags).toStrictEqual({});
+			expect<string[] & { '--': string[] }>(parsed._).toStrictEqual(Object.assign(
+				['a'],
+				{ '--': [] },
+			));
 			expect<string[]>(argv).toStrictEqual(['--', 'b', '--string=b', '--unknown', '--boolean']);
 		});
 
@@ -1613,6 +1575,229 @@ describe('Parsing', () => {
 			expect<string | number>(parsed.flags.inconsistentTypesC).toBe('world');
 			expect<string[]>(parsed.flags.noDefault).toStrictEqual([]);
 			expect<string[]>(argv).toStrictEqual([]);
+		});
+	});
+
+	describe('entries', () => {
+		test('preserves order across different flags', () => {
+			const parsed = typeFlag(
+				{
+					data: {
+						type: [String],
+						alias: 'd',
+					},
+					dataUrlencode: [String],
+				},
+				['-d', 'a', '--data-urlencode', 'b', '-d', 'c'],
+			);
+
+			// `flags` groups by name, losing the interleaving...
+			expect(parsed.flags).toStrictEqual({
+				data: ['a', 'c'],
+				dataUrlencode: ['b'],
+			});
+
+			// ...but `entries` preserves the command-line order.
+			expect(parsed.entries).toStrictEqual([
+				{
+					type: 'known-flag',
+					name: 'data',
+					value: 'a',
+				},
+				{
+					type: 'known-flag',
+					name: 'dataUrlencode',
+					value: 'b',
+				},
+				{
+					type: 'known-flag',
+					name: 'data',
+					value: 'c',
+				},
+			]);
+		});
+
+		test('uses the canonical schema name for alias and kebab-case input', () => {
+			const parsed = typeFlag(
+				{
+					dataUrlencode: {
+						type: [String],
+						alias: 'd',
+					},
+				},
+				['-d', 'a', '--data-urlencode', 'b', '--dataUrlencode', 'c'],
+			);
+
+			expect(parsed.entries).toStrictEqual([
+				{
+					type: 'known-flag',
+					name: 'dataUrlencode',
+					value: 'a',
+				},
+				{
+					type: 'known-flag',
+					name: 'dataUrlencode',
+					value: 'b',
+				},
+				{
+					type: 'known-flag',
+					name: 'dataUrlencode',
+					value: 'c',
+				},
+			]);
+		});
+
+		test('parses values and applies the type function', () => {
+			const parsed = typeFlag(
+				{
+					port: [Number],
+					verbose: Boolean,
+				},
+				['--port', '3000', '--verbose', '--port=3001'],
+			);
+
+			expect(parsed.entries).toStrictEqual([
+				{
+					type: 'known-flag',
+					name: 'port',
+					value: 3000,
+				},
+				{
+					type: 'known-flag',
+					name: 'verbose',
+					value: true,
+				},
+				{
+					type: 'known-flag',
+					name: 'port',
+					value: 3001,
+				},
+			]);
+		});
+
+		test('includes every occurrence of a scalar flag (last wins in flags)', () => {
+			const parsed = typeFlag(
+				{ name: String },
+				['--name', 'a', '--name', 'b'],
+			);
+
+			expect(parsed.flags.name).toBe('b');
+			expect(parsed.entries).toStrictEqual([
+				{
+					type: 'known-flag',
+					name: 'name',
+					value: 'a',
+				},
+				{
+					type: 'known-flag',
+					name: 'name',
+					value: 'b',
+				},
+			]);
+		});
+
+		test('records unknown flags and positionals in order', () => {
+			const parsed = typeFlag(
+				{ verbose: Boolean },
+				['file.txt', '--verbose', '--unknown=x', 'other.txt'],
+			);
+
+			expect(parsed.entries).toStrictEqual([
+				{
+					type: 'argument',
+					value: 'file.txt',
+				},
+				{
+					type: 'known-flag',
+					name: 'verbose',
+					value: true,
+				},
+				{
+					type: 'unknown-flag',
+					name: 'unknown',
+					value: 'x',
+				},
+				{
+					type: 'argument',
+					value: 'other.txt',
+				},
+			]);
+		});
+
+		test('excludes tokens after the double-dash delimiter (they are not parsed)', () => {
+			const parsed = typeFlag(
+				{ verbose: Boolean },
+				['a', '--verbose', '--', 'b', 'c'],
+			);
+
+			// Only pre-`--` elements are interpreted, so `entries` stops at `--`.
+			expect(parsed.entries).toStrictEqual([
+				{
+					type: 'argument',
+					value: 'a',
+				},
+				{
+					type: 'known-flag',
+					name: 'verbose',
+					value: true,
+				},
+			]);
+
+			// The raw post-`--` tail remains available through `_`.
+			expect(parsed._).toStrictEqual(Object.assign(['a', 'b', 'c'], { '--': ['b', 'c'] }));
+		});
+
+		test('records boolean negation as the canonical flag set to false', () => {
+			const parsed = typeFlag(
+				{ cache: Boolean },
+				['--cache', '--no-cache'],
+				{ booleanNegation: true },
+			);
+
+			expect(parsed.flags.cache).toBe(false);
+			expect(parsed.entries).toStrictEqual([
+				{
+					type: 'known-flag',
+					name: 'cache',
+					value: true,
+				},
+				{
+					type: 'known-flag',
+					name: 'cache',
+					value: false,
+				},
+			]);
+		});
+
+		test('excludes elements skipped by the ignore callback', () => {
+			const parsed = typeFlag(
+				{
+					string: [String],
+					verbose: Boolean,
+				},
+				['--string', 'a', '--verbose', '--string', 'b'],
+				{
+					ignore: (type, flagName) => type === 'known-flag' && flagName === 'string',
+				},
+			);
+
+			// An ignored flag never consumes a following value, so `a`/`b` fall
+			// through as positional arguments — and `entries` reflects exactly that.
+			expect(parsed.entries).toStrictEqual([
+				{
+					type: 'argument',
+					value: 'a',
+				},
+				{
+					type: 'known-flag',
+					name: 'verbose',
+					value: true,
+				},
+				{
+					type: 'argument',
+					value: 'b',
+				},
+			]);
 		});
 	});
 });

@@ -207,6 +207,20 @@ export type TypeFlag<Schemas extends Flags = Flags> = {
 	 * Includes a special `"--"` key for arguments after the double dash.
 	 */
 	_: PositionalArguments;
+
+	/**
+	 * Every interpreted argv element, in the order it appeared on the command
+	 * line. Unlike `flags` (which groups values by flag name), this preserves the
+	 * relative order across different flags and positional arguments.
+	 *
+	 * Only covers what the parser interprets: elements after the `--` delimiter
+	 * are not parsed, so they are excluded here (find them in `_['--']`).
+	 *
+	 * Advanced: most CLIs only need `flags`. Reach for `entries` when the order
+	 * of operations across different flags matters — e.g. assembling a curl-style
+	 * request body from interleaved `-d` and `--data-urlencode`.
+	 */
+	entries: ParsedArgvEntry[];
 };
 
 /** Constant indicating a known flag token type. */
@@ -217,6 +231,40 @@ export const UNKNOWN_FLAG = 'unknown-flag';
 
 /** Constant indicating a positional argument token type. */
 export const ARGUMENT = 'argument';
+
+/**
+ * A single interpreted argv element from {@link TypeFlag.entries}, discriminated
+ * by `type`.
+ */
+export type ParsedArgvEntry =
+	| {
+		type: typeof KNOWN_FLAG;
+
+		/**
+		 * Canonical schema key — always the name as declared in the schema
+		 * (e.g. `dataUrlencode`), regardless of whether the alias (`-d`),
+		 * kebab-case (`--data-urlencode`), or camelCase form was used in argv.
+		 */
+		name: string;
+
+		/** Parsed value for this single occurrence. */
+		value: unknown;
+	}
+	| {
+		type: typeof UNKNOWN_FLAG;
+
+		/** Raw flag name as it appeared in argv (not camelCased). */
+		name: string;
+
+		/** Explicit value, or `true` when the flag had no value. */
+		value: string | boolean;
+	}
+	| {
+		type: typeof ARGUMENT;
+
+		/** The positional argument value. */
+		value: string;
+	};
 
 /**
  * A function to dynamically ignore specific elements during parsing.
