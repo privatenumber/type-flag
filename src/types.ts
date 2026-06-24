@@ -223,8 +223,8 @@ export type TypeFlag<Schemas extends Flags = Flags> = {
 	entries: ParsedArgvEntry[];
 };
 
-/** Constant indicating a known flag token type. */
-export const KNOWN_FLAG = 'known-flag';
+/** Constant indicating a defined (schema) flag token type. */
+export const FLAG = 'flag';
 
 /** Constant indicating an unknown flag token type. */
 export const UNKNOWN_FLAG = 'unknown-flag';
@@ -238,7 +238,7 @@ export const ARGUMENT = 'argument';
  */
 export type ParsedArgvEntry =
 	| {
-		type: typeof KNOWN_FLAG;
+		type: typeof FLAG;
 
 		/**
 		 * Canonical schema key — always the name as declared in the schema
@@ -272,7 +272,7 @@ export type ParsedArgvEntry =
  *
  * @param type - The type of element being processed:
  *   - `'argument'`: A positional argument (non-flag value)
- *   - `'known-flag'`: A flag defined in the schema
+ *   - `'flag'`: A flag defined in the schema
  *   - `'unknown-flag'`: A flag not defined in the schema
  * @param argvElement - The raw argv string. For arguments, this is the value itself.
  *   For flags, this is the flag name (e.g., `'--verbose'` or `'-v'`).
@@ -301,7 +301,7 @@ export type ParsedArgvEntry =
  * ```
  */
 export type IgnoreFunction = (
-	type: typeof ARGUMENT | typeof KNOWN_FLAG | typeof UNKNOWN_FLAG,
+	type: typeof ARGUMENT | typeof FLAG | typeof UNKNOWN_FLAG,
 	argvElement: string,
 	flagValue?: string,
 ) => boolean | void;

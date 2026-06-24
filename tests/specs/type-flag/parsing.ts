@@ -1164,7 +1164,7 @@ describe('Parsing', () => {
 				argv,
 				{
 					ignore: (type, flagName) => (
-						type === 'known-flag'
+						type === 'flag'
 							&& flagName === 'string'
 					),
 				},
@@ -1477,7 +1477,7 @@ describe('Parsing', () => {
 			expect(Object.keys(parsed.flags)).toStrictEqual(['verbose']);
 		});
 
-		test('ignore callback receives no- prefixed name as known-flag', () => {
+		test('ignore callback receives no- prefixed name as flag', () => {
 			const ignoredFlags: [string, string][] = [];
 			typeFlag(
 				{
@@ -1494,7 +1494,7 @@ describe('Parsing', () => {
 			);
 
 			expect(ignoredFlags).toStrictEqual([
-				['known-flag', 'no-verbose'],
+				['flag', 'no-verbose'],
 				['unknown-flag', 'no-unknown'],
 			]);
 		});
@@ -1600,17 +1600,17 @@ describe('Parsing', () => {
 			// ...but `entries` preserves the command-line order.
 			expect(parsed.entries).toStrictEqual([
 				{
-					type: 'known-flag',
+					type: 'flag',
 					name: 'data',
 					value: 'a',
 				},
 				{
-					type: 'known-flag',
+					type: 'flag',
 					name: 'dataUrlencode',
 					value: 'b',
 				},
 				{
-					type: 'known-flag',
+					type: 'flag',
 					name: 'data',
 					value: 'c',
 				},
@@ -1630,17 +1630,17 @@ describe('Parsing', () => {
 
 			expect(parsed.entries).toStrictEqual([
 				{
-					type: 'known-flag',
+					type: 'flag',
 					name: 'dataUrlencode',
 					value: 'a',
 				},
 				{
-					type: 'known-flag',
+					type: 'flag',
 					name: 'dataUrlencode',
 					value: 'b',
 				},
 				{
-					type: 'known-flag',
+					type: 'flag',
 					name: 'dataUrlencode',
 					value: 'c',
 				},
@@ -1658,17 +1658,17 @@ describe('Parsing', () => {
 
 			expect(parsed.entries).toStrictEqual([
 				{
-					type: 'known-flag',
+					type: 'flag',
 					name: 'port',
 					value: 3000,
 				},
 				{
-					type: 'known-flag',
+					type: 'flag',
 					name: 'verbose',
 					value: true,
 				},
 				{
-					type: 'known-flag',
+					type: 'flag',
 					name: 'port',
 					value: 3001,
 				},
@@ -1684,12 +1684,12 @@ describe('Parsing', () => {
 			expect(parsed.flags.name).toBe('b');
 			expect(parsed.entries).toStrictEqual([
 				{
-					type: 'known-flag',
+					type: 'flag',
 					name: 'name',
 					value: 'a',
 				},
 				{
-					type: 'known-flag',
+					type: 'flag',
 					name: 'name',
 					value: 'b',
 				},
@@ -1708,7 +1708,7 @@ describe('Parsing', () => {
 					value: 'file.txt',
 				},
 				{
-					type: 'known-flag',
+					type: 'flag',
 					name: 'verbose',
 					value: true,
 				},
@@ -1737,7 +1737,7 @@ describe('Parsing', () => {
 					value: 'a',
 				},
 				{
-					type: 'known-flag',
+					type: 'flag',
 					name: 'verbose',
 					value: true,
 				},
@@ -1757,12 +1757,12 @@ describe('Parsing', () => {
 			expect(parsed.flags.cache).toBe(false);
 			expect(parsed.entries).toStrictEqual([
 				{
-					type: 'known-flag',
+					type: 'flag',
 					name: 'cache',
 					value: true,
 				},
 				{
-					type: 'known-flag',
+					type: 'flag',
 					name: 'cache',
 					value: false,
 				},
@@ -1777,7 +1777,7 @@ describe('Parsing', () => {
 				},
 				['--string', 'a', '--verbose', '--string', 'b'],
 				{
-					ignore: (type, flagName) => type === 'known-flag' && flagName === 'string',
+					ignore: (type, flagName) => type === 'flag' && flagName === 'string',
 				},
 			);
 
@@ -1789,7 +1789,7 @@ describe('Parsing', () => {
 					value: 'a',
 				},
 				{
-					type: 'known-flag',
+					type: 'flag',
 					name: 'verbose',
 					value: true,
 				},

@@ -88,12 +88,12 @@ Ordered stream of every interpreted argv element, preserving relative order acro
 
 ```ts
 type ParsedArgvEntry =
-    | { type: 'known-flag'; name: string; value: unknown }          // name = canonical schema key (alias/kebab resolved)
+    | { type: 'flag'; name: string; value: unknown }          // name = canonical schema key (alias/kebab resolved)
     | { type: 'unknown-flag'; name: string; value: string | boolean } // name = raw argv name
     | { type: 'argument'; value: string }
 ```
 
-`-d a --data-urlencode b -d c` → three `known-flag` items in argv order, each `name` being the canonical schema key. Ignored elements (via `ignore`) are excluded. Tokens after `--` are not parsed, so they don't appear here (use `_['--']`).
+`-d a --data-urlencode b -d c` → three `flag` items in argv order, each `name` being the canonical schema key. Ignored elements (via `ignore`) are excluded. Tokens after `--` are not parsed, so they don't appear here (use `_['--']`).
 
 ## Flag forms
 
@@ -139,7 +139,7 @@ Skip parsing specific tokens (leave them in `argv`). Called for each token:
 
 ```ts
 ignore?: (
-    type: 'known-flag' | 'unknown-flag' | 'argument',
+    type: 'flag' | 'unknown-flag' | 'argument',
     flagOrArgv: string,
     value: string | undefined,
 ) => boolean | void

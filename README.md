@@ -400,15 +400,15 @@ parsed.flags // { data: ['a', 'c'], dataUrlencode: ['b'] }
 
 parsed.entries
 // [
-//   { type: 'known-flag', name: 'data', value: 'a' },
-//   { type: 'known-flag', name: 'dataUrlencode', value: 'b' },
-//   { type: 'known-flag', name: 'data', value: 'c' }
+//   { type: 'flag', name: 'data', value: 'a' },
+//   { type: 'flag', name: 'dataUrlencode', value: 'b' },
+//   { type: 'flag', name: 'data', value: 'c' }
 // ]
 ```
 
 Each entry is discriminated by `type`:
 
-- `known-flag` — a flag defined in the schema. `name` is the **canonical schema key** (regardless of whether the alias, kebab-case, or camelCase form was used), and `value` is the parsed value for that single occurrence.
+- `flag` — a flag defined in the schema (it landed in `flags`). `name` is the **canonical schema key** (regardless of whether the alias, kebab-case, or camelCase form was used), and `value` is the parsed value for that single occurrence.
 - `unknown-flag` — a flag not in the schema. `name` is the raw argv name; `value` is the explicit value or `true`.
 - `argument` — a positional value.
 
@@ -629,7 +629,7 @@ Type:
 ```ts
 type Options = {
     ignore?: (
-        type: 'known-flag' | 'unknown-flag' | 'argument',
+        type: 'flag' | 'unknown-flag' | 'argument',
         flagOrArgv: string,
         value: string | undefined
     ) => boolean | void
