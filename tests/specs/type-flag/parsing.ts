@@ -6,19 +6,24 @@ describe('Parsing', () => {
 	describe('edge-cases', () => {
 		test('Object prototype property', () => {
 			const parsed = typeFlag({}, ['--to-string']);
-			expect<Record<PropertyKey, never>>(parsed.flags).toStrictEqual({});
-			expect<Record<string, (string | boolean)[]>>(parsed.unknownFlags).toStrictEqual({
+			expect<Record<PropertyKey, never>>({ ...parsed.flags }).toStrictEqual({});
+			expect<Record<string, (string | boolean)[]>>({ ...parsed.unknownFlags }).toStrictEqual({
 				'to-string': [true],
 			});
+		});
+
+		test('flags and unknownFlags are null-prototype objects', () => {
+			const parsed = typeFlag({ known: String }, ['--known', 'a', '--other']);
+			expect(Object.getPrototypeOf(parsed.flags)).toBe(null);
+			expect(Object.getPrototypeOf(parsed.unknownFlags)).toBe(null);
 		});
 
 		test('unknown __proto__ flag does not pollute the prototype', () => {
 			const parsed = typeFlag({}, ['--__proto__', '--__proto__=x']);
 
-			// The result's prototype must be untouched.
-			expect(Object.getPrototypeOf(parsed.unknownFlags)).toBe(Object.prototype);
-
-			// `__proto__` is captured as an own data property, not via the setter.
+			// Null-prototype dictionary, so `__proto__` is a normal own key
+			// rather than a trip through the `Object.prototype` setter.
+			expect(Object.getPrototypeOf(parsed.unknownFlags)).toBe(null);
 			expect(Object.hasOwn(parsed.unknownFlags, '__proto__')).toBe(true);
 			const descriptor = Object.getOwnPropertyDescriptor(parsed.unknownFlags, '__proto__');
 			expect<unknown>(descriptor?.value).toStrictEqual([true, 'x']);
@@ -42,7 +47,7 @@ describe('Parsing', () => {
 				boolean: Boolean,
 			}, ['--boolean=value']);
 
-			expect<{ boolean?: boolean }>(parsed.flags).toStrictEqual({
+			expect<{ boolean?: boolean }>({ ...parsed.flags }).toStrictEqual({
 				boolean: true,
 			});
 		});
@@ -52,7 +57,7 @@ describe('Parsing', () => {
 				string: String,
 			}, ['--string', '--', 'value']);
 
-			expect<{ string?: string }>(parsed.flags).toStrictEqual({
+			expect<{ string?: string }>({ ...parsed.flags }).toStrictEqual({
 				string: '',
 			});
 
@@ -69,7 +74,7 @@ describe('Parsing', () => {
 				_flag: Boolean,
 			}, ['--_flag']);
 
-			expect<{ _flag?: boolean }>(parsed.flags).toStrictEqual({
+			expect<{ _flag?: boolean }>({ ...parsed.flags }).toStrictEqual({
 				_flag: true,
 			});
 		});
@@ -79,10 +84,10 @@ describe('Parsing', () => {
 				number: Number,
 			}, ['-123']);
 
-			expect<{ number?: number }>(parsed.flags).toStrictEqual({
+			expect<{ number?: number }>({ ...parsed.flags }).toStrictEqual({
 				number: undefined,
 			});
-			expect<Record<string, (string | boolean)[]>>(parsed.unknownFlags).toStrictEqual({
+			expect<Record<string, (string | boolean)[]>>({ ...parsed.unknownFlags }).toStrictEqual({
 				1: [true],
 				2: [true],
 				3: [true],
@@ -96,10 +101,10 @@ describe('Parsing', () => {
 			}, argv);
 
 			// -123 is consumed as the value for --number
-			expect<{ number?: number }>(parsed.flags).toStrictEqual({
+			expect<{ number?: number }>({ ...parsed.flags }).toStrictEqual({
 				number: -123,
 			});
-			expect<Record<string, (string | boolean)[]>>(parsed.unknownFlags).toStrictEqual({});
+			expect<Record<string, (string | boolean)[]>>({ ...parsed.unknownFlags }).toStrictEqual({});
 			expect<string[] & { '--': string[] }>(parsed._).toStrictEqual(
 				Object.assign(
 					[],
@@ -114,7 +119,7 @@ describe('Parsing', () => {
 				number: Number,
 			}, ['--number=-123']);
 
-			expect<{ number?: number }>(parsed.flags).toStrictEqual({
+			expect<{ number?: number }>({ ...parsed.flags }).toStrictEqual({
 				number: -123,
 			});
 		});
@@ -125,8 +130,8 @@ describe('Parsing', () => {
 			);
 
 			expect<string[] & { '--': string[] }>(parsed._).toStrictEqual(Object.assign([], { '--': [] }));
-			expect<Record<PropertyKey, never>>(parsed.flags).toStrictEqual({});
-			expect<Record<string, (string | boolean)[]>>(parsed.unknownFlags).toStrictEqual({
+			expect<Record<PropertyKey, never>>({ ...parsed.flags }).toStrictEqual({});
+			expect<Record<string, (string | boolean)[]>>({ ...parsed.unknownFlags }).toStrictEqual({
 				i: [true, true, true],
 				n: [true],
 				v: [true],
@@ -154,7 +159,7 @@ describe('Parsing', () => {
 		test('Unknown flags starting with numbers', () => {
 			const parsed = typeFlag({}, ['--123abc', '--456', '-7', '-8a']);
 
-			expect<Record<string, (string | boolean)[]>>(parsed.unknownFlags).toStrictEqual({
+			expect<Record<string, (string | boolean)[]>>({ ...parsed.unknownFlags }).toStrictEqual({
 				'123abc': [true],
 				456: [true],
 				7: [true],
@@ -169,21 +174,21 @@ describe('Parsing', () => {
 			const argv = ['--retry', '-5'];
 			const parsed = typeFlag({ retry: Number }, argv);
 
-			expect<{ retry?: number }>(parsed.flags).toStrictEqual({ retry: -5 });
-			expect(parsed.unknownFlags).toStrictEqual({});
+			expect<{ retry?: number }>({ ...parsed.flags }).toStrictEqual({ retry: -5 });
+			expect({ ...parsed.unknownFlags }).toStrictEqual({});
 			expect<string[]>(argv).toStrictEqual([]);
 		});
 
 		test('consumes negative decimal', () => {
 			const parsed = typeFlag({ retry: Number }, ['--retry', '-5.5']);
 
-			expect<{ retry?: number }>(parsed.flags).toStrictEqual({ retry: -5.5 });
+			expect<{ retry?: number }>({ ...parsed.flags }).toStrictEqual({ retry: -5.5 });
 		});
 
 		test('consumes negative scientific notation', () => {
 			const parsed = typeFlag({ retry: Number }, ['--retry', '-5e3']);
 
-			expect<{ retry?: number }>(parsed.flags).toStrictEqual({ retry: -5000 });
+			expect<{ retry?: number }>({ ...parsed.flags }).toStrictEqual({ retry: -5000 });
 		});
 
 		test('consumes negative via alias', () => {
@@ -194,25 +199,25 @@ describe('Parsing', () => {
 				},
 			}, ['-r', '-5']);
 
-			expect<{ retry?: number }>(parsed.flags).toStrictEqual({ retry: -5 });
+			expect<{ retry?: number }>({ ...parsed.flags }).toStrictEqual({ retry: -5 });
 		});
 
 		test('explicit = value still works', () => {
 			const parsed = typeFlag({ retry: Number }, ['--retry=-5']);
 
-			expect<{ retry?: number }>(parsed.flags).toStrictEqual({ retry: -5 });
+			expect<{ retry?: number }>({ ...parsed.flags }).toStrictEqual({ retry: -5 });
 		});
 
 		test('string flag consumes negative-number token', () => {
 			const parsed = typeFlag({ name: String }, ['--name', '-5']);
 
-			expect<{ name?: string }>(parsed.flags).toStrictEqual({ name: '-5' });
+			expect<{ name?: string }>({ ...parsed.flags }).toStrictEqual({ name: '-5' });
 		});
 
 		test('array of numbers consumes negatives', () => {
 			const parsed = typeFlag({ nums: [Number] }, ['--nums', '-1', '--nums', '-2']);
 
-			expect<{ nums: number[] }>(parsed.flags).toStrictEqual({ nums: [-1, -2] });
+			expect<{ nums: number[] }>({ ...parsed.flags }).toStrictEqual({ nums: [-1, -2] });
 		});
 
 		describe('defined flags take precedence', () => {
@@ -229,12 +234,12 @@ describe('Parsing', () => {
 					},
 				}, ['--retry', '-5']);
 
-				expect(parsed.flags).toStrictEqual({
+				expect({ ...parsed.flags }).toStrictEqual({
 					retry: Number.NaN,
 					fast: true,
 					name: undefined,
 				});
-				expect(parsed.unknownFlags).toStrictEqual({});
+				expect({ ...parsed.unknownFlags }).toStrictEqual({});
 			});
 
 			test('-5 then -n value', () => {
@@ -250,7 +255,7 @@ describe('Parsing', () => {
 					},
 				}, ['--retry', '-5', '-n', 'Hiroki']);
 
-				expect(parsed.flags).toStrictEqual({
+				expect({ ...parsed.flags }).toStrictEqual({
 					retry: Number.NaN,
 					fast: true,
 					name: 'Hiroki',
@@ -270,7 +275,7 @@ describe('Parsing', () => {
 					},
 				}, ['--retry', '-5n', 'Hiroki']);
 
-				expect(parsed.flags).toStrictEqual({
+				expect({ ...parsed.flags }).toStrictEqual({
 					retry: Number.NaN,
 					fast: true,
 					name: 'Hiroki',
@@ -290,7 +295,7 @@ describe('Parsing', () => {
 					},
 				}, ['--retry', '-50']);
 
-				expect(parsed.flags).toStrictEqual({
+				expect({ ...parsed.flags }).toStrictEqual({
 					retry: -50,
 					fast: undefined,
 					name: undefined,
@@ -310,7 +315,7 @@ describe('Parsing', () => {
 					},
 				}, ['--retry', '-5.5']);
 
-				expect(parsed.flags).toStrictEqual({
+				expect({ ...parsed.flags }).toStrictEqual({
 					retry: -5.5,
 					fast: undefined,
 					name: undefined,
@@ -334,7 +339,7 @@ describe('Parsing', () => {
 					},
 				}, ['--retry', '-512']);
 
-				expect(parsed.flags).toStrictEqual({
+				expect({ ...parsed.flags }).toStrictEqual({
 					retry: Number.NaN,
 					alpha: true,
 					beta: true,
@@ -353,7 +358,7 @@ describe('Parsing', () => {
 					},
 				}, ['--retry', '-5']);
 
-				expect(parsed.flags).toStrictEqual({
+				expect({ ...parsed.flags }).toStrictEqual({
 					retry: -5,
 					one: undefined,
 				});
@@ -368,7 +373,7 @@ describe('Parsing', () => {
 					},
 				}, ['-1']);
 
-				expect(parsed.flags).toStrictEqual({
+				expect({ ...parsed.flags }).toStrictEqual({
 					retry: undefined,
 					one: true,
 				});
@@ -383,7 +388,7 @@ describe('Parsing', () => {
 					},
 				}, ['-1', '--retry', '-5']);
 
-				expect(parsed.flags).toStrictEqual({
+				expect({ ...parsed.flags }).toStrictEqual({
 					retry: -5,
 					one: true,
 				});
@@ -398,7 +403,7 @@ describe('Parsing', () => {
 					},
 				}, ['--retry', '-1']);
 
-				expect(parsed.flags).toStrictEqual({
+				expect({ ...parsed.flags }).toStrictEqual({
 					retry: Number.NaN,
 					one: true,
 				});
@@ -409,22 +414,22 @@ describe('Parsing', () => {
 			test('standalone negative is an unknown flag', () => {
 				const parsed = typeFlag({ retry: Number }, ['-7']);
 
-				expect(parsed.flags).toStrictEqual({ retry: undefined });
-				expect(parsed.unknownFlags).toStrictEqual({ 7: [true] });
+				expect({ ...parsed.flags }).toStrictEqual({ retry: undefined });
+				expect({ ...parsed.unknownFlags }).toStrictEqual({ 7: [true] });
 			});
 
 			test('boolean flag does not consume a following negative', () => {
 				const parsed = typeFlag({ verbose: Boolean }, ['--verbose', '-5']);
 
-				expect(parsed.flags).toStrictEqual({ verbose: true });
-				expect(parsed.unknownFlags).toStrictEqual({ 5: [true] });
+				expect({ ...parsed.flags }).toStrictEqual({ verbose: true });
+				expect({ ...parsed.unknownFlags }).toStrictEqual({ 5: [true] });
 			});
 
 			test('array consumes one value; trailing negative is an unknown flag', () => {
 				const parsed = typeFlag({ nums: [Number] }, ['--nums', '-1', '-2']);
 
-				expect(parsed.flags).toStrictEqual({ nums: [-1] });
-				expect(parsed.unknownFlags).toStrictEqual({ 2: [true] });
+				expect({ ...parsed.flags }).toStrictEqual({ nums: [-1] });
+				expect({ ...parsed.unknownFlags }).toStrictEqual({ 2: [true] });
 			});
 		});
 
@@ -432,7 +437,7 @@ describe('Parsing', () => {
 			const argv = ['--retry', '--', '-5'];
 			const parsed = typeFlag({ retry: Number }, argv);
 
-			expect<{ retry?: number }>(parsed.flags).toStrictEqual({ retry: Number.NaN });
+			expect<{ retry?: number }>({ ...parsed.flags }).toStrictEqual({ retry: Number.NaN });
 			expect<string[] & { '--': string[] }>(parsed._).toStrictEqual(
 				Object.assign(['-5'], { '--': ['-5'] }),
 			);
@@ -898,7 +903,7 @@ describe('Parsing', () => {
 			}, ['-ab']);
 			expect<boolean | undefined>(parsed.flags.a).toBe(true);
 			expect<boolean | undefined>(parsed.flags.b).toBe(true);
-			expect<Record<string, (string | boolean)[]>>(parsed.unknownFlags).toStrictEqual({});
+			expect<Record<string, (string | boolean)[]>>({ ...parsed.unknownFlags }).toStrictEqual({});
 		});
 
 		test('groups three single-char boolean names', () => {
@@ -910,7 +915,7 @@ describe('Parsing', () => {
 			expect<boolean | undefined>(parsed.flags.a).toBe(true);
 			expect<boolean | undefined>(parsed.flags.b).toBe(true);
 			expect<boolean | undefined>(parsed.flags.c).toBe(true);
-			expect<Record<string, (string | boolean)[]>>(parsed.unknownFlags).toStrictEqual({});
+			expect<Record<string, (string | boolean)[]>>({ ...parsed.unknownFlags }).toStrictEqual({});
 		});
 
 		test('last char in group takes next-arg value', () => {
@@ -934,7 +939,7 @@ describe('Parsing', () => {
 		test('unknown char in group goes to unknownFlags, known chars still set', () => {
 			const parsed = typeFlag({ a: Boolean }, ['-ab']);
 			expect<boolean | undefined>(parsed.flags.a).toBe(true);
-			expect<Record<string, (string | boolean)[]>>(parsed.unknownFlags).toStrictEqual({
+			expect<Record<string, (string | boolean)[]>>({ ...parsed.unknownFlags }).toStrictEqual({
 				b: [true],
 			});
 		});
@@ -1123,7 +1128,7 @@ describe('Parsing', () => {
 
 			expect<boolean | undefined>(parsed.flags.alpha).toBe(true);
 			expect<boolean | undefined>(parsed.flags.gamma).toBe(true);
-			expect<Record<string, (string | boolean)[]>>(parsed.unknownFlags).toStrictEqual({
+			expect<Record<string, (string | boolean)[]>>({ ...parsed.unknownFlags }).toStrictEqual({
 				x: [true],
 			});
 			expect<string[]>(argv).toStrictEqual([]);
@@ -1154,13 +1159,13 @@ describe('Parsing', () => {
 
 		expect<{
 			[flag: string]: never;
-		}>(parsed.flags).toStrictEqual({});
+		}>({ ...parsed.flags }).toStrictEqual({});
 
 		type UnknownFlags = {
 			[flag: string]: (boolean | string)[];
 		};
 
-		expect<UnknownFlags>(parsed.unknownFlags).toStrictEqual({
+		expect<UnknownFlags>({ ...parsed.unknownFlags }).toStrictEqual({
 			unknownFlag: [true, 'false', ''],
 			u: [true, 'value'],
 			3: [true],
@@ -1195,10 +1200,10 @@ describe('Parsing', () => {
 				},
 			);
 
-			expect<{ string: string[] }>(parsed.flags).toStrictEqual({
+			expect<{ string: string[] }>({ ...parsed.flags }).toStrictEqual({
 				string: [],
 			});
-			expect<Record<string, (string | boolean)[]>>(parsed.unknownFlags).toStrictEqual({
+			expect<Record<string, (string | boolean)[]>>({ ...parsed.unknownFlags }).toStrictEqual({
 				unknown: [true, 'd'],
 				u: [true],
 				v: [true, true, '1'],
@@ -1230,11 +1235,11 @@ describe('Parsing', () => {
 			);
 
 			expect<{ string: string[];
-				boolean: boolean | undefined; }>(parsed.flags).toStrictEqual({
+				boolean: boolean | undefined; }>({ ...parsed.flags }).toStrictEqual({
 				string: ['a', 'b', 'd'],
 				boolean: true,
 			});
-			expect<Record<string, (string | boolean)[]>>(parsed.unknownFlags).toStrictEqual({});
+			expect<Record<string, (string | boolean)[]>>({ ...parsed.unknownFlags }).toStrictEqual({});
 			expect<string[] & { '--': string[] }>(parsed._).toStrictEqual(Object.assign(
 				['c'],
 				{ '--': [] },
@@ -1266,10 +1271,10 @@ describe('Parsing', () => {
 				},
 			);
 
-			expect<{ string: string[] }>(parsed.flags).toStrictEqual({
+			expect<{ string: string[] }>({ ...parsed.flags }).toStrictEqual({
 				string: ['value'],
 			});
-			expect<Record<string, (string | boolean)[]>>(parsed.unknownFlags).toStrictEqual({});
+			expect<Record<string, (string | boolean)[]>>({ ...parsed.unknownFlags }).toStrictEqual({});
 			expect<string[] & { '--': string[] }>(parsed._).toStrictEqual(Object.assign(
 				[],
 				{ '--': [] },
@@ -1297,11 +1302,11 @@ describe('Parsing', () => {
 			);
 
 			expect<{ string: string | undefined;
-				boolean: boolean | undefined; }>(parsed.flags).toStrictEqual({
+				boolean: boolean | undefined; }>({ ...parsed.flags }).toStrictEqual({
 				string: 'hello',
 				boolean: undefined,
 			});
-			expect<Record<string, (string | boolean)[]>>(parsed.unknownFlags).toStrictEqual({});
+			expect<Record<string, (string | boolean)[]>>({ ...parsed.unknownFlags }).toStrictEqual({});
 			expect<string[] & { '--': string[] }>(parsed._).toStrictEqual(Object.assign(
 				['a'],
 				{ '--': [] },
@@ -1338,7 +1343,7 @@ describe('Parsing', () => {
 			);
 
 			expect<string | undefined>(parsed.flags.string).toBe(undefined);
-			expect<Record<string, (string | boolean)[]>>(parsed.unknownFlags).toStrictEqual({});
+			expect<Record<string, (string | boolean)[]>>({ ...parsed.unknownFlags }).toStrictEqual({});
 			expect<string[] & { '--': string[] }>(parsed._).toStrictEqual(
 				Object.assign(
 					[],
@@ -1451,7 +1456,7 @@ describe('Parsing', () => {
 
 			expect<boolean | undefined>(parsed.flags.verbose).toBe(false);
 			expect<number | undefined>(parsed.flags.count).toBe(undefined);
-			expect<Record<string, (string | boolean)[]>>(parsed.unknownFlags).toStrictEqual({
+			expect<Record<string, (string | boolean)[]>>({ ...parsed.unknownFlags }).toStrictEqual({
 				'no-count': [true],
 			});
 		});
@@ -1548,7 +1553,7 @@ describe('Parsing', () => {
 			}, ['--no-verbose']);
 
 			expect<boolean | undefined>(parsed.flags.verbose).toBe(undefined);
-			expect<Record<string, (string | boolean)[]>>(parsed.unknownFlags).toStrictEqual({
+			expect<Record<string, (string | boolean)[]>>({ ...parsed.unknownFlags }).toStrictEqual({
 				'no-verbose': [true],
 			});
 		});
@@ -1617,7 +1622,7 @@ describe('Parsing', () => {
 			);
 
 			// `flags` groups by name, losing the interleaving...
-			expect(parsed.flags).toStrictEqual({
+			expect({ ...parsed.flags }).toStrictEqual({
 				data: ['a', 'c'],
 				dataUrlencode: ['b'],
 			});

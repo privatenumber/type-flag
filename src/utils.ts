@@ -197,7 +197,10 @@ const groupEntries = (
 	entries: ParsedArgvEntry[],
 ) => {
 	const knownFlagValues = new Map<string, unknown[]>();
-	const unknownFlags: Record<string, (string | boolean)[]> = {};
+	// Null-prototype: this is a dictionary keyed by raw argv names, so a flag
+	// literally named `__proto__` must become an own key rather than hit the
+	// `Object.prototype` `__proto__` setter (which would pollute the result).
+	const unknownFlags: Record<string, (string | boolean)[]> = Object.create(null);
 	const positionals: string[] = [];
 
 	for (const entry of entries) {
@@ -209,23 +212,10 @@ const groupEntries = (
 			}
 			values.push(entry.value);
 		} else if (entry.type === UNKNOWN_FLAG) {
-			let values = hasOwn(unknownFlags, entry.name)
-				? unknownFlags[entry.name]
-				: undefined;
-			if (!values) {
-				values = [];
-				// `defineProperty` (not assignment) so a flag literally named
-				// `__proto__` becomes an own data property instead of invoking the
-				// `__proto__` setter — which would mutate the result's prototype and
-				// silently drop the flag.
-				Object.defineProperty(unknownFlags, entry.name, {
-					value: values,
-					writable: true,
-					enumerable: true,
-					configurable: true,
-				});
+			if (!hasOwn(unknownFlags, entry.name)) {
+				unknownFlags[entry.name] = [];
 			}
-			values.push(entry.value);
+			unknownFlags[entry.name].push(entry.value);
 		} else {
 			positionals.push(entry.value);
 		}
@@ -283,7 +273,10 @@ export const finalizeParsed = (
 		positionals,
 	} = groupEntries(entries);
 
-	const flags: Record<string, unknown> = {};
+	// Null-prototype for consistency with `unknownFlags` and to keep the result
+	// a clean dictionary (a computed `{ ['__proto__']: ... }` schema key can't
+	// reach `Object.prototype`'s setter here).
+	const flags: Record<string, unknown> = Object.create(null);
 	for (const flagName in schemas) {
 		if (!hasOwn(schemas, flagName)) {
 			continue;

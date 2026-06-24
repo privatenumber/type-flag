@@ -75,12 +75,14 @@ typeFlag({
 
 ```ts
 {
-    flags:        { [name]: InferredType },
-    unknownFlags: { [name]: (string | boolean)[] },  // not camelCased
+    flags:        { [name]: InferredType },          // null-prototype object
+    unknownFlags: { [name]: (string | boolean)[] },  // null-prototype object; not camelCased
     _:            string[] & { '--': string[] },      // positional; everything after `--` also in `_['--']`
     entries:      ParsedArgvEntry[],                  // advanced; see below
 }
 ```
+
+`flags` and `unknownFlags` are `Object.create(null)` dictionaries (so `--__proto__` is a safe own key, no prototype pollution). Use `name in flags` / `Object.hasOwn`, not `flags.hasOwnProperty`.
 
 ### `entries` (advanced)
 
