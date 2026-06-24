@@ -3,7 +3,7 @@ import {
 	type FlagTypeOrSchema,
 	type Flags,
 	type FlagSchema,
-	type ConsumedArgvItem,
+	type ParsedArgvEntry,
 	KNOWN_FLAG,
 	UNKNOWN_FLAG,
 } from './types.ts';
@@ -189,36 +189,32 @@ export const createRegistry = (
 };
 
 /**
- * Bucket the ordered `consumed` stream by item kind: known-flag values grouped
- * by canonical name (order preserved), unknown flags grouped by raw name, and
- * positionals (tracking which appeared after `--`).
+ * Bucket the ordered `entries` stream by kind: known-flag values grouped by
+ * canonical name (order preserved), unknown flags grouped by raw name, and
+ * positional arguments. Post-`--` tokens are not in `entries`.
  */
-const groupConsumed = (
-	consumed: ConsumedArgvItem[],
+const groupEntries = (
+	entries: ParsedArgvEntry[],
 ) => {
 	const knownFlagValues = new Map<string, unknown[]>();
 	const unknownFlags: Record<string, (string | boolean)[]> = {};
 	const positionals: string[] = [];
-	const doubleDashArguments: string[] = [];
 
-	for (const item of consumed) {
-		if (item.type === KNOWN_FLAG) {
-			let values = knownFlagValues.get(item.name);
+	for (const entry of entries) {
+		if (entry.type === KNOWN_FLAG) {
+			let values = knownFlagValues.get(entry.name);
 			if (!values) {
 				values = [];
-				knownFlagValues.set(item.name, values);
+				knownFlagValues.set(entry.name, values);
 			}
-			values.push(item.value);
-		} else if (item.type === UNKNOWN_FLAG) {
-			if (!hasOwn(unknownFlags, item.name)) {
-				unknownFlags[item.name] = [];
+			values.push(entry.value);
+		} else if (entry.type === UNKNOWN_FLAG) {
+			if (!hasOwn(unknownFlags, entry.name)) {
+				unknownFlags[entry.name] = [];
 			}
-			unknownFlags[item.name].push(item.value);
+			unknownFlags[entry.name].push(entry.value);
 		} else {
-			positionals.push(item.value);
-			if (item.afterDoubleDash) {
-				doubleDashArguments.push(item.value);
-			}
+			positionals.push(entry.value);
 		}
 	}
 
@@ -226,7 +222,6 @@ const groupConsumed = (
 		knownFlagValues,
 		unknownFlags,
 		positionals,
-		doubleDashArguments,
 	};
 };
 
@@ -260,19 +255,20 @@ const resolveFlagValue = (
 
 /**
  * Derive the public result (`flags`, `unknownFlags`, `_`) from the ordered
- * `consumed` stream — the parser's single source of truth.
+ * `entries` stream — the parser's single source of truth — plus the raw
+ * post-`--` tail (which is not parsed into `entries`).
  */
 export const finalizeParsed = (
 	schemas: Flags,
 	registry: FlagRegistry,
-	consumed: ConsumedArgvItem[],
+	entries: ParsedArgvEntry[],
+	doubleDashArguments: string[],
 ) => {
 	const {
 		knownFlagValues,
 		unknownFlags,
 		positionals,
-		doubleDashArguments,
-	} = groupConsumed(consumed);
+	} = groupEntries(entries);
 
 	const flags: Record<string, unknown> = {};
 	for (const flagName in schemas) {
@@ -295,6 +291,9 @@ export const finalizeParsed = (
 	return {
 		flags,
 		unknownFlags,
-		_: createPositionalArgumentsFromParts(positionals, doubleDashArguments),
+		_: createPositionalArgumentsFromParts(
+			[...positionals, ...doubleDashArguments],
+			doubleDashArguments,
+		),
 	};
 };

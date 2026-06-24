@@ -213,11 +213,14 @@ export type TypeFlag<Schemas extends Flags = Flags> = {
 	 * line. Unlike `flags` (which groups values by flag name), this preserves the
 	 * relative order across different flags and positional arguments.
 	 *
-	 * Advanced: most CLIs only need `flags`. Reach for `consumed` when the order
+	 * Only covers what the parser interprets: elements after the `--` delimiter
+	 * are not parsed, so they are excluded here (find them in `_['--']`).
+	 *
+	 * Advanced: most CLIs only need `flags`. Reach for `entries` when the order
 	 * of operations across different flags matters — e.g. assembling a curl-style
 	 * request body from interleaved `-d` and `--data-urlencode`.
 	 */
-	consumed: ConsumedArgvItem[];
+	entries: ParsedArgvEntry[];
 };
 
 /** Constant indicating a known flag token type. */
@@ -230,10 +233,10 @@ export const UNKNOWN_FLAG = 'unknown-flag';
 export const ARGUMENT = 'argument';
 
 /**
- * A single interpreted argv element from {@link TypeFlag.consumed}, discriminated
+ * A single interpreted argv element from {@link TypeFlag.entries}, discriminated
  * by `type`.
  */
-export type ConsumedArgvItem =
+export type ParsedArgvEntry =
 	| {
 		type: typeof KNOWN_FLAG;
 
@@ -261,9 +264,6 @@ export type ConsumedArgvItem =
 
 		/** The positional argument value. */
 		value: string;
-
-		/** `true` when the argument appeared after the `--` delimiter. */
-		afterDoubleDash?: boolean;
 	};
 
 /**

@@ -1578,7 +1578,7 @@ describe('Parsing', () => {
 		});
 	});
 
-	describe('consumed', () => {
+	describe('entries', () => {
 		test('preserves order across different flags', () => {
 			const parsed = typeFlag(
 				{
@@ -1597,8 +1597,8 @@ describe('Parsing', () => {
 				dataUrlencode: ['b=2'],
 			});
 
-			// ...but `consumed` preserves the command-line order.
-			expect(parsed.consumed).toStrictEqual([
+			// ...but `entries` preserves the command-line order.
+			expect(parsed.entries).toStrictEqual([
 				{
 					type: 'known-flag',
 					name: 'data',
@@ -1628,7 +1628,7 @@ describe('Parsing', () => {
 				['-d', 'a', '--data-urlencode', 'b', '--dataUrlencode', 'c'],
 			);
 
-			expect(parsed.consumed).toStrictEqual([
+			expect(parsed.entries).toStrictEqual([
 				{
 					type: 'known-flag',
 					name: 'dataUrlencode',
@@ -1656,7 +1656,7 @@ describe('Parsing', () => {
 				['--port', '3000', '--verbose', '--port=3001'],
 			);
 
-			expect(parsed.consumed).toStrictEqual([
+			expect(parsed.entries).toStrictEqual([
 				{
 					type: 'known-flag',
 					name: 'port',
@@ -1682,7 +1682,7 @@ describe('Parsing', () => {
 			);
 
 			expect(parsed.flags.name).toBe('b');
-			expect(parsed.consumed).toStrictEqual([
+			expect(parsed.entries).toStrictEqual([
 				{
 					type: 'known-flag',
 					name: 'name',
@@ -1702,7 +1702,7 @@ describe('Parsing', () => {
 				['file.txt', '--verbose', '--unknown=x', 'other.txt'],
 			);
 
-			expect(parsed.consumed).toStrictEqual([
+			expect(parsed.entries).toStrictEqual([
 				{
 					type: 'argument',
 					value: 'file.txt',
@@ -1724,13 +1724,14 @@ describe('Parsing', () => {
 			]);
 		});
 
-		test('flags arguments after the double-dash delimiter', () => {
+		test('excludes tokens after the double-dash delimiter (they are not parsed)', () => {
 			const parsed = typeFlag(
 				{ verbose: Boolean },
 				['a', '--verbose', '--', 'b', 'c'],
 			);
 
-			expect(parsed.consumed).toStrictEqual([
+			// Only pre-`--` elements are interpreted, so `entries` stops at `--`.
+			expect(parsed.entries).toStrictEqual([
 				{
 					type: 'argument',
 					value: 'a',
@@ -1740,17 +1741,10 @@ describe('Parsing', () => {
 					name: 'verbose',
 					value: true,
 				},
-				{
-					type: 'argument',
-					value: 'b',
-					afterDoubleDash: true,
-				},
-				{
-					type: 'argument',
-					value: 'c',
-					afterDoubleDash: true,
-				},
 			]);
+
+			// The raw post-`--` tail remains available through `_`.
+			expect(parsed._).toStrictEqual(Object.assign(['a', 'b', 'c'], { '--': ['b', 'c'] }));
 		});
 
 		test('records boolean negation as the canonical flag set to false', () => {
@@ -1761,7 +1755,7 @@ describe('Parsing', () => {
 			);
 
 			expect(parsed.flags.cache).toBe(false);
-			expect(parsed.consumed).toStrictEqual([
+			expect(parsed.entries).toStrictEqual([
 				{
 					type: 'known-flag',
 					name: 'cache',
@@ -1788,8 +1782,8 @@ describe('Parsing', () => {
 			);
 
 			// An ignored flag never consumes a following value, so `a`/`b` fall
-			// through as positional arguments — and `consumed` reflects exactly that.
-			expect(parsed.consumed).toStrictEqual([
+			// through as positional arguments — and `entries` reflects exactly that.
+			expect(parsed.entries).toStrictEqual([
 				{
 					type: 'argument',
 					value: 'a',

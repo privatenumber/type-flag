@@ -6,5 +6,5 @@ export type {
 	Flags,
 	IgnoreFunction,
 	PositionalArguments,
-	ConsumedArgvItem,
+	ParsedArgvEntry,
 } from './types.ts';

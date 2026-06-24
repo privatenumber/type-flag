@@ -3,7 +3,7 @@ import {
 	type TypeFlag,
 	type TypeFlagOptions,
 	type Simplify,
-	type ConsumedArgvItem,
+	type ParsedArgvEntry,
 	KNOWN_FLAG,
 	UNKNOWN_FLAG,
 	ARGUMENT,
@@ -50,8 +50,12 @@ export const typeFlag = <Schemas extends Flags>(
 	const flagRegistry = createRegistry(schemas);
 
 	// The ordered, interpreted argv stream — the single source of truth that
-	// `flags`, `unknownFlags`, and `_` are all derived from.
-	const consumed: ConsumedArgvItem[] = [];
+	// `flags`, `unknownFlags`, and pre-`--` positionals are derived from.
+	const entries: ParsedArgvEntry[] = [];
+
+	// Raw tokens after the `--` delimiter. Not parsed (so not in `entries`);
+	// surfaced only via `_['--']`.
+	let doubleDashArguments: string[] = [];
 
 	// Pending value-expecting flag, read by `flushFlagValue` when the next token
 	// arrives. Hoisted so value-taking flags don't allocate a callback closure
@@ -71,7 +75,7 @@ export const typeFlag = <Schemas extends Flags>(
 			removeArgvs.push(valueIndex);
 		}
 
-		consumed.push({
+		entries.push({
 			type: KNOWN_FLAG,
 			name: pendingName,
 			value: applyParser(pendingParser, value || '', pendingRawName),
@@ -128,7 +132,7 @@ export const typeFlag = <Schemas extends Flags>(
 			}
 
 			if (negatedBaseName) {
-				consumed.push({
+				entries.push({
 					type: KNOWN_FLAG,
 					name: negatedBaseName,
 					value: false,
@@ -137,7 +141,7 @@ export const typeFlag = <Schemas extends Flags>(
 				return;
 			}
 
-			consumed.push({
+			entries.push({
 				type: UNKNOWN_FLAG,
 				name,
 				value: explicitValue === undefined ? true : explicitValue,
@@ -152,33 +156,29 @@ export const typeFlag = <Schemas extends Flags>(
 				return;
 			}
 
-			for (const value of args) {
-				consumed.push(
-					isEoF
-						? {
-							type: ARGUMENT,
-							value,
-							afterDoubleDash: true,
-						}
-						: {
-							type: ARGUMENT,
-							value,
-						},
-				);
+			// Tokens after `--` aren't parsed — keep them out of `entries` and
+			// expose them only through `_['--']`.
+			if (isEoF) {
+				doubleDashArguments = args;
+				argv.splice(index[0]);
+				return;
 			}
 
-			if (isEoF) {
-				argv.splice(index[0]);
-			} else {
-				removeArgvs.push(index);
+			for (const value of args) {
+				entries.push({
+					type: ARGUMENT,
+					value,
+				});
 			}
+
+			removeArgvs.push(index);
 		},
 	});
 
 	spliceFromArgv(argv, removeArgvs);
 
 	return {
-		...finalizeParsed(schemas, flagRegistry, consumed),
-		consumed,
+		...finalizeParsed(schemas, flagRegistry, entries, doubleDashArguments),
+		entries,
 	} as Simplify<TypeFlag<Schemas>>;
 };

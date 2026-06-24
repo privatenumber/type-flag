@@ -1,6 +1,6 @@
 ---
 name: type-flag
-description: "Use when working with type-flag or building CLIs on top of it (e.g. cleye). Strongly-typed Node.js argv parser: schema syntax (String/Number/Boolean, arrays, custom parser functions, Standard Schema validators like Zod/Valibot/ArkType, aliases, defaults, single-char names), return shape (flags/unknownFlags/positional args, plus the advanced ordered `consumed` stream), flag forms (long/short/grouping, =/:/. delimiters, kebab/camelCase), boolean negation via `--no-`, and the `ignore` callback for multi-command dispatch."
+description: "Use when working with type-flag or building CLIs on top of it (e.g. cleye). Strongly-typed Node.js argv parser: schema syntax (String/Number/Boolean, arrays, custom parser functions, Standard Schema validators like Zod/Valibot/ArkType, aliases, defaults, single-char names), return shape (flags/unknownFlags/positional args, plus the advanced ordered `entries` stream), flag forms (long/short/grouping, =/:/. delimiters, kebab/camelCase), boolean negation via `--no-`, and the `ignore` callback for multi-command dispatch."
 ---
 
 # type-flag
@@ -78,22 +78,22 @@ typeFlag({
     flags:        { [name]: InferredType },
     unknownFlags: { [name]: (string | boolean)[] },  // not camelCased
     _:            string[] & { '--': string[] },      // positional; everything after `--` also in `_['--']`
-    consumed:     ConsumedArgvItem[],                 // advanced; see below
+    entries:      ParsedArgvEntry[],                  // advanced; see below
 }
 ```
 
-### `consumed` (advanced)
+### `entries` (advanced)
 
 Ordered stream of every interpreted argv element, preserving relative order across different flags (which `flags` discards by grouping per name). Most CLIs ignore this; use it when order across flags matters (e.g. curl `-d`/`--data-urlencode` body assembly).
 
 ```ts
-type ConsumedArgvItem =
+type ParsedArgvEntry =
     | { type: 'known-flag'; name: string; value: unknown }          // name = canonical schema key (alias/kebab resolved)
     | { type: 'unknown-flag'; name: string; value: string | boolean } // name = raw argv name
-    | { type: 'argument'; value: string; afterDoubleDash?: boolean }
+    | { type: 'argument'; value: string }
 ```
 
-`-d a=1 --data-urlencode b=2 -d c=3` → three `known-flag` items in argv order, each `name` being the canonical schema key. Ignored elements (via `ignore`) are excluded.
+`-d a=1 --data-urlencode b=2 -d c=3` → three `known-flag` items in argv order, each `name` being the canonical schema key. Ignored elements (via `ignore`) are excluded. Tokens after `--` are not parsed, so they don't appear here (use `_['--']`).
 
 ## Flag forms
 

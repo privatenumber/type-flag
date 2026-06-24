@@ -379,12 +379,12 @@ For `['one', '--', 'two']`, `parsed._.slice()` is `['one', 'two']` and `parsed._
 
 Parser and framework integrations that need to rebuild this shape can use `createPositionalArguments()`; see the API reference below.
 
-### Consumed (command-line order)
+### Ordered Entries
 
 > [!NOTE]
-> Advanced. Most CLIs only need `flags`. Reach for `consumed` when the order of operations _across_ different flags matters.
+> Advanced. Most CLIs only need `flags`. Reach for `entries` when the order of operations _across_ different flags matters.
 
-`flags` groups values by flag name, which discards how occurrences of different flags interleaved on the command line. `consumed` is the ordered stream of every interpreted argv element, so that relative order is preserved.
+`flags` groups values by flag name, which discards how occurrences of different flags interleaved on the command line. `entries` is the ordered stream of every interpreted argv element, so that relative order is preserved.
 
 ```ts
 const parsed = typeFlag({
@@ -398,7 +398,7 @@ const parsed = typeFlag({
 // $ my-script -d a=1 --data-urlencode b=2 -d c=3
 parsed.flags // { data: ['a=1', 'c=3'], dataUrlencode: ['b=2'] }
 
-parsed.consumed
+parsed.entries
 // [
 //   { type: 'known-flag', name: 'data', value: 'a=1' },
 //   { type: 'known-flag', name: 'dataUrlencode', value: 'b=2' },
@@ -410,7 +410,9 @@ Each entry is discriminated by `type`:
 
 - `known-flag` — a flag defined in the schema. `name` is the **canonical schema key** (regardless of whether the alias, kebab-case, or camelCase form was used), and `value` is the parsed value for that single occurrence.
 - `unknown-flag` — a flag not in the schema. `name` is the raw argv name; `value` is the explicit value or `true`.
-- `argument` — a positional value. `afterDoubleDash` is `true` when it appeared after `--`.
+- `argument` — a positional value.
+
+Only parsed elements appear. Tokens after the `--` delimiter are not parsed, so they are excluded from `entries` — find them in [`_['--']`](#arguments-and---).
 
 This is useful for curl-style data assembly (`-d` / `--data-urlencode` joined in argv order), debugging "which occurrence won", or any CLI where flags are an ordered instruction log rather than independent settings.
 
@@ -588,11 +590,11 @@ type Parsed = {
     _: string[] & {
         '--': string[]
     }
-    consumed: ConsumedArgvItem[]
+    entries: ParsedArgvEntry[]
 }
 ```
 
-See [Consumed (command-line order)](#consumed-command-line-order) for the `ConsumedArgvItem` shape.
+See [Ordered Entries](#ordered-entries) for the `ParsedArgvEntry` shape.
 
 #### flagSchema
 
