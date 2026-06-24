@@ -82,7 +82,7 @@ typeFlag({
 }
 ```
 
-`flags` and `unknownFlags` are null-prototype objects, so `--__proto__` is a safe own key with no prototype pollution. Use `name in flags` or `Object.hasOwn(flags, name)`.
+`flags` and `unknownFlags` are null-prototype objects. Use `name in flags` or `Object.hasOwn(flags, name)`.
 
 ### `entries` (advanced)
 
