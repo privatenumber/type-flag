@@ -12,6 +12,31 @@ describe('Parsing', () => {
 			});
 		});
 
+		test('unknown __proto__ flag does not pollute the prototype', () => {
+			const parsed = typeFlag({}, ['--__proto__', '--__proto__=x']);
+
+			// The result's prototype must be untouched.
+			expect(Object.getPrototypeOf(parsed.unknownFlags)).toBe(Object.prototype);
+
+			// `__proto__` is captured as an own data property, not via the setter.
+			expect(Object.hasOwn(parsed.unknownFlags, '__proto__')).toBe(true);
+			const descriptor = Object.getOwnPropertyDescriptor(parsed.unknownFlags, '__proto__');
+			expect<unknown>(descriptor?.value).toStrictEqual([true, 'x']);
+
+			expect(parsed.entries).toStrictEqual([
+				{
+					type: 'unknown-flag',
+					name: '__proto__',
+					value: true,
+				},
+				{
+					type: 'unknown-flag',
+					name: '__proto__',
+					value: 'x',
+				},
+			]);
+		});
+
 		test('string to boolean', () => {
 			const parsed = typeFlag({
 				boolean: Boolean,

@@ -209,10 +209,23 @@ const groupEntries = (
 			}
 			values.push(entry.value);
 		} else if (entry.type === UNKNOWN_FLAG) {
-			if (!hasOwn(unknownFlags, entry.name)) {
-				unknownFlags[entry.name] = [];
+			let values = hasOwn(unknownFlags, entry.name)
+				? unknownFlags[entry.name]
+				: undefined;
+			if (!values) {
+				values = [];
+				// `defineProperty` (not assignment) so a flag literally named
+				// `__proto__` becomes an own data property instead of invoking the
+				// `__proto__` setter — which would mutate the result's prototype and
+				// silently drop the flag.
+				Object.defineProperty(unknownFlags, entry.name, {
+					value: values,
+					writable: true,
+					enumerable: true,
+					configurable: true,
+				});
 			}
-			unknownFlags[entry.name].push(entry.value);
+			values.push(entry.value);
 		} else {
 			positionals.push(entry.value);
 		}
