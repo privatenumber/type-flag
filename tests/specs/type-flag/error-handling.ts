@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'manten';
-import { typeFlag } from '#type-flag';
+import { typeFlag, FlagParseError } from '#type-flag';
 
 describe('Error handling', () => {
 	describe('Invalid flag name', () => {
@@ -126,6 +126,28 @@ describe('Error handling', () => {
 			}).toThrow('Flag "--custom": Custom parse error');
 		});
 
+		test('Thrown error is a FlagParseError exposing the flag name', () => {
+			const ThrowingParser = (_value: string) => {
+				throw new Error('Custom parse error');
+			};
+
+			let thrown: unknown;
+			try {
+				typeFlag({
+					custom: ThrowingParser,
+				}, ['--custom', 'value']);
+			} catch (error) {
+				thrown = error;
+			}
+
+			expect(thrown).toBeInstanceOf(FlagParseError);
+			// Still a TypeError, so existing checks keep working
+			expect(thrown).toBeInstanceOf(TypeError);
+			expect((thrown as FlagParseError).name).toBe('FlagParseError');
+			expect((thrown as FlagParseError).flagName).toBe('custom');
+			expect((thrown as FlagParseError).message).toBe('Flag "--custom": Custom parse error');
+		});
+
 		test('Custom parser throws on specific value', () => {
 			const StrictNumber = (value: string) => {
 				const parsed = Number(value);
@@ -153,14 +175,17 @@ describe('Error handling', () => {
 					flag: ThrowingParser,
 				}, ['--flag', 'value']);
 			} catch (error) {
+				expect(error).toBeInstanceOf(FlagParseError);
 				expect(error).toBeInstanceOf(TypeError);
+				expect((error as FlagParseError).flagName).toBe('flag');
 				expect((error as TypeError).cause).toBe(original);
 			}
 		});
 	});
 
 	test('Default function throws error', () => {
-		expect(() => {
+		let thrown: unknown;
+		try {
 			typeFlag({
 				flag: {
 					type: String,
@@ -169,6 +194,13 @@ describe('Error handling', () => {
 					},
 				},
 			}, []);
-		}).toThrow('Default function error');
+		} catch (error) {
+			thrown = error;
+		}
+
+		// Default-factory failures are a developer/runtime bug, not flag-value
+		// validation, so they propagate raw — never wrapped as a FlagParseError.
+		expect(thrown).not.toBeInstanceOf(FlagParseError);
+		expect((thrown as Error).message).toBe('Default function error');
 	});
 });

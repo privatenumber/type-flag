@@ -69,7 +69,7 @@ typeFlag({
 - Multiple values: wrap in `[schema]`, NOT `z.array(...)` (it validates a single token and throws).
 - Numbers: CLI values are strings, so coerce (`z.coerce.number()`).
 - Booleans: keep native `Boolean` (a schema loses `--no-` negation and short grouping).
-- Sync only: async schemas throw. A failed schema is wrapped as `Flag "--<name>": <message>` (original on `.cause`).
+- Sync only: async schemas throw. A failed schema throws `FlagParseError` as `Flag "--<name>": <message>` (original on `.cause`).
 
 ## Return shape
 
@@ -187,8 +187,8 @@ Same argv-mutation behavior as `typeFlag`.
 | `unknownFlags` keys are raw | NOT camelCased — so you can distinguish `--some-flag` from `--someFlag`. |
 | Reserved chars in names | `\s`, `.`, `:`, `=` forbidden in flag names (they're delimiters). |
 | kebab schema key | If schema key is `'some-flag'`, only `--some-flag` / `--someFlag` both map to it, but output key stays kebab. |
-| Default functions throw | A throwing `default: () => ...` propagates. |
-| Parser/schema errors wrap | A throwing parser (or failed schema) is wrapped in a `TypeError` as `Flag "--<name>": <message>`; the original is on `.cause`. |
+| Default functions throw | A throwing `default: () => ...` propagates raw (NOT a `FlagParseError`). |
+| Parser/schema errors wrap | A throwing parser (or failed schema) throws `FlagParseError` (extends `TypeError`) as `Flag "--<name>": <message>`, with `.flagName` and the original on `.cause`. Exported from `type-flag`. |
 
 ## Related
 

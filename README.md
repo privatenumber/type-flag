@@ -441,15 +441,22 @@ These are the supported delimiters; arbitrary delimiter characters are not treat
 
 #### Error Wrapping
 
-When a custom type parser throws, the error is wrapped in a `TypeError` whose message identifies the flag by name. The original error is preserved on `.cause`.
+When a custom type parser (or [Standard Schema](#standard-schema-zod-valibot-arktype)) throws, the error is wrapped in a `FlagParseError` whose message identifies the flag by name. The original error is preserved on `.cause`, and the flag name on `.flagName`.
+
+`FlagParseError extends TypeError`, so existing `instanceof TypeError` checks keep working while `instanceof FlagParseError` lets you handle a bad flag value precisely.
 
 ```ts
+import { typeFlag, FlagParseError } from 'type-flag'
+
 // $ node ./cli --size huge
 try {
     typeFlag({ size: Size })
-} catch {
-    // thrown TypeError message      => 'Flag "--size": Invalid size: "huge"'
-    // .cause.message                => 'Invalid size: "huge"'
+} catch (error) {
+    if (error instanceof FlagParseError) {
+        error.flagName // 'size'
+        error.message // 'Flag "--size": Invalid size: "huge"'
+        error.cause // the original thrown error
+    }
 }
 ```
 

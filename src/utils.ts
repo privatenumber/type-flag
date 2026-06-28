@@ -79,10 +79,33 @@ export const normalizeBoolean = <T>(
 	return value;
 };
 
+/**
+ * Thrown when a flag's parser/validator (a custom type function or a Standard
+ * Schema) rejects the value. Extends `TypeError` for backward compatibility, so
+ * `instanceof TypeError` keeps working while `instanceof FlagParseError` gives a
+ * precise handle. The original error is preserved on `cause`.
+ */
+export class FlagParseError extends TypeError {
+	/** The flag whose value failed to parse, without the `--` prefix (e.g. `sort`). */
+	flagName: string;
+
+	constructor(
+		flagName: string,
+		cause: unknown,
+	) {
+		super(
+			`Flag "--${flagName}": ${cause instanceof Error ? cause.message : cause}`,
+			{ cause },
+		);
+		this.name = 'FlagParseError';
+		this.flagName = flagName;
+	}
+}
+
 export const applyParser = (
 	typeFunction: TypeFunction,
 	value: unknown,
-	flagName?: string,
+	flagName: string,
 ) => {
 	if (typeof value === 'boolean') {
 		return value;
@@ -95,10 +118,7 @@ export const applyParser = (
 	try {
 		return typeFunction(value);
 	} catch (error) {
-		throw new TypeError(
-			`Flag "--${flagName}": ${error instanceof Error ? error.message : error}`,
-			{ cause: error },
-		);
+		throw new FlagParseError(flagName, error);
 	}
 };
 
