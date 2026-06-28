@@ -6,6 +6,7 @@ import { type } from 'arktype';
 import {
 	typeFlag,
 	getFlag,
+	FlagParseError,
 } from '#type-flag';
 import { isStandardSchema, type StandardSchemaV1 } from '#type-flag/internal';
 
@@ -30,8 +31,11 @@ describe('standard-schema', () => {
 				thrown = error;
 			}
 
-			// type-flag wraps the thrown message with the flag-name context
+			// type-flag wraps the thrown message with the flag-name context as a
+			// FlagParseError (still a TypeError for backward compatibility)
+			expect(thrown).toBeInstanceOf(FlagParseError);
 			expect(thrown).toBeInstanceOf(TypeError);
+			expect((thrown as FlagParseError).flagName).toBe('size');
 			expect((thrown as TypeError).message).toMatch('Flag "--size":');
 			expect((thrown as TypeError).message).toMatch('Invalid option');
 
