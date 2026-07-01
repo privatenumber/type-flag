@@ -68,7 +68,7 @@
 		"manten": "^2.0.1",
 		"pkgroll": "^2.27.1",
 		"skills-npm": "^1.2.0",
-		"typescript": "^5.9.3",
+		"typescript": "^6.0.3",
 		"valibot": "^1.4.2",
 		"zod": "^4.4.3"
 	}
