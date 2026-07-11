@@ -24,43 +24,52 @@
 		"skills"
 	],
 	"type": "module",
-	"main": "./dist/index.cjs",
-	"module": "./dist/index.mjs",
-	"types": "./dist/index.d.ts",
 	"exports": {
-		"types": "./dist/index.d.ts",
-		"require": "./dist/index.cjs",
-		"import": "./dist/index.mjs"
+		".": {
+			"types": "./dist/index.d.ts",
+			"default": "./dist/index.mjs"
+		},
+		"./internal": {
+			"types": "./dist/internal.d.ts",
+			"default": "./dist/internal.mjs"
+		}
 	},
 	"imports": {
 		"#type-flag": {
 			"types": "./src/index.ts",
 			"development": "./src/index.ts",
 			"default": "./dist/index.mjs"
+		},
+		"#type-flag/internal": {
+			"types": "./src/internal.ts",
+			"development": "./src/internal.ts",
+			"default": "./dist/internal.mjs"
 		}
 	},
 	"packageManager": "pnpm@10.13.1",
 	"scripts": {
 		"build": "pkgroll --minify --clean-dist",
-		"lint": "lintroll --cache",
+		"lint": "lintroll --git --cache",
 		"test": "node --conditions=development tests/index.ts",
 		"type-check": "tsc",
 		"dev": "node --watch --conditions=development tests/index.ts",
 		"prepare": "skills-npm",
 		"prepack": "pnpm build && clean-pkg-json"
 	},
+	"engines": {
+		"node": ">=22.22.2"
+	},
 	"devDependencies": {
-		"@types/node": "^24.10.15",
-		"arktype": "^2.2.0",
-		"clean-pkg-json": "^1.4.2",
-		"expect-type": "^1.3.0",
-		"lintroll": "^1.30.2",
-		"manten": "^2.0.0",
-		"pkgroll": "^2.27.0",
+		"@types/node": "^26.1.1",
+		"arktype": "^2.2.3",
+		"clean-pkg-json": "^2.0.0",
+		"expect-type": "^1.4.0",
+		"lintroll": "^1.31.0",
+		"manten": "^2.0.1",
+		"pkgroll": "^2.27.1",
 		"skills-npm": "^1.2.0",
-		"tsx": "^4.21.0",
-		"typescript": "^5.9.3",
-		"valibot": "^1.4.1",
+		"typescript": "^6.0.3",
+		"valibot": "^1.4.2",
 		"zod": "^4.4.3"
 	}
 }

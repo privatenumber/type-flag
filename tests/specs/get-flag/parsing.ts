@@ -76,6 +76,14 @@ describe('Parsing', () => {
 			expect<boolean[]>(flagValue).toStrictEqual([true, true]);
 			expect(argv).toStrictEqual(['--unknown']);
 		});
+
+		test('flag named __proto__', () => {
+			const argv = ['--__proto__'];
+			const flagValue = getFlag('--__proto__', Boolean, argv);
+
+			expect<boolean | undefined>(flagValue).toBe(true);
+			expect(argv).toStrictEqual([]);
+		});
 	});
 
 	test('ignores argv', () => {
@@ -116,5 +124,31 @@ describe('Parsing', () => {
 
 		expect<string | undefined>(flagValue).toBe('value');
 		expect(argv).toStrictEqual(['--', '--flag', 'after']);
+	});
+
+	describe('negative number values', () => {
+		test('named flag consumes negative', () => {
+			const argv = ['--retry', '-5'];
+			const flagValue = getFlag('--retry', Number, argv);
+
+			expect<number | undefined>(flagValue).toBe(-5);
+			expect(argv).toStrictEqual([]);
+		});
+
+		test('alias consumes negative', () => {
+			const argv = ['-n', '-5'];
+			const flagValue = getFlag('-n', Number, argv);
+
+			expect<number | undefined>(flagValue).toBe(-5);
+			expect(argv).toStrictEqual([]);
+		});
+
+		test('negative not for the searched flag is left untouched', () => {
+			const argv = ['--foo', '-5', '--retry', '3'];
+			const flagValue = getFlag('--retry', Number, argv);
+
+			expect<number | undefined>(flagValue).toBe(3);
+			expect(argv).toStrictEqual(['--foo', '-5']);
+		});
 	});
 });

@@ -194,7 +194,7 @@ const parsed = typeFlag({
 parsed.flags.mode // 'dev' | 'prod' | undefined
 ```
 
-Schemas work everywhere a flag type is accepted, including arrays (`[z.string()]`), `{ type, default }` objects, and [`getFlag`](#getflag). On validation failure, the schema's error message is surfaced. This adds no runtime dependency: the Standard Schema spec is types-only and vendored in.
+Schemas work everywhere a flag type is accepted, including arrays (`[z.string()]`), `{ type, default }` objects, and [`getFlag`](#getflag). On validation failure, the schema's message is surfaced through type-flag's [error wrapping](#error-wrapping) as `Flag "--<name>": <message>`. This adds no runtime dependency: the Standard Schema spec is types-only and vendored in.
 
 A few things to keep in mind:
 
@@ -278,6 +278,21 @@ const parsed = typeFlag({
 parsed.flags.someString // ['hello', 'world']
 ```
 
+Acronyms are treated as a single word, so consecutive capitals stay together in the kebab-case form.
+
+```ts
+const parsed = typeFlag({
+    getID: String,
+    myURL: String,
+    getHTTPResponse: String
+})
+
+// $ node ./cli --get-id 1 --my-url https://example.com --get-http-response foo
+parsed.flags.getID // => '1'
+parsed.flags.myURL // => 'https://example.com'
+parsed.flags.getHTTPResponse // => 'foo'
+```
+
 ### Unknown Flags And Forwarding
 
 Unknown flags are returned separately instead of being mixed into `flags`.
@@ -288,6 +303,8 @@ const parsed = typeFlag({})
 // $ my-script --some-flag --some-flag=1234
 parsed.unknownFlags // { 'some-flag': [true, '1234'] }
 ```
+
+Unknown flags are not converted to camelCase to allow for accurate error handling.
 
 Wrapper CLIs often need to consume their own flags and pass everything else to another command. If you pass your own argv array, _type-flag_ removes parsed tokens and leaves ignored tokens behind.
 
@@ -362,6 +379,43 @@ For `['one', '--', 'two']`, `parsed._.slice()` is `['one', 'two']` and `parsed._
 
 Parser and framework integrations that need to rebuild this shape can use `createPositionalArguments()`; see the API reference below.
 
+### Ordered Entries
+
+> [!NOTE]
+> Advanced. Most CLIs only need `flags`. Reach for `entries` when the order of operations _across_ different flags matters.
+
+`flags` groups values by flag name, which discards how occurrences of different flags interleaved on the command line. `entries` is the ordered stream of every interpreted argv element, so that relative order is preserved.
+
+```ts
+const parsed = typeFlag({
+    data: {
+        type: [String],
+        alias: 'd'
+    },
+    dataUrlencode: [String]
+})
+
+// $ my-script -d a --data-urlencode b -d c
+parsed.flags // { data: ['a', 'c'], dataUrlencode: ['b'] }
+
+parsed.entries
+// [
+//   { type: 'flag', name: 'data', value: 'a' },
+//   { type: 'flag', name: 'dataUrlencode', value: 'b' },
+//   { type: 'flag', name: 'data', value: 'c' }
+// ]
+```
+
+Each entry is discriminated by `type`:
+
+- `flag` — a flag defined in the schema (it landed in `flags`). `name` is the **canonical schema key** (regardless of whether the alias, kebab-case, or camelCase form was used), and `value` is the parsed value for that single occurrence.
+- `unknown-flag` — a flag not in the schema. `name` is the raw argv name; `value` is the explicit value or `true`.
+- `argument` — a positional value.
+
+Only parsed elements appear. Tokens after the `--` delimiter are not parsed, so they are excluded from `entries` — find them in [`_['--']`](#arguments-and---).
+
+This is useful for curl-style data assembly (`-d` / `--data-urlencode` joined in argv order), debugging "which occurrence won", or any CLI where flags are an ordered instruction log rather than independent settings.
+
 ### Value Delimiters
 
 The characters `=`, `:`, and `.` delimit a value from a flag.
@@ -384,6 +438,27 @@ parsed.flags.env // ['TOKEN=abc']
 ```
 
 These are the supported delimiters; arbitrary delimiter characters are not treated as value separators.
+
+#### Error Wrapping
+
+When a custom type parser (or [Standard Schema](#standard-schema-zod-valibot-arktype)) throws, the error is wrapped in a `FlagParseError` whose message identifies the flag by name. The original error is preserved on `.cause`, and the flag name on `.flagName`.
+
+`FlagParseError extends TypeError`, so existing `instanceof TypeError` checks keep working while `instanceof FlagParseError` lets you handle a bad flag value precisely.
+
+```ts
+import { typeFlag, FlagParseError } from 'type-flag'
+
+// $ node ./cli --size huge
+try {
+    typeFlag({ size: Size })
+} catch (error) {
+    if (error instanceof FlagParseError) {
+        error.flagName // 'size'
+        error.message // 'Flag "--size": Invalid size: "huge"'
+        error.cause // the original thrown error
+    }
+}
+```
 
 ### Boolean Negation
 
@@ -522,8 +597,13 @@ type Parsed = {
     _: string[] & {
         '--': string[]
     }
+    entries: ParsedArgvEntry[]
 }
 ```
+
+See [Ordered Entries](#ordered-entries) for the `ParsedArgvEntry` shape.
+
+`flags` and `unknownFlags` are null-prototype objects. Read them with `name in flags` or `Object.hasOwn(flags, name)`.
 
 #### flagSchema
 
@@ -558,7 +638,7 @@ Type:
 ```ts
 type Options = {
     ignore?: (
-        type: 'known-flag' | 'unknown-flag' | 'argument',
+        type: 'flag' | 'unknown-flag' | 'argument',
         flagOrArgv: string,
         value: string | undefined
     ) => boolean | void
@@ -652,7 +732,7 @@ A few trade-offs are intentional:
 
 - It does not parse POSIX-style short string values like `-ovalue`.
 - It treats missing string values as `""`; strict parsers like `parseArgs()` and `arg` throw.
-- For negative numeric values, use inline values like `--count=-1`; space-separated `--count -1` is parsed as a flag-like token today.
+- Negative numbers are accepted as flag values (`--count -1`); but a number that is itself a defined flag (e.g. a `-1` alias) is treated as that flag, so use `--count=-1` for it. A bare negative (not after a value-taking flag) and `-Infinity` also need the `=` form.
 
 ## Agent Skills
 

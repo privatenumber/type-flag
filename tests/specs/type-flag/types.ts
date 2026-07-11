@@ -2,13 +2,14 @@ import { describe, test } from 'manten';
 import { expectTypeOf } from 'expect-type';
 import {
 	typeFlag,
-	createPositionalArguments,
 	type Flags,
 	type TypeFlag,
 	type TypeFlagOptions,
 	type IgnoreFunction,
 	type PositionalArguments,
+	type ParsedArgvEntry,
 } from '#type-flag';
+import { createPositionalArguments } from '#type-flag/internal';
 
 // Test Helpers
 const toDate = (s: string) => new Date(s);
@@ -130,6 +131,7 @@ describe('Types', () => {
 					[flag: string]: (string | boolean)[];
 				};
 				_: PositionalArguments;
+				entries: ParsedArgvEntry[];
 			}>();
 
 			expectTypeOf(parsed._).toEqualTypeOf<PositionalArguments>();
@@ -270,6 +272,7 @@ describe('Types', () => {
 					[flagName: string]: (string | boolean)[];
 				};
 				_: PositionalArguments;
+				entries: ParsedArgvEntry[];
 			}>();
 		});
 
@@ -282,6 +285,7 @@ describe('Types', () => {
 					[flagName: string]: (string | boolean)[];
 				};
 				_: PositionalArguments;
+				entries: ParsedArgvEntry[];
 			}>();
 		});
 
@@ -325,18 +329,18 @@ describe('Types', () => {
 			ignoreFunction('argument', 'some/path');
 			ignoreFunction('argument', 'some/path', undefined);
 			ignoreFunction('argument', 'some/path', 'value');
-			ignoreFunction('known-flag', '--foo', 'bar');
+			ignoreFunction('flag', '--foo', 'bar');
 			ignoreFunction('unknown-flag', '--baz', undefined);
-			ignoreFunction('known-flag', '--foo');
+			ignoreFunction('flag', '--foo');
 
 			// @ts-expect-error 2nd param must be string
 			ignoreFunction('argument', 123);
 
 			// @ts-expect-error 2nd param must be string
-			ignoreFunction('known-flag', 123);
+			ignoreFunction('flag', 123);
 
 			// @ts-expect-error 3rd param must be string or undefined
-			ignoreFunction('known-flag', '--foo', 123);
+			ignoreFunction('flag', '--foo', 123);
 
 			// @ts-expect-error 'type' must be one of the three constants
 			ignoreFunction('other-type', 'foo');
@@ -345,11 +349,11 @@ describe('Types', () => {
 		test('Implementation with explicit types', () => {
 			const options: TypeFlagOptions = {
 				ignore: (
-					type: 'argument' | 'known-flag' | 'unknown-flag',
+					type: 'argument' | 'flag' | 'unknown-flag',
 					argvElement: string,
 					flagValue?: string,
 				) => {
-					expectTypeOf(type).toEqualTypeOf<'argument' | 'known-flag' | 'unknown-flag'>();
+					expectTypeOf(type).toEqualTypeOf<'argument' | 'flag' | 'unknown-flag'>();
 					expectTypeOf(argvElement).toEqualTypeOf<string>();
 					expectTypeOf(flagValue).toEqualTypeOf<string | undefined>();
 					return false;
@@ -380,7 +384,7 @@ describe('Types', () => {
 		test('3-parameter callback works', () => {
 			const options: TypeFlagOptions = {
 				ignore(type, argvElement, flagValue) {
-					expectTypeOf(type).toEqualTypeOf<'argument' | 'known-flag' | 'unknown-flag'>();
+					expectTypeOf(type).toEqualTypeOf<'argument' | 'flag' | 'unknown-flag'>();
 					expectTypeOf(argvElement).toEqualTypeOf<string>();
 					expectTypeOf(flagValue).toEqualTypeOf<string | undefined>();
 					return false;

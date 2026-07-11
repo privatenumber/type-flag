@@ -6,9 +6,9 @@ import { type } from 'arktype';
 import {
 	typeFlag,
 	getFlag,
-	isStandardSchema,
-	type StandardSchemaV1,
+	FlagParseError,
 } from '#type-flag';
+import { isStandardSchema, type StandardSchemaV1 } from '#type-flag/internal';
 
 describe('standard-schema', () => {
 	describe('Zod', () => {
@@ -31,9 +31,17 @@ describe('standard-schema', () => {
 				thrown = error;
 			}
 
-			// The schema's validation message surfaces (flag-name wrapping is a 5.x feature)
-			expect(thrown).toBeInstanceOf(Error);
-			expect((thrown as Error).message).toMatch('Invalid option');
+			// type-flag wraps the thrown message with the flag-name context as a
+			// FlagParseError (still a TypeError for backward compatibility)
+			expect(thrown).toBeInstanceOf(FlagParseError);
+			expect(thrown).toBeInstanceOf(TypeError);
+			expect((thrown as FlagParseError).flagName).toBe('size');
+			expect((thrown as TypeError).message).toMatch('Flag "--size":');
+			expect((thrown as TypeError).message).toMatch('Invalid option');
+
+			// the original schema error is preserved on `.cause`
+			expect((thrown as TypeError).cause).toBeInstanceOf(Error);
+			expect(((thrown as TypeError).cause as Error).message).toMatch('Invalid option');
 		});
 
 		test('coerced number validates the range', () => {
@@ -50,7 +58,7 @@ describe('standard-schema', () => {
 				typeFlag({
 					port: z.coerce.number().int().min(1).max(65_535),
 				}, ['--port', '99999']);
-			}).toThrow('Too big');
+			}).toThrow('Flag "--port": Too big');
 		});
 
 		test('non-coerced number rejects a string value', () => {
@@ -59,7 +67,7 @@ describe('standard-schema', () => {
 				typeFlag({
 					port: z.number(),
 				}, ['--port', '3000']);
-			}).toThrow('expected number');
+			}).toThrow('Flag "--port":');
 		});
 
 		test('transform maps the value', () => {
@@ -85,7 +93,7 @@ describe('standard-schema', () => {
 				typeFlag({
 					tag: [z.enum(['debug', 'info', 'warn'])],
 				}, ['--tag', 'debug', '--tag', 'nope']);
-			}).toThrow('Invalid option');
+			}).toThrow('Flag "--tag": Invalid option');
 		});
 
 		test('type-flag default applies when the flag is absent', () => {
@@ -164,7 +172,7 @@ describe('standard-schema', () => {
 				typeFlag({
 					mode: v.picklist(['dev', 'prod']),
 				}, ['--mode', 'staging']);
-			}).toThrow('Invalid type');
+			}).toThrow('Flag "--mode": Invalid type');
 		});
 
 		test('email validates the string', () => {
@@ -181,7 +189,7 @@ describe('standard-schema', () => {
 				typeFlag({
 					email: v.pipe(v.string(), v.email()),
 				}, ['--email', 'not-an-email']);
-			}).toThrow('Invalid email');
+			}).toThrow('Flag "--email": Invalid email');
 		});
 	});
 
@@ -202,7 +210,7 @@ describe('standard-schema', () => {
 				typeFlag({
 					size: type("'small' | 'large'"),
 				}, ['--size', 'huge']);
-			}).toThrow('must be');
+			}).toThrow('Flag "--size":');
 		});
 
 		test('absent flag is undefined (callable schema is not treated as a default)', () => {
@@ -225,7 +233,7 @@ describe('standard-schema', () => {
 		test('rejects an invalid value', () => {
 			expect(() => {
 				getFlag('--size', z.enum(['small', 'large']), ['--size', 'huge']);
-			}).toThrow('Invalid option');
+			}).toThrow('Flag "--size": Invalid option');
 		});
 
 		test('collects an array from a wrapped schema', () => {
@@ -251,7 +259,7 @@ describe('standard-schema', () => {
 				typeFlag({
 					asyncFlag: asyncSchema,
 				}, ['--async-flag', 'value']);
-			}).toThrow('Async schemas are not supported');
+			}).toThrow('Flag "--async-flag": Async schemas are not supported');
 		});
 	});
 
@@ -289,7 +297,7 @@ describe('standard-schema', () => {
 				tags: z.array(z.string()),
 			};
 
-			expect(() => typeFlag(schemas, ['--tags', 'a'])).toThrow('expected array');
+			expect(() => typeFlag(schemas, ['--tags', 'a'])).toThrow('Flag "--tags":');
 
 			const parsed = typeFlag(schemas, []);
 			expectTypeOf(parsed.flags.tags).toEqualTypeOf<string[] | undefined>();

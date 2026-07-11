@@ -3,18 +3,17 @@ import {
 	type TypeFlag,
 	type TypeFlagOptions,
 	type Simplify,
-	KNOWN_FLAG,
+	type ParsedArgvEntry,
+	FLAG,
 	UNKNOWN_FLAG,
 	ARGUMENT,
 } from './types.ts';
 import {
-	hasOwn,
 	createRegistry,
 	normalizeBoolean,
 	applyParser,
-	finalizeFlags,
+	finalizeParsed,
 } from './utils.ts';
-import { createPositionalArgumentsFromParts } from './positional-arguments.ts';
 import {
 	ALIAS_INDEX_LENGTH,
 	argvIterator,
@@ -49,37 +48,65 @@ export const typeFlag = <Schemas extends Flags>(
 ) => {
 	const removeArgvs: Index[] = [];
 	const flagRegistry = createRegistry(schemas);
-	const unknownFlags: TypeFlag['unknownFlags'] = {};
-	const positionals: string[] = [];
+
+	// The ordered, interpreted argv stream — the single source of truth that
+	// `flags`, `unknownFlags`, and pre-`--` positionals are derived from.
+	const entries: ParsedArgvEntry[] = [];
+
+	// Raw tokens after the `--` delimiter. Not parsed (so not in `entries`);
+	// surfaced only via `_['--']`.
 	let doubleDashArguments: string[] = [];
 
+	// Pending value-expecting flag, read by `flushFlagValue` when the next token
+	// arrives. Hoisted so value-taking flags don't allocate a callback closure
+	// per occurrence (and keep the value-delivery call site monomorphic).
+	let pendingName: string;
+	let pendingParser: Parameters<typeof applyParser>[0];
+	let pendingFlagIndex: Index;
+	let pendingRawName: string;
+
+	const flushFlagValue = (
+		value: string | boolean | undefined,
+		valueIndex?: Index,
+	) => {
+		// Remove parsed elements from the argv array
+		removeArgvs.push(pendingFlagIndex);
+		if (valueIndex) {
+			removeArgvs.push(valueIndex);
+		}
+
+		entries.push({
+			type: FLAG,
+			name: pendingName,
+			value: applyParser(pendingParser, value || '', pendingRawName),
+		});
+	};
+
 	argvIterator(argv, {
+		knownFlags: flagRegistry,
 		onFlag(name, explicitValue, flagIndex) {
 			const isAlias = flagIndex.length === ALIAS_INDEX_LENGTH;
 			// Long-form requires length > 1; single-char names are exclusive to short-form (-h vs --help)
 			const isValid = isAlias || name.length > 1;
-			const isKnownFlag = isValid && hasOwn(flagRegistry, name);
+			const flagData = isValid ? flagRegistry.get(name) : undefined;
 
-			let negatedBase: string | undefined;
+			let negatedBaseName: string | undefined;
 			if (
-				!isKnownFlag
+				!flagData
 				&& booleanNegation
 				&& !isAlias
 				&& name.length > 3
 				&& name.startsWith('no-')
 			) {
-				const baseName = name.slice(3);
-				if (
-					hasOwn(flagRegistry, baseName)
-					&& flagRegistry[baseName][1] === Boolean
-				) {
-					negatedBase = baseName;
+				const baseData = flagRegistry.get(name.slice(3));
+				if (baseData && baseData[1] === Boolean) {
+					[negatedBaseName] = baseData;
 				}
 			}
 
 			if (
 				ignore?.(
-					isKnownFlag || negatedBase ? KNOWN_FLAG : UNKNOWN_FLAG,
+					flagData || negatedBaseName ? FLAG : UNKNOWN_FLAG,
 					name,
 					explicitValue,
 				)
@@ -87,68 +114,71 @@ export const typeFlag = <Schemas extends Flags>(
 				return;
 			}
 
-			if (isKnownFlag) {
-				const [values, parser] = flagRegistry[name];
+			if (flagData) {
+				const [canonicalName, parser] = flagData;
+				pendingName = canonicalName;
+				pendingParser = parser;
+				pendingFlagIndex = flagIndex;
+				pendingRawName = name;
+
 				const flagValue = normalizeBoolean(parser, explicitValue);
-				const getFollowingValue = (
-					value?: string | boolean,
-					valueIndex?: Index,
-				) => {
-					// Remove elements from argv array
-					removeArgvs.push(flagIndex);
-					if (valueIndex) {
-						removeArgvs.push(valueIndex);
-					}
+				if (flagValue === undefined) {
+					// No inline value: expect the next token as this flag's value.
+					return true;
+				}
 
-					values.push(
-						applyParser(parser, value || ''),
-					);
-				};
-
-				return (
-					flagValue === undefined
-						? getFollowingValue
-						: getFollowingValue(flagValue)
-				);
+				flushFlagValue(flagValue);
+				return;
 			}
 
-			if (negatedBase) {
-				flagRegistry[negatedBase][0].push(false);
+			if (negatedBaseName) {
+				entries.push({
+					type: FLAG,
+					name: negatedBaseName,
+					value: false,
+				});
 				removeArgvs.push(flagIndex);
 				return;
 			}
 
-			if (!hasOwn(unknownFlags, name)) {
-				unknownFlags[name] = [];
-			}
-
-			unknownFlags[name].push(
-				explicitValue === undefined ? true : explicitValue,
-			);
+			entries.push({
+				type: UNKNOWN_FLAG,
+				name,
+				value: explicitValue === undefined ? true : explicitValue,
+			});
 			removeArgvs.push(flagIndex);
 		},
+
+		onValue: flushFlagValue,
 
 		onArgument: (args, index, isEoF) => {
 			if (ignore?.(ARGUMENT, argv[index[0]])) {
 				return;
 			}
 
-			positionals.push(...args);
-
+			// Tokens after `--` aren't parsed — keep them out of `entries` and
+			// expose them only through `_['--']`.
 			if (isEoF) {
 				doubleDashArguments = args;
 				argv.splice(index[0]);
-			} else {
-				removeArgvs.push(index);
+				return;
 			}
+
+			for (const value of args) {
+				entries.push({
+					type: ARGUMENT,
+					value,
+				});
+			}
+
+			removeArgvs.push(index);
 		},
 	});
 
 	spliceFromArgv(argv, removeArgvs);
 
 	return {
-		flags: finalizeFlags(schemas, flagRegistry),
-		unknownFlags,
-		_: createPositionalArgumentsFromParts(positionals, doubleDashArguments),
+		...finalizeParsed(schemas, flagRegistry, entries, doubleDashArguments),
+		entries,
 	} as Simplify<TypeFlag<Schemas>>;
 };

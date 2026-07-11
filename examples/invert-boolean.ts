@@ -2,7 +2,7 @@
  * This example demonstrates how to invert a boolean flag
  *
  * Usage:
- * $ npx tsx ./examples/invert-boolean --boolean=false
+ * $ node --conditions=development ./examples/invert-boolean.ts --boolean=false
  */
 
 import { typeFlag } from '#type-flag';
