@@ -64,7 +64,7 @@
 		"arktype": "^2.2.3",
 		"clean-pkg-json": "^2.0.0",
 		"expect-type": "^1.4.0",
-		"lintroll": "^1.30.2",
+		"lintroll": "^1.31.0",
 		"manten": "^2.0.1",
 		"pkgroll": "^2.27.1",
 		"skills-npm": "^1.2.0",
