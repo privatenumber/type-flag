@@ -208,6 +208,55 @@ describe('Types', () => {
 			expectTypeOf(parsed.flags.constFlag).toEqualTypeOf<number | 42>();
 		});
 
+		test('Custom parser returning a literal union', () => {
+			const parseMode = (value: string): 'fast' | 'safe' => (
+				value === 'fast' ? 'fast' : 'safe'
+			);
+
+			const parsed = typeFlag({
+				mode: parseMode,
+				wrappedMode: { type: parseMode },
+				modes: [parseMode],
+			});
+
+			expectTypeOf(parsed.flags.mode).toEqualTypeOf<'fast' | 'safe' | undefined>();
+			expectTypeOf(parsed.flags.wrappedMode).toEqualTypeOf<'fast' | 'safe' | undefined>();
+			expectTypeOf(parsed.flags.modes).toEqualTypeOf<('fast' | 'safe')[]>();
+		});
+
+		test('Null default widens the inferred type with null', () => {
+			const parsePoint = (value: string) => ({ x: Number(value) });
+
+			const parsed = typeFlag({
+				point: {
+					type: parsePoint,
+					default: null,
+				},
+			});
+
+			expectTypeOf(parsed.flags.point).toEqualTypeOf<{ x: number } | null>();
+		});
+
+		test('as const satisfies Flags preserves array and default inference', () => {
+			const flags = {
+				strings: [String],
+				defaults: {
+					type: [String],
+					default: ['fallback'],
+				},
+				lazyDefaults: {
+					type: [Number],
+					default: () => [1],
+				},
+			} as const satisfies Flags;
+
+			const parsed = typeFlag(flags);
+
+			expectTypeOf(parsed.flags.strings).toEqualTypeOf<string[]>();
+			expectTypeOf(parsed.flags.defaults).toEqualTypeOf<string[] | readonly ['fallback']>();
+			expectTypeOf(parsed.flags.lazyDefaults).toEqualTypeOf<number[]>();
+		});
+
 		test('any/unknown/never types', () => {
 			const parsed = typeFlag({
 				anyFlag: toAny,
