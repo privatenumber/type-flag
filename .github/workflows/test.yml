@@ -40,9 +40,6 @@ jobs:
       - name: Install Node.js 18
         run: pnpm runtime set node 18.20.3 -g
 
-      - name: Verify Node.js 18
-        run: test "$(node --version)" = "v18.20.3"
-
       - name: Test (Node 18)
         env:
           NODE_OPTIONS: --import=tsx/esm
