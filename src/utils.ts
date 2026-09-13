@@ -15,6 +15,22 @@ export const hasOwn = (
 	property: PropertyKey,
 ) => hasOwnProperty.call(object, property);
 
+// Define an enumerable own property. Plain assignment would invoke the
+// `Object.prototype` setter for keys like `__proto__`, dropping the property
+// and replacing the object's prototype instead.
+export const defineOwnProperty = (
+	object: object,
+	property: PropertyKey,
+	value: unknown,
+) => {
+	Object.defineProperty(object, property, {
+		value,
+		enumerable: true,
+		writable: true,
+		configurable: true,
+	});
+};
+
 export const parseFlagType = (
 	flagSchema: FlagTypeOrSchema,
 ): [parser: TypeFunction, isArray: boolean] => {
@@ -98,7 +114,7 @@ const setFlag = (
 		throw new Error(`Duplicate flags named "${flagName}"`);
 	}
 
-	registry[flagName] = data;
+	defineOwnProperty(registry, flagName, data);
 };
 
 export const createRegistry = (
@@ -172,9 +188,9 @@ export const finalizeFlags = (
 			if (typeof defaultValue === 'function') {
 				defaultValue = defaultValue();
 			}
-			flags[flagName] = defaultValue;
+			defineOwnProperty(flags, flagName, defaultValue);
 		} else {
-			flags[flagName] = isArray ? values : values.pop();
+			defineOwnProperty(flags, flagName, isArray ? values : values.pop());
 		}
 	}
 

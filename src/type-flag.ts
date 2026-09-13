@@ -9,6 +9,7 @@ import {
 } from './types.ts';
 import {
 	hasOwn,
+	defineOwnProperty,
 	createRegistry,
 	normalizeBoolean,
 	applyParser,
@@ -119,7 +120,7 @@ export const typeFlag = <Schemas extends Flags>(
 			}
 
 			if (!hasOwn(unknownFlags, name)) {
-				unknownFlags[name] = [];
+				defineOwnProperty(unknownFlags, name, []);
 			}
 
 			unknownFlags[name].push(
