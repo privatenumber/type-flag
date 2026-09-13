@@ -30,9 +30,30 @@ jobs:
         run: pnpm build
 
       - name: Test
-        run: |
-          pnpm test
-          NODE_OPTIONS='--import=tsx/esm' pnx node@18.20.3 --conditions=development tests/index.ts
+        run: pnpm test
 
       - name: Lint
         run: pnpm lint
+
+  test-compat:
+    name: Test (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['18.20.3']
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+
+      - name: Setup pnpm and Node.js
+        uses: pnpm/setup@703c52620218391530e48b9e8870d5c0082e1b9b # v2.1.0
+        with:
+          runtime: node@${{ matrix.node }}
+
+      - name: Test
+        env:
+          NODE_OPTIONS: --import=tsx/esm
+        run: pnpm test
