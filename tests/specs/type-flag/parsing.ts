@@ -14,6 +14,46 @@ describe('Parsing', () => {
 			});
 		});
 
+		// `__proto__` accessors are read via property descriptors to avoid the
+		// `no-proto`/`dot-notation` lint conflict on direct access.
+		test('Unknown flag named __proto__ is an own key', () => {
+			const parsed = typeFlag({}, ['--__proto__=1', '--__proto__=2']);
+			expect(Object.getPrototypeOf(parsed.unknownFlags)).toBe(Object.prototype);
+			expect(Object.hasOwn(parsed.unknownFlags, '__proto__')).toBe(true);
+			expect(Object.keys(parsed.unknownFlags)).toStrictEqual(['__proto__']);
+			expect<unknown>(
+				Object.getOwnPropertyDescriptor(parsed.unknownFlags, '__proto__')?.value,
+			).toStrictEqual(['1', '2']);
+		});
+
+		test('Defined flag named __proto__ is an own key', () => {
+			const parsed = typeFlag(
+				{ ['__proto__']: Boolean },
+				['--__proto__'],
+			);
+			expect(Object.getPrototypeOf(parsed.flags)).toBe(Object.prototype);
+			expect(Object.hasOwn(parsed.flags, '__proto__')).toBe(true);
+			expect<unknown>(
+				Object.getOwnPropertyDescriptor(parsed.flags, '__proto__')?.value,
+			).toBe(true);
+		});
+
+		test('Defined flag named __proto__ default is an own key', () => {
+			const parsed = typeFlag(
+				{
+					['__proto__']: {
+						type: Boolean,
+						default: true,
+					},
+				},
+				[],
+			);
+			expect(Object.hasOwn(parsed.flags, '__proto__')).toBe(true);
+			expect<unknown>(
+				Object.getOwnPropertyDescriptor(parsed.flags, '__proto__')?.value,
+			).toBe(true);
+		});
+
 		test('string to boolean', () => {
 			const parsed = typeFlag({
 				boolean: Boolean,
