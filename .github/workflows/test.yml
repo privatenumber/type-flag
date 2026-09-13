@@ -21,9 +21,7 @@ jobs:
           node-version-file: .nvmrc
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
-        with:
-          run_install: true
+        uses: pnpm/setup@703c52620218391530e48b9e8870d5c0082e1b9b # v2.1.0
 
       - name: Type check
         run: pnpm type-check
@@ -32,9 +30,17 @@ jobs:
         run: pnpm build
 
       - name: Test
-        run: |
-          pnpm test
-          NODE_OPTIONS='--import=tsx/esm' pnpm run --use-node-version=18.20.3 test
+        run: pnpm test
 
       - name: Lint
         run: pnpm lint
+
+      # The dev-only prepare script needs a newer Node than the library
+      # supports, so install on the .nvmrc runtime and switch only the test.
+      - name: Install Node.js 18
+        run: pnpm runtime set node 18.20.3 -g
+
+      - name: Test (Node 18)
+        env:
+          NODE_OPTIONS: --import=tsx/esm
+        run: pnpm test
