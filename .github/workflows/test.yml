@@ -35,36 +35,15 @@ jobs:
       - name: Lint
         run: pnpm lint
 
-  test-compat:
-    name: Test (Node ${{ matrix.node }})
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    strategy:
-      fail-fast: false
-      matrix:
-        node: ['18.20.3']
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
-
-      - name: Use Node.js
-        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
-        with:
-          node-version-file: .nvmrc
-
-      - name: Setup pnpm
-        uses: pnpm/setup@703c52620218391530e48b9e8870d5c0082e1b9b # v2.1.0
-
       # The dev-only prepare script needs a newer Node than the library
       # supports, so install on the .nvmrc runtime and switch only the test.
-      - name: Install Node.js ${{ matrix.node }}
-        run: pnpm runtime set node ${{ matrix.node }} -g
+      - name: Install Node.js 18
+        run: pnpm runtime set node 18.20.3 -g
 
-      - name: Verify Node.js ${{ matrix.node }}
-        run: test "$(node --version)" = "v${{ matrix.node }}"
+      - name: Verify Node.js 18
+        run: test "$(node --version)" = "v18.20.3"
 
-      - name: Test
+      - name: Test (Node 18)
         env:
           NODE_OPTIONS: --import=tsx/esm
         run: pnpm test
