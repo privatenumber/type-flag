@@ -6,16 +6,18 @@ export type Index =
 	| [index: number]
 	| [index: number, aliasIndex: number, isLast: boolean];
 
-type onValueCallbackType = (
-	value?: string,
-	index?: Index,
+type onValueCallback = (
+	value: string | undefined,
+	index: Index | undefined,
 ) => void;
 
+// Return `true` to signal the flag expects a following token as its value
+// (delivered via `onValue`). Avoids allocating a per-occurrence callback closure.
 type onFlag = (
 	name: string,
 	value: string | undefined,
 	index: Index,
-) => void | onValueCallbackType;
+) => boolean | void;
 
 type onArgument = (
 	args: string[],
@@ -24,6 +26,45 @@ type onArgument = (
 ) => void;
 
 const isFlagPattern = /^-{1,2}\w/;
+
+const negativeNumberPattern = /^-(?:\d+(?:\.\d*)?|\.\d+)(?:e[-+]?\d+)?$/i;
+
+/**
+ * A membership-checkable collection of defined flag/alias names. Both the
+ * `typeFlag` registry (a `Map`) and `getFlag`'s searched names (a `Set`)
+ * satisfy this, so neither call site needs a wrapper or conversion.
+ */
+type KnownFlags = {
+	has: (flagName: string) => boolean;
+};
+
+/**
+ * Whether a flag-shaped token should be consumed as the value of a
+ * value-expecting flag: it must look like a single-dash negative number
+ * (e.g. `-5`, `-5.5`, `-5e3`) and NOT fully resolve to defined flags.
+ *
+ * If every character after the dash is a known flag, the token wins as a
+ * flag/alias group instead (e.g. `-512` when 5, 1, and 2 are all defined).
+ */
+const isNegativeNumberValue = (
+	argvElement: string,
+	knownFlags: KnownFlags,
+) => {
+	if (!negativeNumberPattern.test(argvElement)) {
+		return false;
+	}
+
+	// A flag/alias group requires EVERY character to be a defined flag, so the
+	// first non-flag character means the token is a value (e.g. the `0` in `-50`).
+	for (let i = 1; i < argvElement.length; i += 1) {
+		if (!knownFlags.has(argvElement[i])) {
+			return true;
+		}
+	}
+
+	// Every character is a defined flag (e.g. `-512` when 5, 1, 2 are defined).
+	return false;
+};
 
 export const parseFlagArgv = (
 	flagArgv: string,
@@ -62,23 +103,36 @@ export const argvIterator = (
 	argv: string[],
 	{
 		onFlag,
+		onValue,
 		onArgument,
+		knownFlags,
 	}: {
 		onFlag?: onFlag;
+		onValue?: onValueCallback;
 		onArgument?: onArgument;
+
+		/**
+		 * Defined flag/alias names. Used to decide whether a negative-number
+		 * token (e.g. `-5`) should be consumed as a flag's value rather than
+		 * parsed as a flag. A `Map` registry and a `Set` of names both satisfy it.
+		 */
+		knownFlags?: KnownFlags;
 	},
 ) => {
-	let onValueCallback: void | onValueCallbackType;
+	// Whether the previous flag expects the next token as its value. A boolean
+	// flag (rather than storing a per-occurrence callback closure) keeps the
+	// value-delivery call site monomorphic and allocation-free.
+	let expectingValue = false;
 	const triggerValueCallback = (
 		value?: string,
 		index?: Index,
 	) => {
-		if (typeof onValueCallback !== 'function') {
+		if (!expectingValue) {
 			return true;
 		}
 
-		onValueCallback(value, index);
-		onValueCallback = undefined;
+		expectingValue = false;
+		onValue?.(value, index);
 	};
 
 	for (let i = 0; i < argv.length; i += 1) {
@@ -90,6 +144,17 @@ export const argvIterator = (
 			const remaining = argv.slice(i + 1);
 			onArgument?.(remaining, [i], true);
 			break;
+		}
+
+		// A value-expecting flag consumes a negative-number token as its value,
+		// unless the token resolves to defined flags.
+		if (
+			expectingValue
+			&& knownFlags
+			&& isNegativeNumberValue(argvElement, knownFlags)
+		) {
+			triggerValueCallback(argvElement, [i]);
+			continue;
 		}
 
 		const parsedFlag = parseFlagArgv(argvElement);
@@ -109,18 +174,18 @@ export const argvIterator = (
 					triggerValueCallback();
 
 					const isLastAlias = j === flagName.length - 1;
-					onValueCallback = onFlag(
+					expectingValue = onFlag(
 						flagName[j],
 						isLastAlias ? flagValue : undefined,
 						[i, j + 1, isLastAlias],
-					);
+					) === true;
 				}
 			} else {
-				onValueCallback = onFlag(
+				expectingValue = onFlag(
 					flagName,
 					flagValue,
 					[i],
-				);
+				) === true;
 			}
 		} else if (triggerValueCallback(argvElement, [i])) { // if no callback was set
 			onArgument?.([argvElement], [i]);

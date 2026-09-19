@@ -3,7 +3,7 @@ on:
   push:
     branches: [develop]
   pull_request:
-    branches: [master, develop, next]
+    branches: [master, develop, next, beta]
 
 jobs:
   test:
@@ -35,12 +35,9 @@ jobs:
       - name: Lint
         run: pnpm lint
 
-      # The dev-only prepare script needs a newer Node than the library
-      # supports, so install on the .nvmrc runtime and switch only the test.
-      - name: Install Node.js 18
-        run: pnpm runtime set node 18.20.3 -g
+      # Run the suite on the minimum supported Node, reusing the install above.
+      - name: Install Node.js 22.22.2
+        run: pnpm runtime set node 22.22.2 -g
 
-      - name: Test (Node 18)
-        env:
-          NODE_OPTIONS: --import=tsx/esm
+      - name: Test (Node 22.22.2)
         run: pnpm test

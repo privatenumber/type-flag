@@ -26,7 +26,27 @@ export const getFlag = <Type extends FlagType>(
 	const results: unknown[] = [];
 	const removeArgvs: Index[] = [];
 
+	// Pending value-expecting flag, read by `onValue`. Hoisted so no callback
+	// closure is allocated per value-taking flag occurrence.
+	let pendingFlagIndex: Index;
+	let pendingName: string;
+	const pushValue = (
+		flagIndex: Index,
+		rawName: string,
+		value: string | boolean | undefined,
+		valueIndex?: Index,
+	) => {
+		// Remove parsed elements from the argv array
+		removeArgvs.push(flagIndex);
+		if (valueIndex) {
+			removeArgvs.push(valueIndex);
+		}
+
+		results.push(applyParser(parser, value || '', rawName));
+	};
+
 	argvIterator(argv, {
+		knownFlags: flags,
 		onFlag: (name, explicitValue, flagIndex) => {
 			if (
 				!flags.has(name)
@@ -36,24 +56,16 @@ export const getFlag = <Type extends FlagType>(
 			}
 
 			const flagValue = normalizeBoolean(parser, explicitValue);
-			const getFollowingValue = (
-				implicitValue?: string | boolean,
-				valueIndex?: Index,
-			) => {
-				// Remove elements from argv array
-				removeArgvs.push(flagIndex);
-				if (valueIndex) {
-					removeArgvs.push(valueIndex);
-				}
+			if (flagValue === undefined) {
+				pendingFlagIndex = flagIndex;
+				pendingName = name;
+				return true;
+			}
 
-				results.push(applyParser(parser, implicitValue || ''));
-			};
-
-			return (
-				flagValue === undefined
-					? getFollowingValue
-					: getFollowingValue(flagValue)
-			);
+			pushValue(flagIndex, name, flagValue);
+		},
+		onValue: (value, valueIndex) => {
+			pushValue(pendingFlagIndex, pendingName, value, valueIndex);
 		},
 	});
 

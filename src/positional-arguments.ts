@@ -9,6 +9,10 @@ export const createPositionalArgumentsFromParts = (
 	{ [DOUBLE_DASH]: doubleDashArguments },
 );
 
+/**
+ * Build a {@link PositionalArguments} array from raw argv, splitting on the
+ * `--` delimiter so tokens after `--` are also exposed on the `'--'` property.
+ */
 export const createPositionalArguments = (
 	argv: readonly string[],
 ): PositionalArguments => {

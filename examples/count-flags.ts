@@ -2,7 +2,7 @@
  * This example demonstrates how to count the number of flags
  *
  * Usage:
- * $ npx tsx ./examples/count-flags -vvv
+ * $ node --conditions=development ./examples/count-flags.ts -vvv
  */
 
 import { typeFlag } from '#type-flag';

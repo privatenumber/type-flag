@@ -1,6 +1,6 @@
 ---
 name: type-flag
-description: "Use when working with type-flag or building CLIs on top of it (e.g. cleye). Strongly-typed Node.js argv parser: schema syntax (String/Number/Boolean, arrays, custom parser functions, Standard Schema validators like Zod/Valibot/ArkType, aliases, defaults, single-char names), return shape (flags/unknownFlags/positional args), flag forms (long/short/grouping, =/:/. delimiters, kebab/camelCase), boolean negation via `--no-`, and the `ignore` callback for multi-command dispatch."
+description: "Use when working with type-flag or building CLIs on top of it (e.g. cleye). Strongly-typed Node.js argv parser: schema syntax (String/Number/Boolean, arrays, custom parser functions, Standard Schema validators like Zod/Valibot/ArkType, aliases, defaults, single-char names), return shape (flags/unknownFlags/positional args, plus the advanced ordered `entries` stream), flag forms (long/short/grouping, =/:/. delimiters, kebab/camelCase), boolean negation via `--no-`, and the `ignore` callback for multi-command dispatch."
 ---
 
 # type-flag
@@ -69,17 +69,33 @@ typeFlag({
 - Multiple values: wrap in `[schema]`, NOT `z.array(...)` (it validates a single token and throws).
 - Numbers: CLI values are strings, so coerce (`z.coerce.number()`).
 - Booleans: keep native `Boolean` (a schema loses `--no-` negation and short grouping).
-- Sync only: async schemas throw. A failed schema or parser propagates the raw error.
+- Sync only: async schemas throw. A failed schema throws `FlagParseError` as `Flag "--<name>": <message>` (original on `.cause`).
 
 ## Return shape
 
 ```ts
 {
-    flags:        { [name]: InferredType },
-    unknownFlags: { [name]: (string | boolean)[] },  // not camelCased
+    flags:        { [name]: InferredType },          // null-prototype object
+    unknownFlags: { [name]: (string | boolean)[] },  // null-prototype object; not camelCased
     _:            string[] & { '--': string[] },      // positional; everything after `--` also in `_['--']`
+    entries:      ParsedArgvEntry[],                  // advanced; see below
 }
 ```
+
+`flags` and `unknownFlags` are null-prototype objects. Use `name in flags` or `Object.hasOwn(flags, name)`.
+
+### `entries` (advanced)
+
+Ordered stream of every interpreted argv element, preserving relative order across different flags (which `flags` discards by grouping per name). Most CLIs ignore this; use it when order across flags matters (e.g. curl `-d`/`--data-urlencode` body assembly).
+
+```ts
+type ParsedArgvEntry =
+    | { type: 'flag'; name: string; value: unknown }          // name = canonical schema key (alias/kebab resolved)
+    | { type: 'unknown-flag'; name: string; value: string | boolean } // name = raw argv name
+    | { type: 'argument'; value: string }
+```
+
+`-d a --data-urlencode b -d c` → three `flag` items in argv order, each `name` being the canonical schema key. Ignored elements (via `ignore`) are excluded. Tokens after `--` are not parsed, so they don't appear here (use `_['--']`).
 
 ## Flag forms
 
@@ -88,7 +104,7 @@ typeFlag({
 | `--flag value` / `--flag=value` | Long form |
 | `-f value` / `-f=value` | Short form (alias or single-char name) |
 | `-abc` | Group: each char matches an alias or single-char name independently |
-| `--some-flag` | kebab-case → camelCase (`someFlag`) unless schema key is kebab |
+| `--some-flag` | kebab-case → camelCase (`someFlag`) unless schema key is kebab; consecutive capitals treated as one unit (`getID` → `--get-id`, `URLParser` → `--url-parser`) |
 | `--flag:value` / `--flag.value` | `:` and `.` also delimit values (useful for `--define:K=V`, `--env.KEY=V`) |
 | `-xvalue` (concatenated) | ⚠️ Parsed as GROUP, not `x=value`. Use `-x value` or `-x=value`. |
 
@@ -125,7 +141,7 @@ Skip parsing specific tokens (leave them in `argv`). Called for each token:
 
 ```ts
 ignore?: (
-    type: 'known-flag' | 'unknown-flag' | 'argument',
+    type: 'flag' | 'unknown-flag' | 'argument',
     flagOrArgv: string,
     value: string | undefined,
 ) => boolean | void
@@ -165,14 +181,14 @@ Same argv-mutation behavior as `typeFlag`.
 
 | Gotcha | Detail |
 |--------|--------|
-| Negative numbers look like flag groups | `--num -123` is parsed as `-1 -2 -3` (char group). Use `--num=-123` or `--num=-Inf`. |
+| Negative numbers as values | `--num -5` is taken as `--num`'s value. Value-slot only: a standalone `-5`, or a `-5` that resolves to defined flags, still parses as a flag. `-Infinity`/`-NaN` (no leading digit) need `--num=-Infinity`. |
 | `argv` is mutated | Parsed tokens are spliced out. Don't share argv with other parsers after. |
 | Frozen argv throws | `Object.freeze(argv)` breaks the splice. Pass a mutable copy. |
 | `unknownFlags` keys are raw | NOT camelCased — so you can distinguish `--some-flag` from `--someFlag`. |
 | Reserved chars in names | `\s`, `.`, `:`, `=` forbidden in flag names (they're delimiters). |
 | kebab schema key | If schema key is `'some-flag'`, only `--some-flag` / `--someFlag` both map to it, but output key stays kebab. |
-| Default functions throw | A throwing `default: () => ...` propagates. |
-| Parser/schema errors propagate raw | A throwing parser or failed schema surfaces its own error message (no flag-name wrapping). |
+| Default functions throw | A throwing `default: () => ...` propagates raw (NOT a `FlagParseError`). |
+| Parser/schema errors wrap | A throwing parser (or failed schema) throws `FlagParseError` (extends `TypeError`) as `Flag "--<name>": <message>`, with `.flagName` and the original on `.cause`. Exported from `type-flag`. |
 
 ## Related
 

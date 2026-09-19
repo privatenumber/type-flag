@@ -2,7 +2,7 @@
  * This example demonstrates how a dot-nested object can be created
  *
  * Usage:
- * $ npx tsx ./examples/dot-nested --env.TOKEN=123 --env.CI
+ * $ node --conditions=development ./examples/dot-nested.ts --env.TOKEN=123 --env.CI
  */
 
 import { typeFlag } from '#type-flag';
