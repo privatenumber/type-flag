@@ -185,7 +185,13 @@ export const createRegistry = (
 			setFlag(registry, kebabCasing, flagData);
 		}
 
-		if ('alias' in schema && typeof schema.alias === 'string') {
+		if (
+			// A raw schema (e.g. Zod, ArkType) can have its own `.alias`; only a
+			// flag-schema object's `alias` is a type-flag alias.
+			!isStandardSchema(schema)
+			&& 'alias' in schema
+			&& typeof schema.alias === 'string'
+		) {
 			const { alias } = schema;
 			const errorPrefix = `Flag alias "${alias}" for flag "${flagName}"`;
 

@@ -46,7 +46,7 @@
 			"default": "./dist/internal.mjs"
 		}
 	},
-	"packageManager": "pnpm@10.13.1",
+	"packageManager": "pnpm@12.4.1",
 	"scripts": {
 		"build": "pkgroll --minify --clean-dist",
 		"lint": "lintroll --git --cache",
