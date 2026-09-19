@@ -303,6 +303,54 @@ describe('standard-schema', () => {
 		});
 	});
 
+	describe('Alias', () => {
+		// A raw schema can carry its own `alias` member; it is schema metadata,
+		// not a type-flag alias.
+		const schemaWithAlias = (
+			alias: string,
+		): StandardSchemaV1 & { alias: string } => ({
+			alias,
+			'~standard': {
+				version: 1,
+				vendor: 'test',
+				validate: value => ({ value }),
+			},
+		});
+
+		test('schema-internal alias is ignored', () => {
+			const parsed = typeFlag(
+				{ value: schemaWithAlias('x') },
+				['-x', 'hello'],
+			);
+
+			expect(parsed.flags.value).toBeUndefined();
+			expect(parsed.unknownFlags).toStrictEqual({ x: [true] });
+		});
+
+		test('multi-character schema-internal alias does not throw', () => {
+			expect(() => {
+				typeFlag(
+					{ value: schemaWithAlias('metadata') },
+					['--value', 'hello'],
+				);
+			}).not.toThrow();
+		});
+
+		test('explicit wrapper alias still registers', () => {
+			const parsed = typeFlag(
+				{
+					value: {
+						type: schemaWithAlias('metadata'),
+						alias: 'v',
+					},
+				},
+				['-v', 'hello'],
+			);
+
+			expect(parsed.flags.value).toBe('hello');
+		});
+	});
+
 	describe('isStandardSchema', () => {
 		test('detects schemas (Zod, Valibot, ArkType)', () => {
 			expect(isStandardSchema(z.string())).toBe(true);
