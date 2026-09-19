@@ -50,6 +50,34 @@ describe('Parsing', () => {
 			]);
 		});
 
+		test('Defined flag named __proto__ is an own key', () => {
+			const parsed = typeFlag(
+				{ ['__proto__']: Boolean },
+				['--__proto__'],
+			);
+			expect(Object.getPrototypeOf(parsed.flags)).toBe(null);
+			expect(Object.hasOwn(parsed.flags, '__proto__')).toBe(true);
+			expect<unknown>(
+				Object.getOwnPropertyDescriptor(parsed.flags, '__proto__')?.value,
+			).toBe(true);
+		});
+
+		test('Defined flag named __proto__ default is an own key', () => {
+			const parsed = typeFlag(
+				{
+					['__proto__']: {
+						type: Boolean,
+						default: true,
+					},
+				},
+				[],
+			);
+			expect(Object.hasOwn(parsed.flags, '__proto__')).toBe(true);
+			expect<unknown>(
+				Object.getOwnPropertyDescriptor(parsed.flags, '__proto__')?.value,
+			).toBe(true);
+		});
+
 		test('string to boolean', () => {
 			const parsed = typeFlag({
 				boolean: Boolean,
