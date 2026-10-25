@@ -35,8 +35,6 @@ jobs:
       - name: Lint
         run: pnpm lint
 
-      # The dev-only prepare script needs a newer Node than the library
-      # supports, so install on the .nvmrc runtime and switch only the test.
       - name: Install Node.js 18
         run: pnpm runtime set node 18.20.3 -g
 

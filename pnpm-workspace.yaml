@@ -3,3 +3,14 @@ packages:
 allowBuilds:
   esbuild: true
   unrs-resolver: true
+permissions:
+  clean-pkg-json:
+    skills: true
+  lintroll:
+    skills: true
+  manten:
+    skills: true
+skills:
+  dirs:
+    - .claude/skills
+    - .agents/skills
