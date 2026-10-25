@@ -656,7 +656,7 @@ A few trade-offs are intentional:
 
 ## Agent Skills
 
-This package ships with a built-in [agent skill](https://agentskills.io) for AI coding assistants. Set up [`skills-npm`](https://github.com/antfu/skills-npm) in your project to use it.
+This package ships with a built-in [agent skill](https://agentskills.io) for AI coding assistants.
 
 ## Sponsors
 
