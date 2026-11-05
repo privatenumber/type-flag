@@ -12,13 +12,13 @@ Observed in both versions ([results](./argv-survey/results.md#type-flag-probes))
 | --- | --- | --- |
 | `getFlag('-h', Boolean, ['--h'])` | `true` | `--h` is invalid for a single-character name (README "Single-character Flag Names") |
 | `getFlag('--a, -b', Boolean, ['-b'])` | `undefined`, `-b` left in argv | n/a |
-| `getFlag('a', String, ['--a', 'x'])` | `undefined` | `typeFlag` throws for invalid names |
+| `getFlag('a', String, ['--a', 'x'])` | `undefined` | n/a: `a` is a valid `typeFlag` schema key; `getFlag` takes dashed CLI spellings |
 | `getFlag('--a', String, ['--a', 'x', '--a', 'y'])` | `"x"`, `--a y` left in argv | `typeFlag` gives `"y"` |
 
 ## Bugs
 
-- **`--h` matches `-h`.** `getFlag` stores names without their dashes, so `-h` and `--h` become the same key. Fix: keep the dash form when matching, and reject `--x` for one character, as `typeFlag` does.
-- **Invalid names are ignored silently.** `parseFlagArgv` returns `undefined` for `a` and ` -b`, and that `undefined` goes into the name set. Fix: trim each name and throw for names that do not parse.
+- **`--h` matches `-h`.** `getFlag` stores names without their dashes, so `-h` and `--h` become the same key. Fix: keep the dash form when matching, so `--h` in argv does not match a one-character search name. `typeFlag` parses `--h` as an unknown flag in that case.
+- **Invalid names are ignored silently.** `parseFlagArgv` returns `undefined` for `a` and ` -b`, and that `undefined` goes into the name set. These are invalid search expressions, not unknown argv flags. Fix: trim each name and throw for a search expression that does not parse.
 
 ## Decision needed: first or last occurrence
 

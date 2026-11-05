@@ -4,7 +4,7 @@ Researched 2026-11-05 against type-flag `v5.0.0-beta.20`. Not shipped.
 
 ## Summary
 
-Recommendation: support attached short values. When a short flag that takes a value appears in a group, the rest of the token is its value. POSIX requires conforming standard utilities to accept this form. In the survey, node `parseArgs`, commander, argparse, and clap accept it. yargs-parser accepts only `-c5`, arg throws, and minimist, mri, and type-flag parse the rest as more flags.
+Recommendation: support attached short values. When a short flag that takes a value appears in a group, the rest of the token is its value. POSIX requires conforming standard utilities to accept this form. In the survey, node `parseArgs`, commander, argparse, and clap accept `-nfoo` and `-c5`. yargs-parser and minimist read `-c5` as a value for `count` but parse `-nfoo` as more flags. arg throws, and mri and type-flag parse the rest of both as more flags. Adapter configurations differ; see the caveat below.
 
 type-flag's README lists "does not parse POSIX-style short string values like `-ovalue`" as an intentional trade-off. That line came from a docs comparison with `parseArgs()` ([`e0715a9`](https://github.com/privatenumber/type-flag/commit/e0715a9720376c2ad303e7f008c5bc97ddd286e4)), not from a recorded design decision.
 
@@ -49,14 +49,14 @@ Flags that do not take a value, and unknown flags, keep today's behavior. The sc
 
 - **Digit aliases.** With `c` value-taking and `5` a defined alias, `-c5` gives `count: 5`. getopt makes the same choice: the value-taking flag wins over later characters.
 - **Value delimiters `:` and `.`.** Today `-n:foo` and `-n.foo` give `name: "foo"`. Under the rule they would give `":foo"` and `".foo"`, unless the delimiters are also stripped. Decision needed. Stripping keeps current behavior.
-- **`spliceFromArgv`.** Removing a group like `-vnfoo` from argv must remove the whole value, not one character.
+- **`spliceFromArgv`.** Removing a group like `-vnfoo` from argv must remove the whole value, not one character. When `ignore` skips part of a group, the kept remainder must keep its meaning; see the [forwarding hazard](./flag-names.md#forwarding-hazard-partially-consumed-groups) that exists today.
 - **Single-dash long names.** A user who types `-output` meaning `--output` gets `-o` with the value `utput` when `o` takes a value. Today the same input parses as the aliases `o`, `u`, `t`, `p`, `u`, `t`. pflag users reported this surprise in [spf13/pflag#314](https://github.com/spf13/pflag/issues/314). That issue shows the hazard exists, not how often it happens.
 
 ## Compatibility
 
 Breaking against `5.0.0-beta.20`. Two classes of input change:
 
-- **Inputs that lose data today:** `-nfoo` and `-c5` produce `""`, `NaN`, or unknown flags. A CLI is unlikely to rely on these results.
+- **Inputs that lose data today:** `-nfoo` and `-c5` produce `""`, `NaN`, or unknown flags. These results look accidental, but they are observable, so a CLI could still rely on them.
 - **Defined flags after a value-taking flag in one group:** `-nv foo` gives `name: ""`, `verbose: true` today and would give `name: "v"`. Both flags are defined and no unknown flag is reported, so a CLI can rely on the current result. This is a real breaking case.
 
 ## When to revisit

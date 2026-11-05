@@ -5,7 +5,7 @@ Researched 2026-11-05 against type-flag `v5.0.0-beta.20`. Not shipped.
 ## Summary
 
 - **Explicit values (`--verbose=0`):** type-flag treats only the exact string `false` as false, so `--verbose=0`, `--verbose=FALSE`, `--verbose=no`, and the typo `--verbose=flase` all give `true`. Recommendation: accept a fixed set of true and false literals, and decide a result for any other value (an error or an unknown flag).
-- **Negation with a value (`--no-verbose=false`):** type-flag ignores the value and gives `false`. Recommendation: treat it as an unknown flag. type-flag is the only surveyed parser that applies the value.
+- **Negation with a value (`--no-verbose=false`):** type-flag applies the negation and ignores the attached value, so `--no-verbose=false` and `--no-verbose=true` both give `false`. It is the only surveyed configuration that does this. Recommendation: when `no-verbose` is not itself a defined flag, treat `--no-verbose=value` as an unknown flag.
 
 ## Explicit values
 
@@ -18,6 +18,8 @@ Observed ([results](./argv-survey/results.md#boolean-values)):
 | minimist, mri | false | true | true | true | true |
 | arg | true | true | true | true | true |
 | parseArgs, commander, argparse, clap | error | error | error | error | error |
+
+The table shows only the boolean result. mri also turns the value of `=0` and `=FALSE` into a positional ([results](./argv-survey/results.md#boolean-values)).
 
 The permissive parsers each use one literal with opposite defaults:
 
@@ -46,7 +48,7 @@ An unrecognized value needs a defined result. Throwing `FlagParseError` matches 
 | mri | unknown flag `verbose=false` |
 | parseArgs, commander, argparse, clap, arg | error (arg has no negation) |
 
-argparse's message is "ignored explicit argument 'false'" ([argparse.py#L2160](https://github.com/python/cpython/blob/v3.14.0/Lib/argparse.py#L2160)). Recommendation: treat `--no-x=value` as an unknown flag, like yargs-parser. This fits type-flag's existing rule that `--no-` only applies to a bare boolean flag, and it avoids a new error path.
+argparse's message is "ignored explicit argument 'false'" ([argparse.py#L2160](https://github.com/python/cpython/blob/v3.14.0/Lib/argparse.py#L2160)). Recommendation: treat `--no-x=value` as an unknown flag, like yargs-parser, when `no-x` is not itself defined. A schema can define a flag named `no-x`, and type-flag looks up defined flags before negation ([type-flag.ts#L87-L104](https://github.com/privatenumber/type-flag/blob/v5.0.0-beta.20/src/type-flag.ts#L87-L104)): `typeFlag({ 'no-verbose': String }, ['--no-verbose=false'], { booleanNegation: true })` gives `'no-verbose': 'false'`. The proposal must keep that working. It avoids a new error path, but it is still a change: the negation branch sets `false` regardless of the value today ([type-flag.ts#L134-L141](https://github.com/privatenumber/type-flag/blob/v5.0.0-beta.20/src/type-flag.ts#L134-L141)).
 
 ## Kept: `--verbose false`
 
