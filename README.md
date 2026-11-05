@@ -732,7 +732,7 @@ A few trade-offs are intentional:
 
 - It does not parse POSIX-style short string values like `-ovalue`.
 - It treats missing string values as `""`; strict parsers like `parseArgs()` and `arg` throw.
-- Negative numbers are accepted as flag values (`--count -1`); but a number that is itself a defined flag (e.g. a `-1` alias) is treated as that flag, so use `--count=-1` for it. A bare negative (not after a value-taking flag) and `-Infinity` also need the `=` form.
+- Values that start with `-` and a digit are accepted after a value-taking flag: `--count -1`, `--range -5..10`, `--delta -5%`. A token whose characters are all defined flags (e.g. `-1` when `1` is an alias) is treated as those flags, so use `--count=-1` for it. A standalone `-5` (not after a value-taking flag) and `-Infinity` also need the `=` form.
 
 ## Agent Skills
 

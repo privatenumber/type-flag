@@ -504,6 +504,89 @@ describe('Parsing', () => {
 		});
 	});
 
+	describe('values starting with a negative number', () => {
+		test('consumes range, unit, and custom formats', () => {
+			const parse = (value: string) => typeFlag({ range: String }, ['--range', value]);
+
+			for (const value of ['-5..10', '-5%', '-3h', '-40C', '-.5x']) {
+				const parsed = parse(value);
+				expect(parsed.flags).toStrictEqual(nullPrototypeObject({ range: value }));
+				expect(parsed.unknownFlags).toStrictEqual(nullPrototypeObject({}));
+			}
+		});
+
+		test('consumes via alias', () => {
+			const parsed = typeFlag({
+				range: {
+					type: String,
+					alias: 'r',
+				},
+			}, ['-r', '-5..10']);
+
+			expect(parsed.flags).toStrictEqual(nullPrototypeObject({ range: '-5..10' }));
+		});
+
+		test('is a value when only some characters are defined flags', () => {
+			const parsed = typeFlag({
+				range: String,
+				fast: {
+					type: Boolean,
+					alias: '5',
+				},
+			}, ['--range', '-5..10']);
+
+			expect(parsed.flags).toStrictEqual(nullPrototypeObject({
+				range: '-5..10',
+				fast: undefined,
+			}));
+		});
+
+		test('is a flag group when every character is a defined flag', () => {
+			const parsed = typeFlag({
+				range: String,
+				fast: {
+					type: Boolean,
+					alias: '5',
+				},
+				human: {
+					type: Boolean,
+					alias: 'h',
+				},
+			}, ['--range', '-5h']);
+
+			expect(parsed.flags).toStrictEqual(nullPrototypeObject({
+				range: '',
+				fast: true,
+				human: true,
+			}));
+		});
+
+		test('dash followed by a letter is still a flag', () => {
+			const parsed = typeFlag({
+				range: String,
+				verbose: {
+					type: Boolean,
+					alias: 'v',
+				},
+			}, ['--range', '-v']);
+
+			expect(parsed.flags).toStrictEqual(nullPrototypeObject({
+				range: '',
+				verbose: true,
+			}));
+		});
+
+		test('standalone token is still parsed as flags', () => {
+			const parsed = typeFlag({ range: String }, ['-5%']);
+
+			expect(parsed.flags).toStrictEqual(nullPrototypeObject({ range: undefined }));
+			expect(parsed.unknownFlags).toStrictEqual(nullPrototypeObject({
+				5: [true],
+				'%': [true],
+			}));
+		});
+	});
+
 	test('end of flags', () => {
 		const argv = ['--flagA', '--', '--flagB'];
 		const parsed = typeFlag(
