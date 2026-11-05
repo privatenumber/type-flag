@@ -115,6 +115,39 @@ Rationale:
 
 Known trade-off: with a digit alias `-5` defined, `--range -5=3` changed from "alias `5` with inline value `3`" to "`range` is `-5=3`". This needs a digit alias, the inline-value form, and the value slot at the same time. Because `v5.0.0-beta.19` is a published release, the change shipped with a `BREAKING CHANGE:` footer on the beta channel.
 
+## Open proposal: standalone dash-digit tokens as positionals
+
+Researched 2026-11-05. Not shipped.
+
+Outside the value slot, type-flag parses `-5` as the unknown flag `5`: `calc -5` gives `unknownFlags: { 5: [true] }`, and `file -5..10` gives `unknownFlags: { 5: ['.10'] }` ([results](./argv-survey/results.md#standalone-dash-digit)).
+
+Parsers split three ways:
+
+| Behavior | Parsers |
+| --- | --- |
+| Positional | argparse 3.14 (any `-\.?\d` prefix), commander 14.0.3 (complete numbers in a leaf command only, so `-5..10` is an unknown option), yargs-parser 22.0.0 (complete numbers, coerced to numbers) |
+| Error | node `parseArgs` (strict), arg, clap (positionals need `allow_negative_numbers`) |
+| Unknown flag | minimist, mri, type-flag |
+
+Sources:
+
+- argparse: "positional arguments may only begin with `-` if they look like negative numbers and there are no options in the parser that look like negative numbers" ([argparse.rst#L1525](https://github.com/python/cpython/blob/v3.14.0/Doc/library/argparse.rst?plain=1#L1525)).
+- commander added this in v14 ([CHANGELOG.md#L50](https://github.com/tj/commander.js/blob/v14.0.3/CHANGELOG.md?plain=1#L50), [tj/commander.js#2338](https://github.com/tj/commander.js/issues/2338)). The check is [command.js#L1852-L1858](https://github.com/tj/commander.js/blob/v14.0.3/lib/command.js#L1852-L1858): "A negative number in a leaf command is not an unknown option." It applies only when the command has no subcommands (`this.commands.length === 0`). The survey uses a leaf command.
+
+Assessment: supported, with moderate demand. A CLI that takes numbers as positionals (`calc -5`, `seek -10`) cannot accept them today without `--`. The per-token rule from the [Decision](#decision) above would apply unchanged: the token is flags only when every character after the dash is a defined flag. The cost is that a wrapper that reports "unknown flag `-5`" would see a positional instead. A CLI framework that treats the first positional as a command name, such as cleye, would also see `-5` as a command name.
+
+## Kept: `--` right after a value-taking flag ends parsing
+
+Researched 2026-11-05.
+
+`--name -- x` gives `name: ""` and `_: ['x']` in type-flag ([results](./argv-survey/results.md#value-slot-double-dash)). POSIX disagrees: the Guideline 7 rationale lists `pr -h --` as an option-argument of `--`. Parsers split:
+
+- **`--` is the value:** commander.
+- **Error:** node `parseArgs` in strict mode (its default), arg, argparse, clap. With `strict: false`, node `parseArgs` takes `--` as the value (`name: "--"`, positional `x`; Node.js v24.13.1).
+- **`--` ends parsing:** yargs-parser, minimist, mri, type-flag. An open yargs-parser issue reports the opposite behavior, in short flags, as a bug ([yargs/yargs-parser#566](https://github.com/yargs/yargs-parser/issues/566), "Bare `--` is consumed as the value of a preceding short option").
+
+Decision: keep. Consuming `--` as a value would contradict the guard that type-flag uses for every other dash-prefixed token. Among the parsers that do not throw, only commander and non-strict `parseArgs` consume it, and both are greedy for every dash-prefixed value, which type-flag deliberately is not.
+
 ## Reproduce
 
 ```sh

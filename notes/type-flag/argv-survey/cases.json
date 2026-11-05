@@ -1,0 +1,102 @@
+{
+	"short-flag-values": [
+		[
+			"-nfoo"
+		],
+		[
+			"-c5"
+		],
+		[
+			"-vnfoo"
+		],
+		[
+			"-nv",
+			"foo"
+		],
+		[
+			"-n=foo"
+		]
+	],
+	"standalone-dash-digit": [
+		[
+			"-5"
+		],
+		[
+			"file",
+			"-5"
+		],
+		[
+			"file",
+			"-5..10"
+		]
+	],
+	"boolean-values": [
+		[
+			"--verbose=false"
+		],
+		[
+			"--verbose=0"
+		],
+		[
+			"--verbose=FALSE"
+		],
+		[
+			"--verbose=no"
+		],
+		[
+			"--verbose="
+		],
+		[
+			"--verbose",
+			"false"
+		],
+		[
+			"--no-verbose"
+		],
+		[
+			"--no-verbose=false"
+		]
+	],
+	"flag-names": [
+		[
+			"--über",
+			"x"
+		],
+		[
+			"-é"
+		]
+	],
+	"value-slot-double-dash": [
+		[
+			"--name",
+			"--",
+			"x"
+		]
+	],
+	"missing-values": [
+		[
+			"--name"
+		],
+		[
+			"--count"
+		]
+	],
+	"repeated-flags": [
+		[
+			"--name",
+			"a",
+			"--name",
+			"b"
+		]
+	],
+	"error-messages": [
+		[
+			"-s",
+			"bad"
+		],
+		[
+			"--size",
+			"bad"
+		]
+	]
+}
