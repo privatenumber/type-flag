@@ -1,6 +1,6 @@
 // Usage: node survey.mjs <dependencies-directory> [clap-binary]
 // Runs every case in cases.json through each parser and prints one Markdown table per topic.
-// Every parser gets the same schema:
+// Each adapter approximates this schema (README.md lists where parsers differ):
 //   --name/-n     string
 //   --verbose/-v  boolean (with --no-verbose where the parser supports negation)
 //   --count/-c    number

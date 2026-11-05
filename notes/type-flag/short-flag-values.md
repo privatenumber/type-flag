@@ -4,13 +4,13 @@ Researched 2026-11-05 against type-flag `v5.0.0-beta.20`. Not shipped.
 
 ## Summary
 
-Recommendation: support attached short values. When a short flag that takes a value appears in a group, the rest of the token is its value. POSIX requires this form, and every surveyed parser that supports short-flag groups and typed values implements it, except type-flag, yargs-parser, minimist, and mri.
+Recommendation: support attached short values. When a short flag that takes a value appears in a group, the rest of the token is its value. POSIX requires conforming standard utilities to accept this form. In the survey, node `parseArgs`, commander, argparse, and clap accept it. yargs-parser accepts only `-c5`, arg throws, and minimist, mri, and type-flag parse the rest as more flags.
 
 type-flag's README lists "does not parse POSIX-style short string values like `-ovalue`" as an intentional trade-off. That line came from a docs comparison with `parseArgs()` ([`e0715a9`](https://github.com/privatenumber/type-flag/commit/e0715a9720376c2ad303e7f008c5bc97ddd286e4)), not from a recorded design decision.
 
 ## Current behavior
 
-Schema: `name` is a string with alias `n`, `verbose` is a boolean with alias `v`, and `count` is a number with alias `c` ([results](./argv-survey/results.md#short-flag-values)).
+Schema: `name` is a string with alias `n`, `verbose` is a boolean with alias `v`, and `count` is a number with alias `c` ([results](./argv-survey/results.md#short-flag-values)). Not every adapter can declare a number: node `parseArgs` declares `count` as a string (so it reports `"5"`), and the minimist and mri adapters declare no type for it ([adapter differences](./argv-survey/README.md#adapter-differences)).
 
 | Input | type-flag | getopt rule (parseArgs, commander, argparse, clap) |
 | --- | --- | --- |
@@ -29,7 +29,7 @@ The current behavior loses data silently. `-c5` reads as "count 5" to a user but
 
 ## Implementations
 
-- glibc `getopt` takes the rest of the element as the argument: [getopt.c#L674](https://github.com/bminor/glibc/blob/glibc-2.42/posix/getopt.c#L674) ("If we end this ARGV-element by taking the rest as an arg, we must advance to the next element now.").
+- glibc `getopt` takes the rest of the element as the argument: [getopt.c#L674-L679](https://github.com/bminor/glibc/blob/glibc-2.42/posix/getopt.c#L674-L679) ("If we end this ARGV-element by taking the rest as an arg, we must advance to the next element now.").
 - node `parseArgs`: [`isShortOptionGroup`](https://github.com/nodejs/node/blob/v24.13.1/lib/internal/util/parse_args/utils.js#L140) and [`isShortOptionAndValue`](https://github.com/nodejs/node/blob/v24.13.1/lib/internal/util/parse_args/utils.js#L162).
 - commander: [command.js#L1820](https://github.com/tj/commander.js/blob/v14.0.3/lib/command.js#L1820).
 - argparse and clap: observed in the survey.
@@ -50,10 +50,14 @@ Flags that do not take a value, and unknown flags, keep today's behavior. The sc
 - **Digit aliases.** With `c` value-taking and `5` a defined alias, `-c5` gives `count: 5`. getopt makes the same choice: the value-taking flag wins over later characters.
 - **Value delimiters `:` and `.`.** Today `-n:foo` and `-n.foo` give `name: "foo"`. Under the rule they would give `":foo"` and `".foo"`, unless the delimiters are also stripped. Decision needed. Stripping keeps current behavior.
 - **`spliceFromArgv`.** Removing a group like `-vnfoo` from argv must remove the whole value, not one character.
+- **Single-dash long names.** A user who types `-output` meaning `--output` gets `-o` with the value `utput` when `o` takes a value. Today the same input parses as the aliases `o`, `u`, `t`, `p`, `u`, `t`. pflag users reported this surprise in [spf13/pflag#314](https://github.com/spf13/pflag/issues/314). That issue shows the hazard exists, not how often it happens.
 
 ## Compatibility
 
-Breaking against `5.0.0-beta.20`. Every changed input produces `""`, `NaN`, or bogus unknown flags today, so a working CLI is unlikely to depend on the old result.
+Breaking against `5.0.0-beta.20`. Two classes of input change:
+
+- **Inputs that lose data today:** `-nfoo` and `-c5` produce `""`, `NaN`, or unknown flags. A CLI is unlikely to rely on these results.
+- **Defined flags after a value-taking flag in one group:** `-nv foo` gives `name: ""`, `verbose: true` today and would give `name: "v"`. Both flags are defined and no unknown flag is reported, so a CLI can rely on the current result. This is a real breaking case.
 
 ## When to revisit
 
