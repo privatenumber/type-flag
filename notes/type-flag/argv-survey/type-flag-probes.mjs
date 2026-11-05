@@ -81,4 +81,4 @@ show('define key `-x`, then `---x`', () => parse({ '-x': Boolean }, ['---x']));
 show('getFlag(`-h`) with `--h`', () => take('-h', Boolean, ['--h']));
 show('getFlag(`--a, -b`) with `-b`', () => take('--a, -b', Boolean, ['-b']));
 show('getFlag(`a`) with `--a x`', () => take('a', String, ['--a', 'x']));
-show('getFlag(`--a`) with `--a x --a y`', () => take('--a', String, ['--a', 'x', '--a', 'y']));
+show('getFlag(`--name`) with `--name x --name y`', () => take('--name', String, ['--name', 'x', '--name', 'y']));

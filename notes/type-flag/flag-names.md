@@ -40,8 +40,10 @@ POSIX Guideline 3 limits option names to "a single alphanumeric character ... fr
 ## Proposed fix
 
 1. **Tokenizer:** recognize a flag when a Unicode letter, digit, or `_` follows the dashes, for example `/^-{1,2}[\p{L}\p{N}_]/u`. This makes `--über` and `-é` work at the start of a token.
-2. **Definition:** throw for an alias of `=`, `.`, or `:`, which no token can match.
-3. **Decision needed: names that start with `-`.** The long spelling cannot be typed (`---x` is not a flag), but the definition can still work through its alias: `{ '-foo': { type: String, alias: 'f' } }` with `-f x` gives `'-foo': 'x'` in beta.20, because [`createRegistry`](https://github.com/privatenumber/type-flag/blob/v5.0.0-beta.20/src/utils.ts#L172-L210) registers the key and the alias separately. Options: reject only such names that have no alias, or reject all of them as a breaking change.
+2. **Definition:** throw for an alias of `=`, `.`, or `:`. The alias never matches, but the rest of the definition does: `{ name: { type: String, alias: '=' } }` with `--name x` gives `name: 'x'` in beta.20. Throwing surfaces the dead alias at startup, and it breaks callers that only use the long name. Recommendation: throw, because the v5 beta accepts breaking changes and a silently dead alias is a configuration error.
+3. **Decision needed: names that start with `-`.** Two cases work today in beta.20, so rejecting either is breaking:
+   - A multi-character name such as `-foo` cannot be typed as a long flag (`---foo` is not a flag), but works through an alias: `{ '-foo': { type: String, alias: 'f' } }` with `-f x` gives `'-foo': 'x'`, because [`createRegistry`](https://github.com/privatenumber/type-flag/blob/v5.0.0-beta.20/src/utils.ts#L172-L210) registers the key and the alias separately.
+   - The single-character key `-` works inside a group, like alias `-` below: `{ '-': Boolean }` with `-a-` sets `'-': true` (and reports `a` as unknown).
 4. **Decision needed: alias `-`.** It works today only inside a group (`-a-`), because `--` alone ends flag parsing. Rejecting it is a breaking change for that grouped use. Keeping it means the alias can never be used on its own.
 
 Open evidence gap: the cost of a `u`-flag regex on the hot tokenizer path is unmeasured. Measure it with [`benchmarks/`](../../benchmarks) before choosing the pattern.
@@ -50,7 +52,7 @@ Open evidence gap: the cost of a `u`-flag regex on the hot tokenizer path is unm
 
 - Tokens such as `--über` or `-é` change from positionals to flags.
 - They also stop being values. Today a preceding value-taking flag consumes them: `typeFlag({ name: String, über: Boolean }, ['--name', '--über'])` gives `name: '--über'` in beta.20. With the new pattern, `--name` gets `""` and `--über` is parsed as a flag, defined or unknown.
-- The `=`, `.`, and `:` alias errors affect only definitions that never matched. Rejecting names that start with `-`, or alias `-`, breaks definitions that work today.
+- The `=`, `.`, and `:` aliases never match, but their definitions work through the long name, so throwing for them breaks those definitions. Rejecting names that start with `-`, or alias `-`, also breaks definitions that work today.
 
 ## Forwarding hazard: partially consumed groups
 

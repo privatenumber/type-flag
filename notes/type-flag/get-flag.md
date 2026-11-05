@@ -13,7 +13,7 @@ Observed in both versions ([results](./argv-survey/results.md#type-flag-probes))
 | `getFlag('-h', Boolean, ['--h'])` | `true` | `--h` is invalid for a single-character name (README "Single-character Flag Names") |
 | `getFlag('--a, -b', Boolean, ['-b'])` | `undefined`, `-b` left in argv | n/a |
 | `getFlag('a', String, ['--a', 'x'])` | `undefined` | n/a: `a` is a valid `typeFlag` schema key; `getFlag` takes dashed CLI spellings |
-| `getFlag('--a', String, ['--a', 'x', '--a', 'y'])` | `"x"`, `--a y` left in argv | `typeFlag` gives `"y"` |
+| `getFlag('--name', String, ['--name', 'x', '--name', 'y'])` | `"x"`, `--name y` left in argv | `typeFlag({ name: String }, ...)` gives `"y"` |
 
 ## Bugs
 

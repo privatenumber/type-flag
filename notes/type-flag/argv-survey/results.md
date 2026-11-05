@@ -137,7 +137,7 @@ type-flag 4.5.2
 | getFlag(`-h`) with `--h` | {"value":true,"argv":[]} |
 | getFlag(`--a, -b`) with `-b` | {"argv":["-b"]} |
 | getFlag(`a`) with `--a x` | {"argv":["--a","x"]} |
-| getFlag(`--a`) with `--a x --a y` | {"value":"x","argv":["--a","y"]} |
+| getFlag(`--name`) with `--name x --name y` | {"value":"x","argv":["--name","y"]} |
 
 type-flag 5.0.0-beta.20
 
@@ -154,4 +154,4 @@ type-flag 5.0.0-beta.20
 | getFlag(`-h`) with `--h` | {"value":true,"argv":[]} |
 | getFlag(`--a, -b`) with `-b` | {"argv":["-b"]} |
 | getFlag(`a`) with `--a x` | {"argv":["--a","x"]} |
-| getFlag(`--a`) with `--a x --a y` | {"value":"x","argv":["--a","y"]} |
+| getFlag(`--name`) with `--name x --name y` | {"value":"x","argv":["--name","y"]} |
