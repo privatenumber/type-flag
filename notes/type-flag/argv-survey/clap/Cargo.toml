@@ -1,0 +1,8 @@
+[package]
+name = "clap-survey"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+clap = { version = "=4.5.40", features = ["derive"] }
