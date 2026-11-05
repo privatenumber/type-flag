@@ -27,7 +27,10 @@ type onArgument = (
 
 const isFlagPattern = /^-{1,2}\w/;
 
-const negativeNumberPattern = /^-(?:\d+(?:\.\d*)?|\.\d+)(?:e[-+]?\d+)?$/i;
+// A dash followed by a digit, such as `-5`, `-5..10`, or `-5%`. A dash followed
+// by a letter stays a flag, so `--range --verbose` still reports the missing value.
+// `-.5` needs no rule here: it never matches `isFlagPattern`.
+const dashDigitPattern = /^-\d/;
 
 /**
  * A membership-checkable collection of defined flag/alias names. Both the
@@ -40,17 +43,17 @@ type KnownFlags = {
 
 /**
  * Whether a flag-shaped token should be consumed as the value of a
- * value-expecting flag: it must look like a single-dash negative number
- * (e.g. `-5`, `-5.5`, `-5e3`) and NOT fully resolve to defined flags.
+ * value-expecting flag: it must start with a dash and a digit
+ * (e.g. `-5`, `-5.5`, `-5..10`, `-5%`) and NOT fully resolve to defined flags.
  *
  * If every character after the dash is a known flag, the token wins as a
  * flag/alias group instead (e.g. `-512` when 5, 1, and 2 are all defined).
  */
-const isNegativeNumberValue = (
+const isDashDigitValue = (
 	argvElement: string,
 	knownFlags: KnownFlags,
 ) => {
-	if (!negativeNumberPattern.test(argvElement)) {
+	if (!dashDigitPattern.test(argvElement)) {
 		return false;
 	}
 
@@ -112,8 +115,8 @@ export const argvIterator = (
 		onArgument?: onArgument;
 
 		/**
-		 * Defined flag/alias names. Used to decide whether a negative-number
-		 * token (e.g. `-5`) should be consumed as a flag's value rather than
+		 * Defined flag/alias names. Used to decide whether a dash-digit
+		 * token (e.g. `-5` or `-5..10`) should be consumed as a flag's value rather than
 		 * parsed as a flag. A `Map` registry and a `Set` of names both satisfy it.
 		 */
 		knownFlags?: KnownFlags;
@@ -146,12 +149,12 @@ export const argvIterator = (
 			break;
 		}
 
-		// A value-expecting flag consumes a negative-number token as its value,
+		// A value-expecting flag consumes a dash-digit token as its value,
 		// unless the token resolves to defined flags.
 		if (
 			expectingValue
 			&& knownFlags
-			&& isNegativeNumberValue(argvElement, knownFlags)
+			&& isDashDigitValue(argvElement, knownFlags)
 		) {
 			triggerValueCallback(argvElement, [i]);
 			continue;

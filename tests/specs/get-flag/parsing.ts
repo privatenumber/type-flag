@@ -150,5 +150,13 @@ describe('Parsing', () => {
 			expect<number | undefined>(flagValue).toBe(3);
 			expect(argv).toStrictEqual(['--foo', '-5']);
 		});
+
+		test('consumes a value that starts with a negative number', () => {
+			const argv = ['--range', '-5..10'];
+			const flagValue = getFlag('--range', String, argv);
+
+			expect<string | undefined>(flagValue).toBe('-5..10');
+			expect(argv).toStrictEqual([]);
+		});
 	});
 });

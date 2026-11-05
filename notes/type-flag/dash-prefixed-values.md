@@ -13,7 +13,7 @@ Parsers fall into four groups:
 3. **Guarded, with a numeric exception:** the flag rejects a dash-prefixed token unless the token looks numeric. argparse, yargs-parser, clap (opt-in), and type-flag follow this rule.
 4. **Guarded, with no exception:** minimist and mri never take a dash-prefixed token as a value.
 
-type-flag is in group 3. Its numeric exception accepts only complete numbers (`-5`, `-5.5`, `-5e3`). Python's argparse made the same change that [#91](https://github.com/privatenumber/type-flag/issues/91) proposes. In Python 3.14, argparse moved from a complete-number match to a prefix match on `-\.?\d`, so values like `-12,3` and `-0xabc` reach custom converters.
+type-flag is in group 3. Up to `v5.0.0-beta.19`, its numeric exception accepted only complete numbers (`-5`, `-5.5`, `-5e3`). [#91](https://github.com/privatenumber/type-flag/issues/91) widened it to any token that starts with `-` and a digit. Python's argparse made the same change in 3.14: it moved from a complete-number match to a prefix match on `-\.?\d`, so values like `-12,3` and `-0xabc` reach custom converters. See [Decision](#decision).
 
 ## The question
 
@@ -102,15 +102,18 @@ No later CPython issue reports a regression from this change. A search on 2026-1
 
 Commander kept greedy required option-arguments. In v14 it added a negative-number exception for optional option-arguments and operands ([tj/commander.js#2338](https://github.com/tj/commander.js/issues/2338#issuecomment-2888810445)).
 
-## Implications for type-flag
+## Decision
 
-These points are inferences and proposals for #91. They are not shipped behavior yet.
+type-flag accepts a token as a flag's value when the flag expects a value, the token matches `/^-\d/`, and not every character after the dash is a defined flag ([#91](https://github.com/privatenumber/type-flag/issues/91), `isDashDigitValue` in [`src/argv-iterator.ts`](../../src/argv-iterator.ts)). The tests are in the "values starting with a negative number" suite of [`tests/specs/type-flag/parsing.ts`](../../tests/specs/type-flag/parsing.ts) and in [`tests/specs/get-flag/parsing.ts`](../../tests/specs/get-flag/parsing.ts).
 
-- **type-flag needs a guard.** type-flag gives a missing string value `""` instead of throwing (README "trade-offs"). If it were greedy, `--range --verbose` would silently set `range` to `"--verbose"` and drop the flag. The guard keeps that typo visible.
-- **A digit-or-dot prefix keeps the guard's purpose.** Letters are unaffected, so `--range --verbose` and `--range -v` still parse as flags. This rule has prior art: argparse 3.14 uses it.
-- **type-flag's defined-flag check is finer than argparse's.** argparse turns the numeric exception off for the whole parser when any option looks like a negative number (observed: with `-5` defined, even `-5..10` is an error). type-flag checks each token: the token is a flag group only when every character after the dash is a defined flag ([argv-iterator.ts#L59-L66](https://github.com/privatenumber/type-flag/blob/v5.0.0-beta.19/src/argv-iterator.ts#L59-L66)). So `-5..10` stays a value even when `-5` is defined, because `.` can never be a flag name.
-- **Only `\d` matters in the prefix.** `-.` already fails the flag pattern, so a rule of `/^-\d/` covers the same tokens as `/^-[\d.]/`.
-- **Remaining ambiguity.** With a digit alias `-5` defined, `--range -5=3` changes from "alias `5` with inline value `3`" to "`range` is `-5=3`". This needs a digit alias, the inline-value form, and the value slot at the same time.
+Rationale:
+
+- **type-flag keeps a guard instead of becoming greedy.** type-flag gives a missing string value `""` instead of throwing (README "trade-offs"). If it were greedy, `--range --verbose` would silently set `range` to `"--verbose"` and drop the flag. The guard keeps that typo visible.
+- **A digit prefix keeps the guard's purpose.** Letters are unaffected, so `--range --verbose` and `--range -v` still parse as flags. argparse 3.14 uses the same kind of prefix rule.
+- **type-flag's defined-flag check is finer than argparse's.** argparse turns the numeric exception off for the whole parser when any option looks like a negative number (observed: with `-5` defined, even `-5..10` is an error). type-flag checks each token: the token is a flag group only when every character after the dash is a defined flag. So `-5..10` stays a value even when `-5` is defined, because `.` can never be a flag name, while `-5h` is a flag group when both `5` and `h` are defined.
+- **The rule needs only `\d`, not `[\d.]`.** `-.5` already fails the flag pattern `/^-{1,2}\w/`, so it was a value before this change.
+
+Known trade-off: with a digit alias `-5` defined, `--range -5=3` changed from "alias `5` with inline value `3`" to "`range` is `-5=3`". This needs a digit alias, the inline-value form, and the value slot at the same time. Because `v5.0.0-beta.19` is a published release, the change shipped with a `BREAKING CHANGE:` footer on the beta channel.
 
 ## Reproduce
 
