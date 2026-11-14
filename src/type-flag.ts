@@ -84,6 +84,9 @@ export const typeFlag = <Schemas extends Flags>(
 
 	argvIterator(argv, {
 		knownFlags: flagRegistry,
+		isValueFlag: name => name.length === 1
+			&& flagRegistry.has(name)
+			&& flagRegistry.get(name)![1] !== Boolean,
 		onFlag(name, explicitValue, flagIndex) {
 			const isAlias = flagIndex.length === ALIAS_INDEX_LENGTH;
 			// Short names are one UTF-16 unit; long names are longer.

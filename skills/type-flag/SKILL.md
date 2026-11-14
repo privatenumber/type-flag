@@ -112,7 +112,7 @@ type ParsedArgvEntry =
 
 ## Single-char flag names vs aliases
 
-Both produce short flags that group identically (`-ab`, `-av`, mixed — all work). The difference is OUTPUT placement:
+Both produce short flags that group identically. A defined non-Boolean flag takes the rest of the token as its value and ends the group: `-vnfoo` gives `v` and `n=foo`. Strip one leading `=`, `:`, or `.` from that value; if nothing follows the flag, it takes the next argument. Long flags need `--`: with a string alias `o`, `-output` gives `o` the value `utput`. The difference is OUTPUT placement:
 
 | Pattern | When | Example |
 |---------|------|---------|
@@ -171,7 +171,7 @@ typeFlag(schema, argv, {
 
 `argv` is mutated: type-flag removes parsed tokens. Pass `process.argv.slice(2)` (or a copy) to see what's left.
 
-When forwarding to another parser, do not group an extracted short flag with flags the other parser will read. Extraction deletes characters in place, retaining an attached value only if the original last character remains. A remainder of exactly `--` is removed to avoid hiding the rest of argv; all other remainders stay in order. A remainder can become a long flag (`-q-abc` becomes `--abc`), a positional (`-q?` becomes `-?`), or a dash-number value candidate (`-q5x` becomes `-5x`). A preceding type-flag value-taking flag consumes `-5x` unless both `5` and `x` are defined flags. Which flag takes the next token also depends on the next parser. Extracting `-q` from `-q-=value` leaves `--=value`: type-flag treats it as a positional, but Node's `util.parseArgs` reads it as an unknown long option named `=value`.
+When forwarding to another parser, do not group an extracted short flag with flags the other parser will read. Extraction removes a value-taking flag and its attached value; ignored flags keep theirs. A remainder of exactly `--` is removed to avoid hiding the rest of argv; all other remainders stay in order. A remainder can become a long flag (`-q-abc` becomes `--abc`), a positional (`-q?` becomes `-?`), or a dash-number value candidate (`-q5x` becomes `-5x`). A preceding type-flag value-taking flag consumes `-5x` unless both `5` and `x` are defined flags. Which flag takes the next token also depends on the next parser. Extracting `-q` from `-q-=value` leaves `--=value`: type-flag treats it as a positional, but Node's `util.parseArgs` reads it as an unknown long option named `=value`.
 
 ## `getFlag` — one-off extraction
 

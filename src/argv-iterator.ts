@@ -111,10 +111,12 @@ export const argvIterator = (
 		onValue,
 		onArgument,
 		knownFlags,
+		isValueFlag,
 	}: {
 		onFlag?: onFlag;
 		onValue?: onValueCallback;
 		onArgument?: onArgument;
+		isValueFlag?: (name: string) => boolean;
 
 		/**
 		 * Defined flag/alias names. Used to decide whether a dash-digit
@@ -162,6 +164,32 @@ export const argvIterator = (
 			continue;
 		}
 
+		if (!argvElement.startsWith(DOUBLE_DASH) && isFlagPattern.test(argvElement)) {
+			triggerValueCallback();
+			if (!onFlag) {
+				continue;
+			}
+			for (let j = 1; j < argvElement.length;) {
+				const character = argvElement.codePointAt(j)! > 0xFF_FF
+					? argvElement.slice(j, j + 2)
+					: argvElement[j];
+				const next = j + character.length;
+				const delimiter = argvElement[next] === '=' || argvElement[next] === ':' || argvElement[next] === '.';
+				const attached = next < argvElement.length && (delimiter || isValueFlag?.(character));
+				const value = attached ? argvElement.slice(next + (delimiter ? 1 : 0)) : undefined;
+				expectingValue = onFlag(
+					character,
+					value,
+					[i, j, Boolean(attached) || next === argvElement.length, character.length],
+				) === true;
+				if (attached) {
+					break;
+				}
+				j = next;
+			}
+			continue;
+		}
+
 		const parsedFlag = parseFlagArgv(argvElement);
 
 		if (parsedFlag) {
@@ -171,32 +199,8 @@ export const argvIterator = (
 				continue;
 			}
 
-			const [flagName, flagValue, isAlias] = parsedFlag;
-
-			if (isAlias) {
-				// Alias group
-				for (let j = 0; j < flagName.length;) {
-					triggerValueCallback();
-
-					// A supplementary character spans two UTF-16 units; index directly otherwise
-					const character = flagName.codePointAt(j)! > 0xFF_FF
-						? flagName.slice(j, j + 2)
-						: flagName[j];
-					const isLastAlias = j + character.length === flagName.length;
-					expectingValue = onFlag(
-						character,
-						isLastAlias ? flagValue : undefined,
-						[i, j + 1, isLastAlias, character.length],
-					) === true;
-					j += character.length;
-				}
-			} else {
-				expectingValue = onFlag(
-					flagName,
-					flagValue,
-					[i],
-				) === true;
-			}
+			const [flagName, flagValue] = parsedFlag;
+			expectingValue = onFlag(flagName, flagValue, [i]) === true;
 		} else if (triggerValueCallback(argvElement, [i])) { // if no callback was set
 			onArgument?.([argvElement], [i]);
 		}

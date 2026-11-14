@@ -3,6 +3,18 @@ import { describe, test, expect } from 'manten';
 import { getFlag, typeFlag, FlagParseError } from '#type-flag';
 
 describe('Parsing', () => {
+	test('attached short values match typeFlag and remove the value', () => {
+		for (const [token, value] of [['-nfoo', 'foo'], ['-n=foo', 'foo'], ['-n:foo', 'foo'], ['-n.foo', 'foo'], ['-n==foo', '=foo'], ['-n😀x', '😀x']] as const) {
+			const argv = [token];
+			expect(getFlag('-n', String, argv)).toBe(value);
+			expect(argv).toStrictEqual([]);
+		}
+		const argv = ['-vnfoo'];
+		expect(getFlag('-n', String, argv)).toBe('foo');
+		expect(argv).toStrictEqual(['-v']);
+		expect(getFlag('-n', String, ['-vn', 'foo'])).toBe('foo');
+		expect(getFlag('-c', Number, ['-c5'])).toBe(5);
+	});
 	test('keeps the last group member as the next-token value owner', () => {
 		const argv = ['-q5a', 'file'];
 		getFlag('-q', Boolean, argv);
@@ -285,8 +297,8 @@ describe('Parsing', () => {
 			const argv = ['-aliasesa=value'];
 			const flagValue = getFlag('-a', [String], argv);
 
-			expect<string[]>(flagValue).toStrictEqual(['', '', 'value']);
-			expect(argv).toStrictEqual(['-lises']);
+			expect<string[]>(flagValue).toStrictEqual(['liasesa=value']);
+			expect(argv).toStrictEqual([]);
 		});
 	});
 

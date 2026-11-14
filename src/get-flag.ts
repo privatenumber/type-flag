@@ -74,6 +74,7 @@ export const getFlag = <Type extends FlagType>(
 
 	argvIterator(argv, {
 		knownFlags: shortFlags,
+		isValueFlag: name => parser !== Boolean && shortFlags.has(name),
 		onFlag: (name, explicitValue, flagIndex) => {
 			if (!(flagIndex.length === 1 ? longFlags : shortFlags).has(name)) {
 				return;
