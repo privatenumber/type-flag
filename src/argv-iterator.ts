@@ -211,6 +211,8 @@ export const spliceFromArgv = (
 	argv: string[],
 	removeArgvs: Index[],
 ) => {
+	// Single pass: `removeArgvs` arrives in ascending token order, because the
+	// iterator flushes a pending value before it handles the next token.
 	let writeIndex = 0;
 	let removalIndex = 0;
 	for (let readIndex = 0; readIndex < argv.length; readIndex += 1) {
