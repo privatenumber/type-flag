@@ -72,12 +72,14 @@ When a parser consumes part of a short group, the remainder can become a delimit
 1. Remove an empty remainder.
 2. Keep a remainder starting with a Unicode letter or `_` unchanged.
 3. Otherwise move its first letter or `_` to the front, unless it is the last character and has an attached value. Moving that character would give its value to a different flag.
-4. If no character can move, remove a remainder consisting only of `-` characters. Keep any other remainder unchanged. It can still be a dash-number value candidate or a positional.
+4. If no character can move, remove a remainder consisting only of `-` characters only when it has no attached value. Keep any other remainder unchanged. It can still be a dash-number value candidate, positional, or long flag.
 
-For example, extracting `-q` changes `-q-abc` to `-a-bc` and `-q5x` to `-x5`; `-q-` is removed, while `-q?` becomes the positional `-?`. The attached-value exception leaves `-q?a=x` as `-?a=x`.
+For example, extracting `-q` changes `-q-abc` to `-a-bc` and `-q5x` to `-x5`; `-q-` is removed, while `-q?` becomes the positional `-?`. `-q-=value` leaves `--=value`, a positional rather than a delimiter. The attached-value exception leaves `-q?a=x` as `-?a=x`.
 
-Rejected alternatives: appending `=` guesses the next parser's schema and an empty value throws for strict booleans; keeping the whole group parses consumed flags twice; splitting the group into tokens still leaves the value-capture problem.
+Rejected alternatives: appending `=` guesses the next parser's schema and an empty value throws for strict booleans; keeping the whole group parses consumed flags twice; splitting the group into tokens still leaves the value-capture problem. Keeping a number-led remainder in order would preserve entry order, but a preceding value-taking flag could silently consume it, and `spliceFromArgv` cannot know the next parser's schema.
 
-The next parser's schema can still change value capture. Extracting `-b` from `['-ab', 'file']` leaves `['-a', 'file']`; if the next parser defines `a: String`, it consumes `file`. Moving the last character to the front when it has no attached value can similarly change which flag takes the next token. Avoid grouping extracted flags with forwarded flags, or attach values with `=`.
+Do not group extracted flags with flags another parser will read. The next parser's schema can still change value capture. Extracting `-b` from `['-ab', 'file']` leaves `['-a', 'file']`; if the next parser defines `a: String`, it consumes `file`. Moving the last character to the front when it has no attached value can similarly change which flag takes the next token. Attaching a value with `=` prevents that flag from taking the next token, but does not make mixed groups safe.
+
+The attached-value exception can leave `-q5a=x` as `-5a=x`, which a preceding `--name` with `name: String` consumes as its value. It can also leave `-q-a=true` as the long flag `--a=true`. Without a movable letter or `_`, a remainder can become a positional. Moving a letter to the front changes the group's flag order in `entries`.
 
 The removal pass compacts the same argv array in token order rather than splicing once per removal. On Node v24.13.1, with 32,000 matched flags and 32,000 kept arguments, four measured runs after one warmup gave 399.2-420.1 ms before and 9.1-13.8 ms after for interleaved `-v`; with `--quiet` tokens followed by kept arguments, results were 155.5-790.2 ms before and 3.9-12.0 ms after. Each run called `getFlag` with a fresh copy and verified that all kept arguments remained. The wide before range reflects runtime variation; these are elapsed measurements, not a statistical guarantee.

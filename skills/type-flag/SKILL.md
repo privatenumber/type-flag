@@ -171,7 +171,7 @@ typeFlag(schema, argv, {
 
 `argv` is mutated: type-flag removes parsed tokens. Pass `process.argv.slice(2)` (or a copy) to see what's left.
 
-When forwarding to another parser, avoid grouping an extracted short flag with other flags, or attach values with `=`. Removing or reordering group members can change which flag consumes the next token. A remainder without a movable letter or `_` can remain a positional or a dash-number value candidate.
+When forwarding to another parser, do not group an extracted short flag with flags the other parser will read. Removing or reordering group members can change which flag consumes the next token. Attaching a value with `=` prevents that flag from taking the next token, but does not make mixed groups safe. A remainder without a movable letter or `_` can become a positional or a dash-number value candidate: extracting `-q` from `['--name', '-q5a=x']` leaves `-5a=x`, which a later `name: String` consumes. An unknown `-` before a last letter that owns a value can leave a long flag (`-q-a=true` becomes `--a=true`). Moving a letter to the front changes the group's flag order in `entries`.
 
 ## `getFlag` — one-off extraction
 

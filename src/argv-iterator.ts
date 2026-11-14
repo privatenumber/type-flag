@@ -211,6 +211,9 @@ export const spliceFromArgv = (
 	argv: string[],
 	removeArgvs: Index[],
 ) => {
+	if (removeArgvs.length === 0) {
+		return;
+	}
 	// Single pass: `removeArgvs` arrives in ascending token order, because the
 	// iterator flushes a pending value before it handles the next token.
 	let writeIndex = 0;
@@ -248,7 +251,7 @@ export const spliceFromArgv = (
 		const suffixIndex = remainder.search(/[=:.]/u);
 		const group = suffixIndex < 0 ? remainder : remainder.slice(0, suffixIndex);
 		const suffix = suffixIndex < 0 ? '' : remainder.slice(suffixIndex);
-		if (!group || /^-+$/u.test(group)) {
+		if (!group || (!suffix && /^-+$/u.test(group))) {
 			continue;
 		}
 		const match = letterOrUnderscorePattern.exec(group);

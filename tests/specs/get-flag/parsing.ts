@@ -2,6 +2,28 @@ import { describe, test, expect } from 'manten';
 import { getFlag, typeFlag, FlagParseError } from '#type-flag';
 
 describe('Parsing', () => {
+	test('preserves a dash remainder with an attached value', () => {
+		const argv = ['-q-=value', '--rest'];
+		getFlag('-q', Boolean, argv);
+		expect(argv).toStrictEqual(['--=value', '--rest']);
+		const result = typeFlag({ rest: Boolean }, argv);
+		expect(result._).toStrictEqual(Object.assign(['--=value'], { '--': [] }));
+		expect(result.flags.rest).toBe(true);
+	});
+
+	test('does not scan argv twice when no flag matches', () => {
+		let lengthReads = 0;
+		const argv = new Proxy(['--other'], {
+			get(target, property, receiver) {
+				if (property === 'length') {
+					lengthReads += 1;
+				}
+				return Reflect.get(target, property, receiver);
+			},
+		});
+		getFlag('-q', Boolean, argv);
+		expect(lengthReads).toBe(2);
+	});
 	test('forwarded group does not become a delimiter', () => {
 		const argv = ['-q-', '--verbose'];
 		getFlag('-q', Boolean, argv);

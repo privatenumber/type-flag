@@ -9,6 +9,14 @@ const nullPrototypeObject = <T extends object>(object: T): T => (
 );
 
 describe('Parsing', () => {
+	test('preserves an ignored dash with an attached value', () => {
+		const argv = ['-q-=value', '--rest'];
+		typeFlag({ q: Boolean }, argv, { ignore: (type, name) => type === 'unknown-flag' && (name === '-' || name === 'rest') });
+		expect(argv).toStrictEqual(['--=value', '--rest']);
+		const result = typeFlag({ rest: Boolean }, argv);
+		expect(result._).toStrictEqual(Object.assign(['--=value'], { '--': [] }));
+		expect(result.flags.rest).toBe(true);
+	});
 	test('forwarded ignored group keeps a flag start', () => {
 		const argv = ['-q5x'];
 		typeFlag({ q: Boolean }, argv, { ignore: type => type === 'unknown-flag' });
