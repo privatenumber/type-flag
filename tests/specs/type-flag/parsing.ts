@@ -1336,6 +1336,26 @@ describe('Parsing', () => {
 	});
 
 	describe('ignore', () => {
+		test('preserves the value of an ignored flag', () => {
+			const argv = ['--name', 'x', 'pos'];
+			const calls: string[] = [];
+			const parsed = typeFlag({ name: String }, argv, {
+				ignore: (type, value) => {
+					calls.push(`${type}:${value}`);
+					return type === 'flag';
+				},
+			});
+
+			expect(parsed.flags).toStrictEqual(nullPrototypeObject({ name: undefined }));
+			expect(parsed._).toStrictEqual(Object.assign(['pos'], { '--': [] }));
+			expect(parsed.entries).toStrictEqual([{
+				type: 'argument',
+				value: 'pos',
+			}]);
+			expect(argv).toStrictEqual(['--name', 'x']);
+			expect(calls).toStrictEqual(['flag:name', 'argument:pos']);
+		});
+
 		test('specific known flag', () => {
 			const argv = ['--string', 'a', '--string=b', '--unknown', 'c', '--unknown=d', '-u', '-vvv=1'];
 			const parsed = typeFlag(
@@ -1362,10 +1382,72 @@ describe('Parsing', () => {
 				v: [true, true, '1'],
 			}));
 			expect<string[] & { '--': string[] }>(parsed._).toStrictEqual(Object.assign(
-				['a', 'c'],
+				['c'],
 				{ '--': [] },
 			));
-			expect<string[]>(argv).toStrictEqual(['--string', '--string=b']);
+			expect<string[]>(argv).toStrictEqual(['--string', 'a', '--string=b']);
+		});
+
+		test('parses a flag following an ignored value-taking flag', () => {
+			const argv = ['--name', '--verbose', 'pos'];
+			const parsed = typeFlag({
+				name: String,
+				verbose: Boolean,
+			}, argv, {
+				ignore: (type, name) => type === 'flag' && name === 'name',
+			});
+
+			expect(parsed.flags).toStrictEqual(nullPrototypeObject({
+				name: undefined,
+				verbose: true,
+			}));
+			expect(parsed._).toStrictEqual(Object.assign(['pos'], { '--': [] }));
+			expect(argv).toStrictEqual(['--name']);
+		});
+
+		test('preserves an ignored value-taking flag at the end', () => {
+			const argv = ['--name'];
+			const parsed = typeFlag({ name: String }, argv, { ignore: type => type === 'flag' });
+
+			expect(parsed.entries).toStrictEqual([]);
+			expect(argv).toStrictEqual(['--name']);
+		});
+
+		test('preserves the ignored alias and its value in a group', () => {
+			const argv = ['-vn', 'x'];
+			const parsed = typeFlag({
+				verbose: {
+					type: Boolean,
+					alias: 'v',
+				},
+				name: {
+					type: String,
+					alias: 'n',
+				},
+			}, argv, { ignore: (type, name) => type === 'flag' && name === 'n' });
+
+			expect(parsed.flags).toStrictEqual(nullPrototypeObject({
+				verbose: true,
+				name: undefined,
+			}));
+			expect(parsed._).toStrictEqual(Object.assign([], { '--': [] }));
+			expect(argv).toStrictEqual(['-n', 'x']);
+		});
+
+		test('parses the argument after an ignored Boolean flag', () => {
+			const argv = ['--verbose', 'pos'];
+			const parsed = typeFlag({ verbose: Boolean }, argv, { ignore: type => type === 'flag' });
+
+			expect(parsed._).toStrictEqual(Object.assign(['pos'], { '--': [] }));
+			expect(argv).toStrictEqual(['--verbose']);
+		});
+
+		test('preserves dash-digit values and handles the end-of-flags delimiter', () => {
+			const argv = ['--name', '-5', '--name', '--', 'tail'];
+			const parsed = typeFlag({ name: String }, argv, { ignore: type => type === 'flag' });
+
+			expect(parsed._).toStrictEqual(Object.assign(['tail'], { '--': ['tail'] }));
+			expect(argv).toStrictEqual(['--name', '-5', '--name']);
 		});
 
 		test('unknown flags', () => {
@@ -1965,34 +2047,27 @@ describe('Parsing', () => {
 		});
 
 		test('excludes elements skipped by the ignore callback', () => {
+			const argv = ['--string', 'a', '--verbose', '--string', 'b'];
 			const parsed = typeFlag(
 				{
 					string: [String],
 					verbose: Boolean,
 				},
-				['--string', 'a', '--verbose', '--string', 'b'],
+				argv,
 				{
 					ignore: (type, flagName) => type === 'flag' && flagName === 'string',
 				},
 			);
 
-			// An ignored flag never consumes a following value, so `a`/`b` fall
-			// through as positional arguments — and `entries` reflects exactly that.
+			// Ignored value-taking flags keep their values out of the parsed stream.
 			expect(parsed.entries).toStrictEqual([
-				{
-					type: 'argument',
-					value: 'a',
-				},
 				{
 					type: 'flag',
 					name: 'verbose',
 					value: true,
 				},
-				{
-					type: 'argument',
-					value: 'b',
-				},
 			]);
+			expect(argv).toStrictEqual(['--string', 'a', '--string', 'b']);
 		});
 	});
 });

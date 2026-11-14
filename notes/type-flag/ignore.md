@@ -1,10 +1,10 @@
 # `ignore` and flag values
 
-Researched 2026-11-05 against type-flag `v5.0.0-beta.20` and `4.5.2`. Not shipped.
+Researched 2026-11-05 against type-flag `v5.0.0-beta.20` and `4.5.2`. Fixed in the v5 beta; see the [ignore tests](../../tests/specs/type-flag/parsing.ts).
 
 ## Summary
 
-Recommendation: fix. When `ignore` skips a defined flag that takes a value, type-flag still parses the flag's value as a positional and removes it from argv. The flag and its value end up in different places. This happens in 4.5.2 and in 5.0.0-beta.20.
+Decision: keep an ignored defined value-taking flag and its value together in argv. In 4.5.2 and 5.0.0-beta.20, type-flag instead parses that value as a positional and removes it from argv.
 
 ## Problem
 
@@ -24,10 +24,10 @@ Expected: `argv: ['--name', 'x']`, with `x` never parsed. type-flag knows from t
 - **tsx** ([remove-argv-flags.ts](https://github.com/privatenumber/tsx/blob/v4.23.15/src/remove-argv-flags.ts)) ignores unknown flags and everything after the first positional. After a positional, every later token is ignored too, so the value is never split. The fix does not change tsx.
 - **cleye** passes a user's `ignoreArgv` straight to `typeFlag` ([cli.ts#L202-L206](https://github.com/privatenumber/cleye/blob/b6b2e754bfbed22d1652493c245bd800be81add3/src/cli.ts#L202-L206)). An app that ignores a specific defined flag hits the bug.
 
-## Proposed fix
+## Decision
 
-When `ignore` returns true for a defined flag that would take the next token as its value, skip that next token too and leave both in argv. Precedence matters: a dash-prefixed next token that the guard would parse as a flag is not the value, so it is parsed normally.
+When `ignore` returns true for a defined flag that would take the next token as its value, skip that next token too and leave both in argv. The iterator decides whether the next token is a value, including dash-digit values, so flags and the `--` delimiter keep their normal precedence. The [ignore tests](../../tests/specs/type-flag/parsing.ts) cover the value, flag, alias group, Boolean, end-of-input, and delimiter cases.
 
 ## Unknown flags: cannot be fixed
 
-With `ignore` returning true for unknown flags, `--target value` leaves `--target` in argv and parses `value` as a positional. type-flag cannot know whether an unknown flag takes a value. The README example avoids this by using `--target-flag=value`. Recommendation: document that forwarded unknown flags need the `=` form.
+With `ignore` returning true for unknown flags, `--target value` leaves `--target` in argv and parses `value` as a positional. type-flag cannot know whether an unknown flag takes a value. The README documents the `--target-flag=value` form for forwarding unknown flags with values.

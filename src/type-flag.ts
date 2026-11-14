@@ -64,6 +64,7 @@ export const typeFlag = <Schemas extends Flags>(
 	let pendingParser: Parameters<typeof applyParser>[0];
 	let pendingFlagIndex: Index;
 	let pendingRawName: string;
+	let ignoringValue = false;
 
 	const flushFlagValue = (
 		value: string | boolean | undefined,
@@ -111,6 +112,10 @@ export const typeFlag = <Schemas extends Flags>(
 					explicitValue,
 				)
 			) {
+				if (flagData && flagData[1] !== Boolean && explicitValue === undefined) {
+					ignoringValue = true;
+					return true;
+				}
 				return;
 			}
 
@@ -149,7 +154,13 @@ export const typeFlag = <Schemas extends Flags>(
 			removeArgvs.push(flagIndex);
 		},
 
-		onValue: flushFlagValue,
+		onValue(value, index) {
+			if (ignoringValue) {
+				ignoringValue = false;
+				return;
+			}
+			flushFlagValue(value, index);
+		},
 
 		onArgument: (args, index, isEoF) => {
 			if (ignore?.(ARGUMENT, argv[index[0]])) {
