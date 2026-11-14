@@ -7,7 +7,7 @@ Researched 2026-11-05 against type-flag `v5.0.0-beta.20`. The decisions below ch
 - **Explicit values:** accept only `true` and `false`, case-sensitive, and throw `FlagParseError` for any other value. This includes empty values and `[Boolean]`.
 - **Negation with a value:** treat `--no-verbose=value` as unknown unless `no-verbose` is itself defined. Bare negation is unchanged.
 
-Start with the documented literals: narrowing the set later breaks users, while widening it does not. Go `strconv.ParseBool` and clap also reject values outside their respective sets. Regression tests cover both [typeFlag](../../tests/specs/type-flag/parsing.ts) and [getFlag](../../tests/specs/get-flag/parsing.ts).
+Start with the documented literals. Narrowing the set later turns accepted input into errors. Widening it later is less disruptive but still observable, because input that used to throw would then parse. Go `strconv.ParseBool` and clap also reject values outside their respective sets. Regression tests cover both [typeFlag](../../tests/specs/type-flag/parsing.ts) and [getFlag](../../tests/specs/get-flag/parsing.ts).
 
 ## Explicit values
 
@@ -33,13 +33,13 @@ Neither rule catches typos. Go and clap are examples of strict literal sets that
 - Go `strconv.ParseBool`, used by Go `flag` ([flag.go#L133](https://github.com/golang/go/blob/go1.25.0/src/flag/flag.go#L133)) and pflag ([bool.go#L21](https://github.com/spf13/pflag/blob/v1.0.10/bool.go#L21)), accepts `1 t T true TRUE True` and `0 f F false FALSE False`, and returns an error for anything else ([atob.go#L8-L18](https://github.com/golang/go/blob/go1.25.0/src/strconv/atob.go#L8-L18)). It lists three spellings per word; it is not case-insensitive, so `tRuE` is an error.
 - clap's opt-in `BoolishValueParser` accepts `y yes t true on 1` and `n no f false off 0` ([str_to_bool.rs#L2-L5](https://github.com/clap-rs/clap/blob/v4.5.40/clap_builder/src/util/str_to_bool.rs#L2-L5)).
 
-Options for type-flag:
+Options considered before the decision (type-flag chose a narrower set than either: only `true` and `false`):
 
 1. **Go's set**, exactly as listed. The narrowest set with a major precedent. A case-insensitive match of `true`, `false`, `t`, `f`, `1`, and `0` would be an extension of it, not Go's behavior.
 2. **clap's set** (adds `yes`/`no`/`y`/`n`/`on`/`off`).
 3. **Keep today's rule.** No error path, but typos silently mean `true`.
 
-An unrecognized value needs a defined result. Throwing `FlagParseError` matches how type-flag reports other bad values. `--verbose=` (empty) also needs a decision: Go and clap reject it.
+An unrecognized value needs a defined result. Throwing `FlagParseError` matches how type-flag reports other bad values. `--verbose=` (empty) needed a decision too: Go and clap reject it, and type-flag now throws for it.
 
 ## Negation with a value
 

@@ -135,7 +135,7 @@ Only affects `Boolean`-typed, schema-known flags. `--no-X` for non-boolean or un
 
 Explicit `=false` always works regardless of `booleanNegation`:
 
-Explicit Boolean values, including `[Boolean]`, accept only case-sensitive `true` and `false`. Other values, including empty values, throw `FlagParseError` in both APIs. This applies to `=`, `:`, `.`, and grouped short aliases. A separate following token remains positional.
+Explicit Boolean values, including `[Boolean]`, accept only case-sensitive `true` and `false`. Other values, including empty values, throw `FlagParseError` in both APIs. This applies to `=`, `:`, `.`, and grouped short aliases. A separate following token is never the Boolean's value: `--verbose false` leaves `false` as a positional in `typeFlag` and in argv for `getFlag`.
 ```ts
 // --verbose=false → flags.verbose = false
 // --verbose false → flags.verbose = true, `_` = ['false']  (space-separated is positional)
