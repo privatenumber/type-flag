@@ -137,7 +137,7 @@ Explicit `=false` always works regardless of `booleanNegation`:
 
 ## `ignore` callback
 
-Skip parsing specific tokens (leave them in `argv`). An ignored defined value-taking flag also leaves its following value in `argv` without calling `ignore` for that value. For unknown flags, use `--flag=value` when forwarding values: a separate following token is parsed on its own, usually as an argument. Called for each flag and positional argument, but not for a flag's value token:
+Skip parsing specific tokens (leave them in `argv`). An ignored defined value-taking flag also leaves its following value in `argv` without calling `ignore` for that value. For unknown flags, use `--flag=value` when forwarding values: a separate following token is parsed on its own, usually as an argument. Called for each flag and each positional argument before `--`, but not for a flag's value token. `--` gets one `'argument'` call with `'--'`, which covers the whole tail after it:
 
 ```ts
 ignore?: (
