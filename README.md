@@ -334,6 +334,8 @@ argv // ['--target-flag=value']
 
 Use the `--target-flag=value` form for forwarded unknown flags with values. Since _type-flag_ does not know whether an unknown flag takes a value, it parses a separate following token on its own, usually as an argument.
 
+Avoid grouping an extracted short flag with flags that another parser will handle, or attach values with `=`. Removing the last flag, or reordering a partial group, can change which flag receives the next token. For example, extracting `-b` from `['-ab', 'file']` leaves `['-a', 'file']`, so a later parser with `a: String` consumes `file`. A partial group that cannot start with a letter or `_` may also remain a positional or a dash-number value candidate.
+
 You can also stop parsing after the first positional argument:
 
 ```ts

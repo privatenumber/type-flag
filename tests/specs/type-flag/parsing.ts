@@ -9,6 +9,16 @@ const nullPrototypeObject = <T extends object>(object: T): T => (
 );
 
 describe('Parsing', () => {
+	test('forwarded ignored group keeps a flag start', () => {
+		const argv = ['-q5x'];
+		typeFlag({ q: Boolean }, argv, { ignore: type => type === 'unknown-flag' });
+		expect(argv).toStrictEqual(['-x5']);
+		const result = typeFlag({
+			x: Boolean,
+			5: Boolean,
+		}, argv);
+		expect([result.flags.x, result.flags[5]]).toStrictEqual([true, true]);
+	});
 	test('Unicode numbers are values unless all aliases are defined', () => {
 		for (const value of ['-٥', '-Ⅳ', '-𝟝']) {
 			const result = typeFlag({ x: String }, ['-x', value]);

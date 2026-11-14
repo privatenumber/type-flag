@@ -26,8 +26,10 @@ type onArgument = (
 ) => void;
 
 const numberClass = String.raw`\p{N}`;
-export const flagStartClass = String.raw`[\p{L}${numberClass}_]`;
+const letterOrUnderscoreClass = String.raw`\p{L}_`;
+export const flagStartClass = `[${letterOrUnderscoreClass}${numberClass}]`;
 const isFlagPattern = new RegExp(`^-{1,2}${flagStartClass}`, 'u');
+const letterOrUnderscorePattern = new RegExp(`[${letterOrUnderscoreClass}]`, 'u');
 
 // A dash followed by a Unicode number (\p{N}), such as `-5`, `-٥`, or `-Ⅳ`. A dash followed
 // by a letter stays a flag, so `--range --verbose` still reports the missing value.
@@ -209,21 +211,53 @@ export const spliceFromArgv = (
 	argv: string[],
 	removeArgvs: Index[],
 ) => {
-	for (let i = removeArgvs.length - 1; i >= 0; i -= 1) {
-		const [index, aliasIndex, isLast, characterLength] = removeArgvs[i];
-		if (aliasIndex) {
-			const element = argv[index];
-			let newValue = element.slice(0, aliasIndex);
-			if (!isLast) {
-				newValue += element.slice(aliasIndex + characterLength!);
+	let writeIndex = 0;
+	let removalIndex = 0;
+	for (let readIndex = 0; readIndex < argv.length; readIndex += 1) {
+		const removal = removeArgvs[removalIndex];
+		if (!removal || removal[0] !== readIndex) {
+			if (writeIndex !== readIndex) {
+				argv[writeIndex] = argv[readIndex];
 			}
-
-			if (newValue !== '-') {
-				argv[index] = newValue;
-				continue;
-			}
+			writeIndex += 1;
+			continue;
 		}
 
-		argv.splice(index, 1);
+		if (removal.length === 1) {
+			removalIndex += 1;
+			continue;
+		}
+
+		const element = argv[readIndex];
+		let remainder = '';
+		let start = 1;
+		let removedLast = false;
+		while (removalIndex < removeArgvs.length && removeArgvs[removalIndex][0] === readIndex) {
+			const [, aliasIndex, isLast, characterLength] = removeArgvs[removalIndex];
+			remainder += element.slice(start, aliasIndex);
+			start = aliasIndex! + characterLength!;
+			removedLast = isLast!;
+			removalIndex += 1;
+		}
+		if (!removedLast) {
+			remainder += element.slice(start);
+		}
+
+		const suffixIndex = remainder.search(/[=:.]/u);
+		const group = suffixIndex < 0 ? remainder : remainder.slice(0, suffixIndex);
+		const suffix = suffixIndex < 0 ? '' : remainder.slice(suffixIndex);
+		if (!group || /^-+$/u.test(group)) {
+			continue;
+		}
+		const match = letterOrUnderscorePattern.exec(group);
+		if (match && match.index > 0 && !(suffix && match.index + match[0].length === group.length)) {
+			argv[writeIndex] = `-${match[0]}${group.slice(0, match.index)}${group.slice(match.index + match[0].length)}${suffix}`;
+		} else {
+			argv[writeIndex] = `-${group}${suffix}`;
+		}
+		writeIndex += 1;
+	}
+	if (writeIndex !== argv.length) {
+		argv.length = writeIndex;
 	}
 };

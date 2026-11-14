@@ -67,14 +67,17 @@ Built with `pnpm build`, then ran `node bench.js` in [`benchmarks/`](../../bench
 
 ## Forwarding hazard: partially consumed groups
 
-This hazard is not fixed by the name validation change.
+When a parser consumes part of a short group, the remainder can become a delimiter, long flag, dash-number value, or positional. The decision is to preserve a usable short-group start where possible. After removing consumed characters as whole code points, keep the attached `=`, `:`, or `.` value only if the original last group character remains:
 
-When type-flag consumes only part of a short-flag group, `spliceFromArgv` removes the consumed characters and keeps the rest ([argv-iterator.ts#L201-L220](https://github.com/privatenumber/type-flag/blob/v5.0.0-beta.20/src/argv-iterator.ts#L201-L220)). The kept token can mean something different on the next parse (observed with beta.20, `a` a defined boolean):
+1. Remove an empty remainder.
+2. Keep a remainder starting with a Unicode letter or `_` unchanged.
+3. Otherwise move its first letter or `_` to the front, unless it is the last character and has an attached value. Moving that character would give its value to a different flag.
+4. If no character can move, remove a remainder consisting only of `-` characters. Keep any other remainder unchanged. It can still be a dash-number value candidate or a positional.
 
-| Schema and call | argv after | Next parse sees |
-| --- | --- | --- |
-| alias `é`, `ignore` returns true for `é`, argv `['-aé']` | `['-é']` | a positional today; the flag `é` with the new tokenizer |
-| alias `-`, `ignore` returns true for `-`, argv `['-a-']` | `['--']` | the end-of-flags delimiter |
-| `getFlag('-a', Boolean, ['-aé'])` | `['-é']` | same as the first row |
+For example, extracting `-q` changes `-q-abc` to `-a-bc` and `-q5x` to `-x5`; `-q-` is removed, while `-q?` becomes the positional `-?`. The attached-value exception leaves `-q?a=x` as `-?a=x`.
 
-This exists today and does not depend on the proposal, but the tokenizer change alters how the first and third rows read. Any fix should define how a kept remainder preserves its meaning, for example by keeping the group intact when its remainder would not start with a flag character.
+Rejected alternatives: appending `=` guesses the next parser's schema and an empty value throws for strict booleans; keeping the whole group parses consumed flags twice; splitting the group into tokens still leaves the value-capture problem.
+
+The next parser's schema can still change value capture. Extracting `-b` from `['-ab', 'file']` leaves `['-a', 'file']`; if the next parser defines `a: String`, it consumes `file`. Moving the last character to the front when it has no attached value can similarly change which flag takes the next token. Avoid grouping extracted flags with forwarded flags, or attach values with `=`.
+
+The removal pass compacts the same argv array in token order rather than splicing once per removal. On Node v24.13.1, with 32,000 matched flags and 32,000 kept arguments, four measured runs after one warmup gave 399.2-420.1 ms before and 9.1-13.8 ms after for interleaved `-v`; with `--quiet` tokens followed by kept arguments, results were 155.5-790.2 ms before and 3.9-12.0 ms after. Each run called `getFlag` with a fresh copy and verified that all kept arguments remained. The wide before range reflects runtime variation; these are elapsed measurements, not a statistical guarantee.

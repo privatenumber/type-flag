@@ -171,6 +171,8 @@ typeFlag(schema, argv, {
 
 `argv` is mutated: type-flag removes parsed tokens. Pass `process.argv.slice(2)` (or a copy) to see what's left.
 
+When forwarding to another parser, avoid grouping an extracted short flag with other flags, or attach values with `=`. Removing or reordering group members can change which flag consumes the next token. A remainder without a movable letter or `_` can remain a positional or a dash-number value candidate.
+
 ## `getFlag` — one-off extraction
 
 ```ts
@@ -188,7 +190,7 @@ Scalar parsers return the last match; array parsers return all matches. Every ma
 | Gotcha | Detail |
 |--------|--------|
 | Negative numbers as values | A token that starts with `-` and a digit (`--num -5`, `--range -5..10`, `--delta -5%`) is taken as the flag's value. Value-slot only: a standalone `-5`, or a token whose characters are all defined flags, still parses as flags. `-Infinity`/`-NaN` (no leading digit) need `--num=-Infinity`. |
-| `argv` is mutated | Parsed tokens are spliced out. Don't share argv with other parsers after. |
+| `argv` is mutated | Parsed tokens are removed in place. See the forwarding caveats above before sharing argv with another parser. |
 | Frozen argv throws | `Object.freeze(argv)` breaks the splice. Pass a mutable copy. |
 | `unknownFlags` keys are raw | NOT camelCased — so you can distinguish `--some-flag` from `--someFlag`. |
 | Reserved chars in names | `\s`, `.`, `:`, `=` forbidden in flag names (they're delimiters). |
