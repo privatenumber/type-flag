@@ -75,7 +75,7 @@ export const getFlag = <Type extends FlagType>(
 				return;
 			}
 
-			const flagValue = normalizeBoolean(parser, explicitValue);
+			const flagValue = normalizeBoolean(parser, explicitValue, errorName, errorSpelling);
 			if (flagValue === undefined) {
 				pendingFlagIndex = flagIndex;
 				return true;

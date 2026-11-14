@@ -2,6 +2,46 @@ import { describe, test, expect } from 'manten';
 import { getFlag, FlagParseError } from '#type-flag';
 
 describe('Parsing', () => {
+	test('Boolean literals across delimiters and aliases', () => {
+		for (const separator of ['=', ':', '.']) {
+			for (const [value, expected] of [['true', true], ['false', false]] as const) {
+				for (const token of [`--verbose${separator}${value}`, `-av${separator}${value}`]) {
+					expect(getFlag('-v,--verbose', [Boolean], [token])).toStrictEqual([expected]);
+				}
+			}
+			expect(() => getFlag('--verbose', Boolean, [`--verbose${separator}bad`])).toThrow(FlagParseError);
+		}
+	});
+
+	test('rejects invalid array values with the short search name', () => {
+		let thrown: unknown;
+		try {
+			getFlag('-v', [Boolean], ['-v=a"b']);
+		} catch (error) {
+			thrown = error;
+		}
+		expect(thrown).toBeInstanceOf(FlagParseError);
+		expect((thrown as FlagParseError).flagName).toBe('v');
+		expect((thrown as FlagParseError).message).toBe(`Flag "-v": invalid boolean value ${JSON.stringify('a"b')}; expected "true" or "false"`);
+	});
+	for (const value of ['0', 'FALSE', 'flase', '']) {
+		for (const token of [`--verbose=${value}`, `-av=${value}`]) {
+			test(`rejects Boolean ${JSON.stringify(token)}`, () => {
+				let thrown: unknown;
+				try {
+					getFlag('-v,--verbose', Boolean, [token]);
+				} catch (error) {
+					thrown = error;
+				}
+				const message = `invalid boolean value ${JSON.stringify(value)}; expected "true" or "false"`;
+				expect(thrown).toBeInstanceOf(FlagParseError);
+				expect((thrown as FlagParseError).flagName).toBe('verbose');
+				expect((thrown as FlagParseError).message).toBe(`Flag "--verbose": ${message}`);
+				expect((thrown as FlagParseError).cause).toBeInstanceOf(Error);
+				expect(((thrown as FlagParseError).cause as Error).message).toBe(message);
+			});
+		}
+	}
 	for (const [search, token, name, spelling] of [
 		['-a,--age', '-a', 'age', '--age'],
 		['-a', '-a', 'a', '-a'],
@@ -97,8 +137,8 @@ describe('Parsing', () => {
 			expect(argv).toStrictEqual([]);
 		});
 
-		test('casts boolean with explicit value', () => {
-			const argv = ['--boolean=value'];
+		test('boolean with explicit true', () => {
+			const argv = ['--boolean=true'];
 			const flagValue = getFlag('--boolean', Boolean, argv);
 
 			expect<boolean | undefined>(flagValue).toBe(true);

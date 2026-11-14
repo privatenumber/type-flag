@@ -1,11 +1,13 @@
 # Boolean flag values
 
-Researched 2026-11-05 against type-flag `v5.0.0-beta.20`. Not shipped.
+Researched 2026-11-05 against type-flag `v5.0.0-beta.20`. The decisions below change that surveyed behavior.
 
 ## Summary
 
-- **Explicit values (`--verbose=0`):** type-flag treats only the exact string `false` as false, so `--verbose=0`, `--verbose=FALSE`, `--verbose=no`, and the typo `--verbose=flase` all give `true`. Recommendation: accept a fixed set of true and false literals, and decide a result for any other value (an error or an unknown flag).
-- **Negation with a value (`--no-verbose=false`):** type-flag applies the negation and ignores the attached value, so `--no-verbose=false` and `--no-verbose=true` both give `false`. It is the only surveyed configuration that does this. Recommendation: when `no-verbose` is not itself a defined flag, treat `--no-verbose=value` as an unknown flag.
+- **Explicit values:** accept only `true` and `false`, case-sensitive, and throw `FlagParseError` for any other value. This includes empty values and `[Boolean]`.
+- **Negation with a value:** treat `--no-verbose=value` as unknown unless `no-verbose` is itself defined. Bare negation is unchanged.
+
+Start with the documented literals: narrowing the set later breaks users, while widening it does not. Go `strconv.ParseBool` and clap also reject values outside their respective sets. Regression tests cover both [typeFlag](../../tests/specs/type-flag/parsing.ts) and [getFlag](../../tests/specs/get-flag/parsing.ts).
 
 ## Explicit values
 
@@ -58,11 +60,11 @@ All surveyed parsers except yargs-parser, minimist, and mri give `verbose: true`
 
 Both changes break observable behavior of `5.0.0-beta.20` ([utils.ts#L71-L79](https://github.com/privatenumber/type-flag/blob/v5.0.0-beta.20/src/utils.ts#L71-L79)):
 
-| Input | Today | Proposed |
+| Input | `v5.0.0-beta.20` | New behavior |
 | --- | --- | --- |
-| `--verbose=0`, `=f`, `=FALSE` | `true` | `false` |
-| `--verbose=custom` (outside the set) | `true` | error or unknown flag (decision needed) |
-| `--verbose=` | `true` | decision needed |
+| `--verbose=0`, `=f`, `=FALSE` | `true` | `FlagParseError` |
+| `--verbose=custom` | `true` | `FlagParseError` |
+| `--verbose=` | `true` | `FlagParseError` |
 | `--no-verbose=false` | `false` | unknown flag |
 
-Whether today's results for these inputs are mistakes is a policy decision, not a fact about existing callers. type-flag currently documents only `--verbose=false`.
+The earlier README documented `--verbose=false`; the new rule also accepts `--verbose=true`.

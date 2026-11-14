@@ -129,7 +129,11 @@ typeFlag({ verbose: Boolean }, argv, { booleanNegation: true })
 
 Only affects `Boolean`-typed, schema-known flags. `--no-X` for non-boolean or unknown falls through to `unknownFlags`.
 
+`--no-X=value` is unknown unless `no-X` is itself defined; defined flags take precedence over negation.
+
 Explicit `=false` always works regardless of `booleanNegation`:
+
+Explicit Boolean values, including `[Boolean]`, accept only case-sensitive `true` and `false`. Other values, including empty values, throw `FlagParseError` in both APIs. This applies to `=`, `:`, `.`, and grouped short aliases. A separate following token remains positional.
 ```ts
 // --verbose=false → flags.verbose = false
 // --verbose false → flags.verbose = true, `_` = ['false']  (space-separated is positional)

@@ -71,9 +71,17 @@ export const parseFlagType = (
 export const normalizeBoolean = <T>(
 	parser: TypeFunction,
 	value: T,
+	flagName: string,
+	spelling?: string,
 ) => {
 	if (parser === Boolean) {
-		return value !== 'false';
+		if (value === undefined || value === 'true') {
+			return true;
+		}
+		if (value === 'false') {
+			return false;
+		}
+		throw new FlagParseError(flagName, new Error(`invalid boolean value ${JSON.stringify(value)}; expected "true" or "false"`), spelling);
 	}
 
 	return value;
