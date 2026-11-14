@@ -571,7 +571,7 @@ port // number | undefined
 argv // ['--', '--forwarded']
 ```
 
-Wrap the parser in an array to retrieve all matching values.
+By default, `getFlag()` returns the last matching value and removes every matching occurrence from argv. Wrap the parser in an array to retrieve all matching values.
 
 ```ts
 const tag = getFlag('--tag', [String])
@@ -653,7 +653,7 @@ type Options = {
 
 Type: `string`
 
-A comma-separated list of flag names to parse.
+A comma-separated list of flag names to parse, such as `-p, --port`. Whitespace around each name is ignored. A short name has one dash and one character; a long name has two dashes and at least two characters. Short names match short flags and groups, while long names match only long flags. Invalid names throw an `Error`.
 
 #### flagType
 
@@ -673,7 +673,7 @@ Type: `string[]`
 
 Default: `process.argv.slice(2)`
 
-The argv array to parse. If you pass your own array, it is mutated to remove the parsed flag and its value.
+The argv array to parse. If you pass your own array, it is mutated to remove every matching flag and its value.
 
 ### createPositionalArguments(argv)
 
