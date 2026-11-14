@@ -176,6 +176,24 @@ describe('Error handling', () => {
 			expect((thrown as FlagParseError).message).toBe('Flag "--custom": Custom parse error');
 		});
 
+		test('wraps a thrown non-Error value that cannot be interpolated', () => {
+			const symbol = Symbol('bad');
+			let thrown: unknown;
+			try {
+				typeFlag({
+					custom: () => {
+						throw symbol;
+					},
+				}, ['--custom', 'x']);
+			} catch (error) {
+				thrown = error;
+			}
+
+			expect(thrown).toBeInstanceOf(FlagParseError);
+			expect((thrown as FlagParseError).cause).toBe(symbol);
+			expect((thrown as FlagParseError).message).toBe('Flag "--custom": Symbol(bad)');
+		});
+
 		test('Custom parser throws on specific value', () => {
 			const StrictNumber = (value: string) => {
 				const parsed = Number(value);

@@ -98,7 +98,7 @@ export class FlagParseError extends TypeError {
 		spelling = flagName.length === 1 ? `-${flagName}` : `--${flagNameToKebab(flagName)}`,
 	) {
 		super(
-			`Flag "${spelling}": ${cause instanceof Error ? cause.message : cause}`,
+			`Flag "${spelling}": ${cause instanceof Error ? cause.message : String(cause)}`,
 			{ cause },
 		);
 		this.name = 'FlagParseError';

@@ -194,7 +194,7 @@ const parsed = typeFlag({
 parsed.flags.mode // 'dev' | 'prod' | undefined
 ```
 
-Schemas work everywhere a flag type is accepted, including arrays (`[z.string()]`), `{ type, default }` objects, and [`getFlag`](#getflag). On validation failure, the schema's message is surfaced through type-flag's [error wrapping](#error-wrapping) as `Flag "--<name>": <message>`. This adds no runtime dependency: the Standard Schema spec is types-only and vendored in.
+Schemas work everywhere a flag type is accepted, including arrays (`[z.string()]`), `{ type, default }` objects, and [`getFlag`](#getflag). On validation failure, the schema's message is surfaced through type-flag's [error wrapping](#error-wrapping) as `Flag "<flag>": <message>`, where `<flag>` is the flag's canonical spelling, such as `--size` or `-x`. This adds no runtime dependency: the Standard Schema spec is types-only and vendored in.
 
 A few things to keep in mind:
 
