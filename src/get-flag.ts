@@ -9,7 +9,6 @@ import {
 } from './utils.ts';
 import {
 	argvIterator,
-	parseFlagArgv,
 	spliceFromArgv,
 	type Index,
 } from './argv-iterator.ts';
@@ -19,9 +18,18 @@ export const getFlag = <Type extends FlagType>(
 	flagType: Type,
 	argv = process.argv.slice(2),
 ) => {
-	const flags = new Set(
-		flagNames.split(',').map(name => parseFlagArgv(name)?.[0]),
-	);
+	const shortFlags = new Set<string>();
+	const longFlags = new Set<string>();
+	for (const part of flagNames.split(',')) {
+		const name = part.trim();
+		if (/^-\w$/.test(name)) {
+			shortFlags.add(name.slice(1));
+		} else if (/^--\w[^\s=:.]+$/.test(name)) {
+			longFlags.add(name.slice(2));
+		} else {
+			throw new Error(`Invalid flag name: ${JSON.stringify(name)}`);
+		}
+	}
 	const [parser, gatherAll] = parseFlagType(flagType);
 	const results: unknown[] = [];
 	const removeArgvs: Index[] = [];
@@ -46,12 +54,9 @@ export const getFlag = <Type extends FlagType>(
 	};
 
 	argvIterator(argv, {
-		knownFlags: flags,
+		knownFlags: shortFlags,
 		onFlag: (name, explicitValue, flagIndex) => {
-			if (
-				!flags.has(name)
-				|| (!gatherAll && results.length > 0)
-			) {
+			if (!(flagIndex.length === 1 ? longFlags : shortFlags).has(name)) {
 				return;
 			}
 
@@ -71,5 +76,5 @@ export const getFlag = <Type extends FlagType>(
 
 	spliceFromArgv(argv, removeArgvs);
 
-	return (gatherAll ? results : results[0]) as InferFlagType<Type>;
+	return (gatherAll ? results : results.at(-1)) as InferFlagType<Type>;
 };

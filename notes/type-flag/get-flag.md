@@ -1,30 +1,22 @@
 # `getFlag` consistency with `typeFlag`
 
-Researched 2026-11-05 against type-flag `v5.0.0-beta.20` and `4.5.2`. Not shipped.
+Verified 2026-11-06 against the `getFlag` [parsing tests](../../tests/specs/get-flag/parsing.ts). The following decisions ship in the v5 beta:
 
-## Summary
+- A scalar parser returns the last value and consumes all occurrences. This matches `typeFlag` and most surveyed parsers ([results](./argv-survey/results.md#repeated-flags)). [POSIX Utility Syntax Guideline 11](https://pubs.opengroup.org/onlinepubs/9799919799/basedefs/V1_chap12.html) recommends interpreting repeated options with option-arguments in command-line order; it does not itself prescribe last-wins. Consuming all occurrences also prevents a later parser from seeing a flag extracted at import time, such as `--json`.
+- Search names match their dash form: `-h` matches short flags and groups, not `--h`; `--help` matches long flags. This matches the `typeFlag` single-character name rule.
+- Each comma-separated name is trimmed. Invalid names throw instead of being ignored: a short name has one dash and one character; a long name has two dashes and at least two characters. Names cannot contain value delimiters or whitespace.
 
-`getFlag` disagrees with `typeFlag` in three ways. Two are bugs to fix. The third, which occurrence wins, needs a decision.
+The tests also cover array values, explicit values, alias groups, `--`, `__proto__`, and digit aliases when deciding whether a dash-digit token is a value.
 
-Observed in both versions ([results](./argv-survey/results.md#type-flag-probes)):
+## Historical observations
 
-| Call | Result | `typeFlag` equivalent |
+Research on 2026-11-05 against type-flag `v5.0.0-beta.20` and `4.5.2` found the following behavior ([results](./argv-survey/results.md#type-flag-probes)):
+
+| Call | Old result | `typeFlag` equivalent |
 | --- | --- | --- |
-| `getFlag('-h', Boolean, ['--h'])` | `true` | `--h` is invalid for a single-character name (README "Single-character Flag Names") |
+| `getFlag('-h', Boolean, ['--h'])` | `true` | `--h` is unknown for a single-character name |
 | `getFlag('--a, -b', Boolean, ['-b'])` | `undefined`, `-b` left in argv | n/a |
-| `getFlag('a', String, ['--a', 'x'])` | `undefined` | n/a: `a` is a valid `typeFlag` schema key; `getFlag` takes dashed CLI spellings |
+| `getFlag('a', String, ['--a', 'x'])` | `undefined` | n/a: `a` is a schema key, not a dashed CLI spelling |
 | `getFlag('--name', String, ['--name', 'x', '--name', 'y'])` | `"x"`, `--name y` left in argv | `typeFlag({ name: String }, ...)` gives `"y"` |
 
-## Bugs
-
-- **`--h` matches `-h`.** `getFlag` stores names without their dashes, so `-h` and `--h` become the same key. Fix: keep the dash form when matching, so `--h` in argv does not match a one-character search name. `typeFlag` parses `--h` as an unknown flag in that case.
-- **Invalid names are ignored silently.** `parseFlagArgv` returns `undefined` for `a` and ` -b`, and that `undefined` goes into the name set. These are invalid search expressions, not unknown argv flags. Fix: trim each name and throw for a search expression that does not parse.
-
-## Decision needed: first or last occurrence
-
-`typeFlag` uses the last value for a scalar flag. Most surveyed parsers do the same: parseArgs, commander, arg, argparse ([results](./argv-survey/results.md#repeated-flags)). clap errors by default, and yargs-parser, minimist, and mri collect an array.
-
-`getFlag` returns the first value and leaves later occurrences in argv for the next parser. Options:
-
-1. **Last wins, consume all occurrences.** Matches `typeFlag` and the majority.
-2. **Keep first wins.** This lets callers take one occurrence at a time. No caller found in a GitHub code search for `from 'type-flag'` (2026-11-05) depends on it, but the search only covers indexed public repositories.
+Keeping the first occurrence would allow callers to extract one occurrence at a time. A GitHub code search for `from 'type-flag'` on 2026-11-05 found no caller relying on that behavior, but only covered indexed public repositories.

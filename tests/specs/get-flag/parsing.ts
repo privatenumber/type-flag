@@ -3,12 +3,12 @@ import { getFlag } from '#type-flag';
 
 describe('Parsing', () => {
 	describe('alias', () => {
-		test('gets number', () => {
+		test('gets the last number and consumes every occurrence', () => {
 			const argv = ['-n', '1111', '2222', '-n', '3333'];
 			const flagValue = getFlag('-n', Number, argv);
 
-			expect<number | undefined>(flagValue).toBe(1111);
-			expect(argv).toStrictEqual(['2222', '-n', '3333']);
+			expect<number | undefined>(flagValue).toBe(3333);
+			expect(argv).toStrictEqual(['2222']);
 		});
 
 		test('expecting value but no value', () => {
@@ -86,6 +86,32 @@ describe('Parsing', () => {
 		});
 	});
 
+	test('matches the dash form', () => {
+		const unmatched = ['--h'];
+		expect(getFlag('-h', Boolean, unmatched)).toBe(undefined);
+		expect(unmatched).toStrictEqual(['--h']);
+
+		const argv = ['--h', '-vh', '--help'];
+		expect(getFlag('-h', Boolean, argv)).toBe(true);
+		expect(argv).toStrictEqual(['--h', '-v', '--help']);
+		expect(getFlag('--help', Boolean, argv)).toBe(true);
+		expect(argv).toStrictEqual(['--h', '-v']);
+	});
+
+	test('trims search names', () => {
+		const argv = ['-b', '--aa'];
+		expect(getFlag('--aa, -b', [Boolean], argv)).toStrictEqual([true, true]);
+		expect(argv).toStrictEqual([]);
+	});
+
+	test('rejects invalid search names', () => {
+		for (const name of ['a', '-help', '--h', '', '---x', '--name=value', '-a, ']) {
+			const argv = ['-a'];
+			expect(() => getFlag(name, Boolean, argv)).toThrow(JSON.stringify(name === '-a, ' ? '' : name));
+			expect(argv).toStrictEqual(['-a']);
+		}
+	});
+
 	test('ignores argv', () => {
 		const argv = ['--boolean', 'arg'];
 		const flagValue = getFlag('--boolean', Boolean, argv);
@@ -127,6 +153,12 @@ describe('Parsing', () => {
 	});
 
 	describe('negative number values', () => {
+		test('a searched digit alias is not consumed as a value', () => {
+			const argv = ['-n', '-5'];
+			expect(getFlag('-n,-5', [String], argv)).toStrictEqual(['', '']);
+			expect(argv).toStrictEqual([]);
+		});
+
 		test('named flag consumes negative', () => {
 			const argv = ['--retry', '-5'];
 			const flagValue = getFlag('--retry', Number, argv);
