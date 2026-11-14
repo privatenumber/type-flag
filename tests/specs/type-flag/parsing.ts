@@ -9,6 +9,108 @@ const nullPrototypeObject = <T extends object>(object: T): T => (
 );
 
 describe('Parsing', () => {
+	test('extracts a known flag from an ignored unknown attached value', () => {
+		const argv = ['-nvalue'];
+		expect(typeFlag({ n: String }, [...argv]).flags.n).toBe('value');
+		const result = typeFlag({ v: Boolean }, argv, { ignore: type => type === 'unknown-flag' });
+		expect(result.flags.v).toBe(true);
+		expect(argv).toStrictEqual(['-nalue']);
+		expect(typeFlag({ n: String }, argv).flags.n).toBe('alue');
+	});
+
+	describe('attached short values', () => {
+		for (const [token, value] of [['-nfoo', 'foo'], ['-n=foo', 'foo'], ['-n:foo', 'foo'], ['-n.foo', 'foo'], ['-n==foo', '=foo'], ['-n😀x', '😀x']] as const) {
+			test(`parses ${token}`, () => {
+				const argv = [token];
+				const result = typeFlag({
+					name: {
+						type: String,
+						alias: 'n',
+					},
+				}, argv);
+				expect(result.flags.name).toBe(value);
+				expect(result.entries).toStrictEqual([{
+					type: 'flag',
+					name: 'name',
+					value,
+				}]);
+				expect(argv).toStrictEqual([]);
+			});
+		}
+		test('stops a group at the value-taking flag', () => {
+			const result = typeFlag({
+				verbose: {
+					type: Boolean,
+					alias: 'v',
+				},
+				name: {
+					type: String,
+					alias: 'n',
+				},
+			}, ['-vnfoo']);
+			expect([result.flags.verbose, result.flags.name]).toStrictEqual([true, 'foo']);
+			expect(result.entries).toStrictEqual([{
+				type: 'flag',
+				name: 'verbose',
+				value: true,
+			}, {
+				type: 'flag',
+				name: 'name',
+				value: 'foo',
+			}]);
+		});
+		test('a defined flag after a value-taking flag is its value', () => {
+			const result = typeFlag({
+				name: {
+					type: String,
+					alias: 'n',
+				},
+				verbose: {
+					type: Boolean,
+					alias: 'v',
+				},
+			}, ['-nv', 'foo']);
+			expect([result.flags.name, result.flags.verbose, [...result._]]).toStrictEqual(['v', undefined, ['foo']]);
+		});
+		test('last short flag takes the next token', () => {
+			const result = typeFlag({
+				verbose: {
+					type: Boolean,
+					alias: 'v',
+				},
+				name: {
+					type: String,
+					alias: 'n',
+				},
+			}, ['-vn', 'foo']);
+			expect([result.flags.verbose, result.flags.name]).toStrictEqual([true, 'foo']);
+		});
+		test('a digit after a value-taking flag is its value', () => {
+			const result = typeFlag({
+				count: {
+					type: Number,
+					alias: 'c',
+				},
+				5: Boolean,
+			}, ['-c5']);
+			expect([result.flags.count, result.flags[5]]).toStrictEqual([5, undefined]);
+		});
+		test('unknown and Boolean group members remain separate', () => {
+			const result = typeFlag({
+				v: Boolean,
+				a: Boolean,
+			}, ['-v?ab']);
+			expect([result.flags.v, result.flags.a, result.unknownFlags['?'], result.unknownFlags.b]).toStrictEqual([true, true, [true], [true]]);
+		});
+		test('ignoring a value-taking flag retains its attached value', () => {
+			const argv = ['-vnfoo', 'tail'];
+			typeFlag({
+				v: Boolean,
+				n: String,
+			}, argv, { ignore: (type, name) => name === 'n' || type === 'argument' });
+			expect(argv).toStrictEqual(['-nfoo', 'tail']);
+		});
+	});
 	test('preserves ignored group characters in order', () => {
 		for (const [input, remainder] of [['-q-abc', '--abc'], ['-q5xy', '-5xy'], ['-q--', '---'], ['-q-', undefined]] as const) {
 			const argv = [input];
@@ -1338,7 +1440,7 @@ describe('Parsing', () => {
 				argv,
 			);
 
-			expect<string[]>(parsed.flags.alias).toStrictEqual(['', '', 'value']);
+			expect<string[]>(parsed.flags.alias).toStrictEqual(['liasesa=value']);
 			expect<string[]>(argv).toStrictEqual([]);
 		});
 
