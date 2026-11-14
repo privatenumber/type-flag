@@ -9,7 +9,6 @@ import {
 } from './utils.ts';
 import {
 	argvIterator,
-	parseFlagArgv,
 	spliceFromArgv,
 	type Index,
 } from './argv-iterator.ts';
@@ -19,11 +18,21 @@ export const getFlag = <Type extends FlagType>(
 	flagType: Type,
 	argv = process.argv.slice(2),
 ) => {
-	const flags = new Set(
-		flagNames.split(',').map(name => parseFlagArgv(name)?.[0]),
-	);
+	const shortFlags = new Set<string>();
+	const longFlags = new Set<string>();
+	for (const part of flagNames.split(',')) {
+		const name = part.trim();
+		if (/^-\w$/.test(name)) {
+			shortFlags.add(name.slice(1));
+		} else if (/^--\w[^\s=:.]+$/.test(name)) {
+			longFlags.add(name.slice(2));
+		} else {
+			throw new Error(`Invalid flag name: ${JSON.stringify(name)}`);
+		}
+	}
 	const [parser, gatherAll] = parseFlagType(flagType);
 	const results: unknown[] = [];
+	let lastResult: unknown;
 	const removeArgvs: Index[] = [];
 
 	// Pending value-expecting flag, read by `onValue`. Hoisted so no callback
@@ -42,16 +51,19 @@ export const getFlag = <Type extends FlagType>(
 			removeArgvs.push(valueIndex);
 		}
 
-		results.push(applyParser(parser, value || '', rawName));
+		const result = applyParser(parser, value || '', rawName);
+		if (gatherAll) {
+			results.push(result);
+		} else {
+			// Only the last scalar value is returned, so earlier ones are not retained
+			lastResult = result;
+		}
 	};
 
 	argvIterator(argv, {
-		knownFlags: flags,
+		knownFlags: shortFlags,
 		onFlag: (name, explicitValue, flagIndex) => {
-			if (
-				!flags.has(name)
-				|| (!gatherAll && results.length > 0)
-			) {
+			if (!(flagIndex.length === 1 ? longFlags : shortFlags).has(name)) {
 				return;
 			}
 
@@ -71,5 +83,5 @@ export const getFlag = <Type extends FlagType>(
 
 	spliceFromArgv(argv, removeArgvs);
 
-	return (gatherAll ? results : results[0]) as InferFlagType<Type>;
+	return (gatherAll ? results : lastResult) as InferFlagType<Type>;
 };

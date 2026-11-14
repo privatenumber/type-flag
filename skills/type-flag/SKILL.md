@@ -175,7 +175,7 @@ const age  = getFlag('-a,--age', Number)        // comma-separated names
 const tags = getFlag('-t,--tag', [String])      // array form collects all
 ```
 
-Same argv-mutation behavior as `typeFlag`.
+Scalar parsers return the last match; array parsers return all matches. Every match is removed from argv. Names are comma-separated and whitespace-trimmed: use one dash for a single-character short name and two dashes for a long name of at least two characters. Short and long forms match only their respective argv forms. Invalid names throw an `Error`.
 
 ## Gotchas
 
