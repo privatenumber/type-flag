@@ -32,6 +32,7 @@ export const getFlag = <Type extends FlagType>(
 	}
 	const [parser, gatherAll] = parseFlagType(flagType);
 	const results: unknown[] = [];
+	let lastResult: unknown;
 	const removeArgvs: Index[] = [];
 
 	// Pending value-expecting flag, read by `onValue`. Hoisted so no callback
@@ -50,7 +51,13 @@ export const getFlag = <Type extends FlagType>(
 			removeArgvs.push(valueIndex);
 		}
 
-		results.push(applyParser(parser, value || '', rawName));
+		const result = applyParser(parser, value || '', rawName);
+		if (gatherAll) {
+			results.push(result);
+		} else {
+			// Only the last scalar value is returned, so earlier ones are not retained
+			lastResult = result;
+		}
 	};
 
 	argvIterator(argv, {
@@ -76,5 +83,5 @@ export const getFlag = <Type extends FlagType>(
 
 	spliceFromArgv(argv, removeArgvs);
 
-	return (gatherAll ? results : results.at(-1)) as InferFlagType<Type>;
+	return (gatherAll ? results : lastResult) as InferFlagType<Type>;
 };

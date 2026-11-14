@@ -10,5 +10,5 @@ Parsing policy for type-flag and the evidence behind it. Cross-parser observatio
 | [Flag names and aliases](./flag-names.md) | Fix: `--über` and `-é` cannot start a token. Throw for `=`, `.`, and `:` aliases, which never match (breaking for definitions used through their long name). Decide: names starting with `-` and alias `-`. Records a forwarding hazard for partially consumed groups. |
 | [Error messages](./error-messages.md) | Fix: `FlagParseError` prints `--s` for alias `-s`. Name the flag by its definition. |
 | [`ignore` and flag values](./ignore.md) | Fix: an ignored flag's value is parsed as a positional. |
-| [`getFlag` consistency](./get-flag.md) | Fix: `--h` matches `-h`, and invalid names fail silently. Decide: first or last occurrence wins. |
+| [`getFlag` consistency](./get-flag.md) | Fixed: last occurrence wins, dash forms match exactly, and invalid search names throw. |
 | [Missing flag values](./missing-values.md) | Kept: a missing value gives `""` to the type function. |
