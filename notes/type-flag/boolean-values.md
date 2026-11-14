@@ -7,7 +7,7 @@ Researched 2026-11-05 against type-flag `v5.0.0-beta.20`. The decisions below ch
 - **Explicit values:** accept only `true` and `false`, case-sensitive, and throw `FlagParseError` for any other value. This includes empty values and `[Boolean]`.
 - **Negation with a value:** treat `--no-verbose=value` as unknown unless `no-verbose` is itself defined. Bare negation is unchanged.
 
-Start with the documented literals. Narrowing the set later turns accepted input into errors. Widening it later is less disruptive but still observable, because input that used to throw would then parse. Go `strconv.ParseBool` and clap also reject values outside their respective sets. Regression tests cover both [typeFlag](../../tests/specs/type-flag/parsing.ts) and [getFlag](../../tests/specs/get-flag/parsing.ts).
+Start with the smallest set: the documented `false` and its counterpart `true` (the README documented bare `--verbose` for `true`, not `--verbose=true`). Narrowing the set later turns accepted input into errors. Widening it later is less disruptive but still observable, because input that used to throw would then parse. Go `strconv.ParseBool` and clap's `BoolishValueParser` also reject values outside their sets; clap's `FalseyValueParser` is lenient instead. Regression tests cover both [typeFlag](../../tests/specs/type-flag/parsing.ts) and [getFlag](../../tests/specs/get-flag/parsing.ts).
 
 ## Explicit values
 
