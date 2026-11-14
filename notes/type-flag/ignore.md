@@ -17,6 +17,8 @@ typeFlag({ name: String }, ['--name', 'x', 'pos'], { ignore: type => type === 'f
 // _: ['x', 'pos'], argv: ['--name']
 ```
 
+In 4.5.2 the callback type for a defined flag is `known-flag`, so the same probe there uses `type === 'known-flag'`.
+
 Expected: `argv: ['--name', 'x']`, with `x` never parsed. type-flag knows from the schema that `--name` takes a value, so it can keep the value with the ignored flag.
 
 ## Who is affected
