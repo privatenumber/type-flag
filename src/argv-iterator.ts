@@ -29,7 +29,7 @@ const numberClass = String.raw`\p{N}`;
 export const flagStartClass = String.raw`[\p{L}${numberClass}_]`;
 const isFlagPattern = new RegExp(`^-{1,2}${flagStartClass}`, 'u');
 
-// A dash followed by a digit, such as `-5`, `-5..10`, or `-5%`. A dash followed
+// A dash followed by a Unicode number (\p{N}), such as `-5`, `-٥`, or `-Ⅳ`. A dash followed
 // by a letter stays a flag, so `--range --verbose` still reports the missing value.
 // `-.5` needs no rule here: it never matches `isFlagPattern`.
 const dashDigitPattern = new RegExp(`^-${numberClass}`, 'u');
@@ -45,8 +45,8 @@ type KnownFlags = {
 
 /**
  * Whether a flag-shaped token should be consumed as the value of a
- * value-expecting flag: it must start with a dash and a digit
- * (e.g. `-5`, `-5.5`, `-5..10`, `-5%`) and NOT fully resolve to defined flags.
+ * value-expecting flag: it must start with a dash and a Unicode number (\p{N})
+ * (e.g. `-5`, `-٥`, `-Ⅳ`, `-5..10`) and NOT fully resolve to defined flags.
  *
  * If every character after the dash is a known flag, the token wins as a
  * flag/alias group instead (e.g. `-512` when 5, 1, and 2 are all defined).

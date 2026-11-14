@@ -181,7 +181,7 @@ const age  = getFlag('-a,--age', Number)        // comma-separated names
 const tags = getFlag('-t,--tag', [String])      // array form collects all
 ```
 
-Scalar parsers return the last match; array parsers return all matches. Every match is removed from argv. Names are comma-separated and whitespace-trimmed: a short name is one dash followed by one UTF-16 code unit that is a Unicode letter, Unicode number, or `_`; a long name is two dashes followed by that class and at least one more character, without whitespace, `=`, `:`, or `.`. Short and long forms match only their respective argv forms. Invalid names throw an `Error`.
+Scalar parsers return the last match; array parsers return all matches. Every match is removed from argv. Names are comma-separated and whitespace-trimmed: a short name is one dash followed by one UTF-16 code unit that is a Unicode letter, Unicode number, or `_`; a long name is two dashes followed by a name that starts with that class and spans at least two UTF-16 code units, without whitespace, `=`, `:`, or `.`. One supplementary character, such as `𐐀`, qualifies as a long name. Short and long forms match only their respective argv forms. Invalid names throw an `Error`.
 
 ## Gotchas
 

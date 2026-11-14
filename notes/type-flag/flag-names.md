@@ -49,6 +49,8 @@ This intentionally rejects `-foo`, `-`, and punctuation starts and aliases, even
 | `--name --über` | `name` receives `--über` | `name` receives `""`; `--über` is a flag |
 | key `-foo`, alias `-` or `=` | accepted, but not usable at token start | rejected at definition time |
 | alias `5` | valid | valid |
+| key `aÉclair` | matches `--aéclair` | matches `--a-éclair` |
+| keys `aÉ` and `a-é` | accepted | duplicate-flag error |
 
 ### Benchmark
 
@@ -59,6 +61,7 @@ Built with `pnpm build`, then ran `node bench.js` in [`benchmarks/`](../../bench
 - Tokens such as `--über` or `-é` change from positionals to flags.
 - They also stop being values. In beta.20 a preceding value-taking flag consumes them: `typeFlag({ name: String, über: Boolean }, ['--name', '--über'])` gives `name: '--über'`. With the new pattern, `--name` gets `""` and `--über` is parsed as a flag, defined or unknown.
 - The `=`, `.`, and `:` aliases never match, but their definitions work through the long name, so throwing for them breaks those definitions. Rejecting names that start with `-`, or alias `-`, also breaks definitions that work today.
+- CamelCase keys with non-ASCII case boundaries now use the same kebab-case splitting as ASCII keys: `aÉclair` matched `--aéclair` before and now matches `--a-éclair`, like `aEclair`. Schemas such as `{ aÉ: Boolean, 'a-é': Boolean }` now throw a duplicate-flag error because both keys map to `a-é`.
 
 ## Forwarding hazard: partially consumed groups
 

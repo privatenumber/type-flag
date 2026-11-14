@@ -665,7 +665,7 @@ type Options = {
 
 Type: `string`
 
-A comma-separated list of flag names to parse, such as `-p, --port`. Whitespace around each name is ignored. A short name has one dash and one UTF-16 code unit that is a Unicode letter, Unicode number, or `_`. A long name has two dashes, starts with that same character class, and has at least one further character. Long names cannot contain whitespace, `=`, `:`, or `.`. Short names match short flags and groups, while long names match only long flags. Invalid names throw an `Error`.
+A comma-separated list of flag names to parse, such as `-p, --port`. Whitespace around each name is ignored. A short name has one dash and one UTF-16 code unit that is a Unicode letter, Unicode number, or `_`. A long name has two dashes, starts with that same character class, and has at least two UTF-16 code units after the dashes. One supplementary character, such as `𐐀`, qualifies. Long names cannot contain whitespace, `=`, `:`, or `.`. Short names match short flags and groups, while long names match only long flags. Invalid names throw an `Error`.
 
 #### flagType
 
