@@ -9,6 +9,39 @@ const nullPrototypeObject = <T extends object>(object: T): T => (
 );
 
 describe('Parsing', () => {
+	test('Unicode name starts a token', () => {
+		expect(typeFlag({ über: String }, ['--über', 'x']).flags.über).toBe('x');
+	});
+
+	test('Unicode alias starts a token and works in a group', () => {
+		const schema = {
+			enabled: {
+				type: Boolean,
+				alias: 'é',
+			},
+			a: Boolean,
+		};
+		expect(typeFlag(schema, ['-é']).flags.enabled).toBe(true);
+		expect(typeFlag(schema, ['-aé']).flags.enabled).toBe(true);
+	});
+
+	test('Unicode flag is not consumed as a preceding value', () => {
+		const result = typeFlag({
+			name: String,
+			über: Boolean,
+		}, ['--name', '--über']);
+		expect(result.flags.name).toBe('');
+		expect(result.flags.über).toBe(true);
+	});
+
+	test('digit alias starts a token', () => {
+		expect(typeFlag({
+			enabled: {
+				type: Boolean,
+				alias: '5',
+			},
+		}, ['-5']).flags.enabled).toBe(true);
+	});
 	test('Boolean literals across delimiters and aliases', () => {
 		for (const separator of ['=', ':', '.']) {
 			for (const [value, expected] of [['true', true], ['false', false]] as const) {

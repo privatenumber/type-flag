@@ -9,6 +9,7 @@ import {
 } from './types.ts';
 import { isStandardSchema, schemaToParser } from './standard-schema.ts';
 import { createPositionalArgumentsFromParts } from './positional-arguments.ts';
+import { flagStartClass } from './argv-iterator.ts';
 
 /**
  * Regex uses zero-width assertions to find positions for hyphen insertion:
@@ -142,6 +143,7 @@ export const applyParser = (
 };
 
 const reservedCharactersPattern = /[\s.:=]/;
+const flagStartPattern = new RegExp(`^${flagStartClass}`, 'u');
 
 const validateFlagName = (
 	flagName: string,
@@ -150,6 +152,9 @@ const validateFlagName = (
 
 	if (flagName.length === 0) {
 		throw new Error(`${errorPrefix} cannot be empty`);
+	}
+	if (!flagStartPattern.test(flagName)) {
+		throw new Error(`${errorPrefix} must start with a letter, digit, or underscore`);
 	}
 
 	const hasReservedCharacter = flagName.match(reservedCharactersPattern);
@@ -224,6 +229,9 @@ export const createRegistry = (
 
 			if (alias.length > 1) {
 				throw new Error(`${errorPrefix} must be a single character`);
+			}
+			if (!flagStartPattern.test(alias)) {
+				throw new Error(`${errorPrefix} must be a letter, digit, or underscore`);
 			}
 
 			setFlag(registry, alias, flagData);

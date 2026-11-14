@@ -2,6 +2,46 @@ import { describe, test, expect } from 'manten';
 import { typeFlag, FlagParseError } from '#type-flag';
 
 describe('Error handling', () => {
+	for (const key of ['-foo', '-', '$port', '?', '!', '=', '.', ':']) {
+		test(`rejects unstartable name ${key}`, () => {
+			expect(() => typeFlag({ [key]: String }, [])).toThrow(`Flag name "${key}" must start with a letter, digit, or underscore`);
+		});
+	}
+	for (const alias of ['?', '!', '-', '=', '.', ':']) {
+		test(`rejects unstartable alias ${alias}`, () => {
+			expect(() => typeFlag({
+				flag: {
+					type: Boolean,
+					alias,
+				},
+			}, [])).toThrow(`Flag alias "${alias}" for flag "flag" must be a letter, digit, or underscore`);
+		});
+	}
+	test('rejects a supplementary character alias', () => {
+		expect(() => typeFlag({
+			flag: {
+				type: Boolean,
+				alias: '𐐀',
+			},
+		}, [])).toThrow('Flag alias "𐐀" for flag "flag" must be a single character');
+	});
+	test('Unicode error spelling can be parsed again', () => {
+		let thrown: unknown;
+		try {
+			typeFlag({
+				über: {
+					type: () => { throw new Error('bad'); },
+					alias: 'u',
+				},
+			}, ['-u', 'x']);
+		} catch (error) {
+			thrown = error;
+		}
+		expect(thrown).toBeInstanceOf(FlagParseError);
+		const spelling = (thrown as Error).message.match(/^Flag "([^"]+)":/)?.[1];
+		expect(spelling).toBe('--über');
+		expect(typeFlag({ über: String }, [spelling!, 'x']).flags.über).toBe('x');
+	});
 	describe('Invalid flag name', () => {
 		test('Empty flag name', () => {
 			expect(() => {

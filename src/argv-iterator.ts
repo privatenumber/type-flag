@@ -25,7 +25,8 @@ type onArgument = (
 	isEoF?: boolean,
 ) => void;
 
-const isFlagPattern = /^-{1,2}\w/;
+export const flagStartClass = String.raw`[\p{L}\p{N}_]`;
+const isFlagPattern = new RegExp(`^-{1,2}${flagStartClass}`, 'u');
 
 // A dash followed by a digit, such as `-5`, `-5..10`, or `-5%`. A dash followed
 // by a letter stays a flag, so `--range --verbose` still reports the missing value.
