@@ -52,6 +52,8 @@ This intentionally rejects `-foo`, `-`, and punctuation starts and aliases, even
 | key `aÉclair` | matches `--aéclair` | matches `--a-éclair` |
 | keys `aÉ` and `a-é` | accepted | duplicate-flag error |
 
+camelCase splitting uses the Unicode `Lowercase` and `Uppercase` properties plus titlecase (`Lt`), and keeps combining marks with the preceding letter. The mark lookbehinds rescan a run of combining marks, so a schema key with thousands of consecutive marks takes seconds to register (about 2 s for 8,000 marks on Node 22). This runs once per definition on developer-supplied schema keys, not on argv, so it was accepted instead of adding a length limit.
+
 ### Benchmark
 
 Built with `pnpm build`, then ran `node bench.js` in [`benchmarks/`](../../benchmarks) once before and once after. On Apple M2 Max, Node 24.13.1 arm64-darwin, average `type-flag` was 2.32 µs before and 2.27 µs after; `get-flag` was 1.45 µs before and 1.41 µs after. This ASCII-only full-API benchmark includes registry and search validation, and single runs do not isolate regex cost or establish statistical equivalence.

@@ -15,10 +15,12 @@ import { flagStartClass } from './argv-iterator.ts';
  * Regex uses zero-width assertions to find positions for hyphen insertion:
  * - after a lowercase letter or number, before an uppercase or titlecase letter
  * - after an uppercase or titlecase letter, before uppercase or titlecase + lowercase
+ * Case uses the Unicode `Lowercase` and `Uppercase` properties, not general
+ * categories, so modifier letters such as `ᵃ` count as lowercase.
  * Combining marks stay with the preceding character.
  */
-const kebabPattern = /(?<=[\p{Ll}\p{N}]\p{M}*)(?=[\p{Lu}\p{Lt}])|(?<=[\p{Lu}\p{Lt}]\p{M}*)(?=[\p{Lu}\p{Lt}]\p{M}*\p{Ll})/gu;
-const hasUpperCasePattern = /[\p{Lu}\p{Lt}]/u;
+const kebabPattern = /(?<=[\p{Lowercase}\p{N}]\p{M}*)(?=[\p{Uppercase}\p{Lt}])|(?<=[\p{Uppercase}\p{Lt}]\p{M}*)(?=[\p{Uppercase}\p{Lt}]\p{M}*\p{Lowercase})/gu;
+const hasUpperCasePattern = /[\p{Uppercase}\p{Lt}]/u;
 
 /**
  * Normalize a schema-declared flag name (e.g. `orgID`, `apiURL`, `fooBar`,
