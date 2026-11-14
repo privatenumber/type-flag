@@ -9,6 +9,42 @@ const nullPrototypeObject = <T extends object>(object: T): T => (
 );
 
 describe('Parsing', () => {
+	test('preserves ignored group characters in order', () => {
+		for (const [input, remainder] of [['-q-abc', '--abc'], ['-q5xy', '-5xy'], ['-q--', '---'], ['-q-', undefined]] as const) {
+			const argv = [input];
+			typeFlag({ q: Boolean }, argv, { ignore: type => type === 'unknown-flag' });
+			expect(argv).toStrictEqual(remainder ? [remainder] : []);
+		}
+	});
+	test('keeps the last ignored group member as the next-token value owner', () => {
+		const argv = ['-q5a', 'file'];
+		typeFlag({ q: Boolean }, argv, { ignore: type => type === 'unknown-flag' || type === 'argument' });
+		expect(argv).toStrictEqual(['-5a', 'file']);
+		const result = typeFlag({
+			5: Boolean,
+			a: String,
+		}, argv);
+		expect([result.flags[5], result.flags.a]).toStrictEqual([true, 'file']);
+	});
+
+	test('preserves an ignored dash with an attached value', () => {
+		const argv = ['-q-=value', '--rest'];
+		typeFlag({ q: Boolean }, argv, { ignore: (type, name) => type === 'unknown-flag' && (name === '-' || name === 'rest') });
+		expect(argv).toStrictEqual(['--=value', '--rest']);
+		const result = typeFlag({ rest: Boolean }, argv);
+		expect(result._).toStrictEqual(Object.assign(['--=value'], { '--': [] }));
+		expect(result.flags.rest).toBe(true);
+	});
+	test('forwarded ignored group keeps its last member', () => {
+		const argv = ['-q5x'];
+		typeFlag({ q: Boolean }, argv, { ignore: type => type === 'unknown-flag' });
+		expect(argv).toStrictEqual(['-5x']);
+		const result = typeFlag({
+			x: Boolean,
+			5: Boolean,
+		}, argv);
+		expect([result.flags.x, result.flags[5]]).toStrictEqual([true, true]);
+	});
 	test('Unicode numbers are values unless all aliases are defined', () => {
 		for (const value of ['-٥', '-Ⅳ', '-𝟝']) {
 			const result = typeFlag({ x: String }, ['-x', value]);

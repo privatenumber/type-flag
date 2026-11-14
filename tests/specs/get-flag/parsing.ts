@@ -1,7 +1,149 @@
+import { parseArgs } from 'node:util';
 import { describe, test, expect } from 'manten';
-import { getFlag, FlagParseError } from '#type-flag';
+import { getFlag, typeFlag, FlagParseError } from '#type-flag';
 
 describe('Parsing', () => {
+	test('keeps the last group member as the next-token value owner', () => {
+		const argv = ['-q5a', 'file'];
+		getFlag('-q', Boolean, argv);
+		expect(argv).toStrictEqual(['-5a', 'file']);
+		const result = typeFlag({
+			5: Boolean,
+			a: String,
+		}, argv);
+		expect([result.flags[5], result.flags.a]).toStrictEqual([true, 'file']);
+	});
+
+	test('preserves a dash remainder with an attached value', () => {
+		const argv = ['-q-=value', '--rest'];
+		getFlag('-q', Boolean, argv);
+		expect(argv).toStrictEqual(['--=value', '--rest']);
+		const result = typeFlag({ rest: Boolean }, argv);
+		expect(result._).toStrictEqual(Object.assign(['--=value'], { '--': [] }));
+		expect(result.flags.rest).toBe(true);
+	});
+
+	test('forwarded group does not become a delimiter', () => {
+		const argv = ['-q-', '--verbose'];
+		getFlag('-q', Boolean, argv);
+		expect(argv).toStrictEqual(['--verbose']);
+		expect(typeFlag({ verbose: Boolean }, argv).flags.verbose).toBe(true);
+	});
+
+	test('forwarded group can become a long flag', () => {
+		const argv = ['-q-abc'];
+		getFlag('-q', Boolean, argv);
+		expect(argv).toStrictEqual(['--abc']);
+		expect(typeFlag({ abc: Boolean }, argv).flags.abc).toBe(true);
+	});
+
+	test('forwarded number-led group retains a last letter', () => {
+		const argv = ['--name', '-q5x'];
+		getFlag('-q', Boolean, argv);
+		expect(argv).toStrictEqual(['--name', '-5x']);
+		const result = typeFlag({
+			name: String,
+			x: Boolean,
+			5: Boolean,
+		}, argv);
+		expect([result.flags.name, result.flags.x, result.flags[5]]).toStrictEqual(['', true, true]);
+	});
+
+	test('forwarded group preserves order for downstream parsers', () => {
+		const argv = ['-q5xy'];
+		getFlag('-q', Boolean, argv);
+		expect(argv).toStrictEqual(['-5xy']);
+		const nodeResult = parseArgs({
+			args: argv,
+			options: {
+				5: { type: 'boolean' },
+				x: { type: 'string' },
+			},
+		});
+		expect({ ...nodeResult.values }).toStrictEqual({
+			5: true,
+			x: 'y',
+		});
+		const result = typeFlag({
+			x: Boolean,
+			5: Boolean,
+			y: String,
+		}, [...argv, 'file']);
+		expect([result.flags.x, result.flags[5], result.flags.y]).toStrictEqual([true, true, 'file']);
+	});
+
+	test('forwarded group can become positional', () => {
+		const argv = ['-q?'];
+		getFlag('-q', Boolean, argv);
+		expect(argv).toStrictEqual(['-?']);
+		expect(typeFlag({}, argv)._).toStrictEqual(Object.assign(['-?'], { '--': [] }));
+	});
+
+	test('preserves the raw attached value remainder as a positional', () => {
+		const argv = ['-q?a=x'];
+		getFlag('-q', Boolean, argv);
+		expect(argv).toStrictEqual(['-?a=x']);
+		expect(typeFlag({ a: String }, argv)._).toStrictEqual(Object.assign(['-?a=x'], { '--': [] }));
+	});
+
+	test('preserves the raw empty attached value remainder as a positional', () => {
+		const argv = ['-q?_='];
+		getFlag('-q', Boolean, argv);
+		expect(argv).toStrictEqual(['-?_=']);
+		expect(typeFlag({ _: String }, argv)._).toStrictEqual(Object.assign(['-?_='], { '--': [] }));
+	});
+
+	test('removing the last group member removes its attached value', () => {
+		const argv = ['-aq=true'];
+		getFlag('-q', Boolean, argv);
+		expect(argv).toStrictEqual(['-a']);
+		expect(typeFlag({ a: Boolean }, argv).flags.a).toBe(true);
+	});
+
+	test('forwarded group preserves order and attached value', () => {
+		for (const separator of ['=', ':', '.']) {
+			const argv = [`-q?ab${separator}value`];
+			getFlag('-q', Boolean, argv);
+			expect(argv).toStrictEqual([`-?ab${separator}value`]);
+			const result = typeFlag({
+				a: Boolean,
+				b: String,
+			}, argv);
+			expect(result._).toStrictEqual(Object.assign([`-?ab${separator}value`], { '--': [] }));
+		}
+	});
+
+	test('retains multiple remaining dashes', () => {
+		const argv = ['-q--'];
+		getFlag('-q', Boolean, argv);
+		expect(argv).toStrictEqual(['---']);
+	});
+
+	test('forwarding a group can change which flag takes the next value', () => {
+		const argv = ['-ab', 'file'];
+		getFlag('-b', Boolean, argv);
+		expect(argv).toStrictEqual(['-a', 'file']);
+		expect(typeFlag({ a: String }, argv).flags.a).toBe('file');
+	});
+
+	test('forwarding a number-only group remains a value candidate', () => {
+		const argv = ['--name', '-q5'];
+		getFlag('-q', Boolean, argv);
+		expect(argv).toStrictEqual(['--name', '-5']);
+		expect(typeFlag({ name: String }, argv).flags.name).toBe('-5');
+	});
+
+	test('forwarded group removes several matches and preserves supplementary characters', () => {
+		const argv = ['-q𐐀q5a'];
+		getFlag('-q', Boolean, argv);
+		expect(argv).toStrictEqual(['-𐐀5a']);
+		const result = typeFlag({
+			a: Boolean,
+			5: Boolean,
+		}, argv);
+		expect(result.unknownFlags['𐐀']).toStrictEqual([true]);
+		expect([result.flags[5], result.flags.a]).toStrictEqual([true, true]);
+	});
 	test('Unicode numbers are values unless all aliases are searched', () => {
 		for (const value of ['-٥', '-Ⅳ', '-𝟝']) {
 			expect(getFlag('-x', String, ['-x', value])).toBe(value);

@@ -26,7 +26,7 @@ type onArgument = (
 ) => void;
 
 const numberClass = String.raw`\p{N}`;
-export const flagStartClass = String.raw`[\p{L}${numberClass}_]`;
+export const flagStartClass = String.raw`[\p{L}_${numberClass}]`;
 const isFlagPattern = new RegExp(`^-{1,2}${flagStartClass}`, 'u');
 
 // A dash followed by a Unicode number (\p{N}), such as `-5`, `-٥`, or `-Ⅳ`. A dash followed
@@ -209,21 +209,50 @@ export const spliceFromArgv = (
 	argv: string[],
 	removeArgvs: Index[],
 ) => {
-	for (let i = removeArgvs.length - 1; i >= 0; i -= 1) {
-		const [index, aliasIndex, isLast, characterLength] = removeArgvs[i];
-		if (aliasIndex) {
-			const element = argv[index];
-			let newValue = element.slice(0, aliasIndex);
-			if (!isLast) {
-				newValue += element.slice(aliasIndex + characterLength!);
+	if (removeArgvs.length === 0) {
+		return;
+	}
+	// Single pass: `removeArgvs` arrives in ascending token order, because the
+	// iterator flushes a pending value before it handles the next token.
+	let writeIndex = 0;
+	let removalIndex = 0;
+	for (let readIndex = 0; readIndex < argv.length; readIndex += 1) {
+		const removal = removeArgvs[removalIndex];
+		if (!removal || removal[0] !== readIndex) {
+			if (writeIndex !== readIndex) {
+				argv[writeIndex] = argv[readIndex];
 			}
-
-			if (newValue !== '-') {
-				argv[index] = newValue;
-				continue;
-			}
+			writeIndex += 1;
+			continue;
 		}
 
-		argv.splice(index, 1);
+		if (removal.length === 1) {
+			removalIndex += 1;
+			continue;
+		}
+
+		const element = argv[readIndex];
+		let remainder = '';
+		let start = 1;
+		let removedLast = false;
+		while (removalIndex < removeArgvs.length && removeArgvs[removalIndex][0] === readIndex) {
+			const [, aliasIndex, isLast, characterLength] = removeArgvs[removalIndex];
+			remainder += element.slice(start, aliasIndex);
+			start = aliasIndex! + characterLength!;
+			removedLast = isLast!;
+			removalIndex += 1;
+		}
+		if (!removedLast) {
+			remainder += element.slice(start);
+		}
+
+		if (!remainder || remainder === '-') {
+			continue;
+		}
+		argv[writeIndex] = `-${remainder}`;
+		writeIndex += 1;
+	}
+	if (writeIndex !== argv.length) {
+		argv.length = writeIndex;
 	}
 };

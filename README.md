@@ -312,7 +312,7 @@ Unknown flags are not converted to camelCase to allow for accurate error handlin
 
 Wrapper CLIs often need to consume their own flags and pass everything else to another command. If you pass your own argv array, _type-flag_ removes parsed tokens and leaves ignored tokens behind.
 
-Ignored tokens are left in `argv`, so an `ignore` callback can stop parsing at a command name and preserve the full command tail for another parser. When a defined value-taking flag is ignored, its following value is also left in `argv` and is not passed to `ignore`. If other aliases in the same group are parsed, only the ignored aliases remain in that token.
+Do not group flags you parse with flags another parser will read. Ignored tokens are left in `argv`, so an `ignore` callback can stop parsing at a command name and preserve the full command tail for another parser. When a defined value-taking flag is ignored, its following value is also left in `argv` and is not passed to `ignore`. If other aliases in the same group are parsed, they are deleted in place. A remainder of exactly `--` is removed, because most parsers, including _type-flag_, would read it as the end-of-flags delimiter and stop parsing the rest of `argv`.
 
 ```ts
 const argv = process.argv.slice(2)
@@ -333,6 +333,14 @@ argv // ['--target-flag=value']
 ```
 
 Use the `--target-flag=value` form for forwarded unknown flags with values. Since _type-flag_ does not know whether an unknown flag takes a value, it parses a separate following token on its own, usually as an argument.
+
+Do not group an extracted short flag with flags another parser will handle. Extracting part of a group deletes those characters in place and keeps an attached value only if the original last character remains. A remainder of exactly `--` is removed; all others are kept in order. The next parser may interpret them differently:
+
+- Extracting `-q` from `-q-abc` leaves the long flag `--abc`; `-q?` leaves the positional `-?`.
+- Extracting `-q` from `['--name', '-q5x']` leaves `-5x`. A later _type-flag_ parser consumes it as the value of `name: String` unless both `5` and `x` are defined flags.
+- Extracting `-q` from `-q-=value` leaves `--=value`, which _type-flag_ treats as a positional. Node's `util.parseArgs` reads it as an unknown long option named `=value`.
+
+Which flag takes the next token also depends on the next parser. For example, extracting `-b` from `['-ab', 'file']` leaves `['-a', 'file']`, so a later parser with `a: String` consumes `file`.
 
 You can also stop parsing after the first positional argument:
 
