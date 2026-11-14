@@ -308,7 +308,7 @@ Unknown flags are not converted to camelCase to allow for accurate error handlin
 
 Wrapper CLIs often need to consume their own flags and pass everything else to another command. If you pass your own argv array, _type-flag_ removes parsed tokens and leaves ignored tokens behind.
 
-Ignored tokens are left in `argv`, so an `ignore` callback can stop parsing at a command name and preserve the full command tail for another parser. When a defined value-taking flag is ignored, its following value is also left in `argv`. If other aliases in the same group are parsed, only the ignored aliases remain in that token.
+Ignored tokens are left in `argv`, so an `ignore` callback can stop parsing at a command name and preserve the full command tail for another parser. When a defined value-taking flag is ignored, its following value is also left in `argv` and is not passed to `ignore`. If other aliases in the same group are parsed, only the ignored aliases remain in that token.
 
 ```ts
 const argv = process.argv.slice(2)

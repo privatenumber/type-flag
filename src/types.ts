@@ -282,6 +282,9 @@ export type ParsedArgvEntry =
  *   - For arguments (`type === 'argument'`): always `undefined`
  * @returns `true` to ignore/skip this element, `false` or `undefined` to process it
  *
+ * When a defined flag that takes a separate value is ignored, that value token
+ * also stays in argv and is not passed to this callback.
+ *
  * @example
  * ```ts
  * // Ignore all unknown flags
