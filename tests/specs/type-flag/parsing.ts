@@ -9,6 +9,13 @@ const nullPrototypeObject = <T extends object>(object: T): T => (
 );
 
 describe('Parsing', () => {
+	test('preserves ignored group characters in order', () => {
+		for (const [input, remainder] of [['-q-abc', '--abc'], ['-q5xy', '-5xy'], ['-q--', '---'], ['-q-', undefined]] as const) {
+			const argv = [input];
+			typeFlag({ q: Boolean }, argv, { ignore: type => type === 'unknown-flag' });
+			expect(argv).toStrictEqual(remainder ? [remainder] : []);
+		}
+	});
 	test('keeps the last ignored group member as the next-token value owner', () => {
 		const argv = ['-q5a', 'file'];
 		typeFlag({ q: Boolean }, argv, { ignore: type => type === 'unknown-flag' || type === 'argument' });

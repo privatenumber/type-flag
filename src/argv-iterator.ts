@@ -26,10 +26,8 @@ type onArgument = (
 ) => void;
 
 const numberClass = String.raw`\p{N}`;
-const letterOrUnderscoreClass = String.raw`\p{L}_`;
-export const flagStartClass = `[${letterOrUnderscoreClass}${numberClass}]`;
+export const flagStartClass = String.raw`[\p{L}_${numberClass}]`;
 const isFlagPattern = new RegExp(`^-{1,2}${flagStartClass}`, 'u');
-const letterOrUnderscorePattern = new RegExp(`[${letterOrUnderscoreClass}]`, 'u');
 
 // A dash followed by a Unicode number (\p{N}), such as `-5`, `-٥`, or `-Ⅳ`. A dash followed
 // by a letter stays a flag, so `--range --verbose` still reports the missing value.
@@ -248,18 +246,10 @@ export const spliceFromArgv = (
 			remainder += element.slice(start);
 		}
 
-		const suffixIndex = remainder.search(/[=:.]/u);
-		const group = suffixIndex < 0 ? remainder : remainder.slice(0, suffixIndex);
-		const suffix = suffixIndex < 0 ? '' : remainder.slice(suffixIndex);
-		if (!group || (!suffix && /^-+$/u.test(group))) {
+		if (!remainder || remainder === '-') {
 			continue;
 		}
-		const match = letterOrUnderscorePattern.exec(group);
-		if (match && match.index > 0 && match.index + match[0].length < group.length) {
-			argv[writeIndex] = `-${match[0]}${group.slice(0, match.index)}${group.slice(match.index + match[0].length)}${suffix}`;
-		} else {
-			argv[writeIndex] = `-${group}${suffix}`;
-		}
+		argv[writeIndex] = `-${remainder}`;
 		writeIndex += 1;
 	}
 	if (writeIndex !== argv.length) {
