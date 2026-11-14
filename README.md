@@ -328,7 +328,7 @@ parsed.flags.config // string | undefined
 argv // ['--target-flag=value']
 ```
 
-Use the `--target-flag=value` form for forwarded unknown flags with values. Since _type-flag_ does not know whether an unknown flag takes a value, it parses a separate following token as an argument.
+Use the `--target-flag=value` form for forwarded unknown flags with values. Since _type-flag_ does not know whether an unknown flag takes a value, it parses a separate following token on its own, usually as an argument.
 
 You can also stop parsing after the first positional argument:
 

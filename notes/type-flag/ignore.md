@@ -8,7 +8,7 @@ Decision: keep an ignored defined value-taking flag and its value together in ar
 
 ## Problem
 
-The README says: "Ignored tokens are left in `argv` exactly as passed, so an `ignore` callback can stop parsing at a command name and preserve the full command tail for another parser."
+Before this fix, the README said: "Ignored tokens are left in `argv` exactly as passed, so an `ignore` callback can stop parsing at a command name and preserve the full command tail for another parser."
 
 Observed ([results](./argv-survey/results.md#type-flag-probes)), with `name: String` and `ignore` returning true for defined flags:
 
