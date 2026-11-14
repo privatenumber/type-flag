@@ -22,6 +22,22 @@ describe('Parsing', () => {
 		});
 	}
 
+	test('wraps a thrown value that cannot be converted to a string', () => {
+		const cause = Object.create(null);
+		let thrown: unknown;
+		try {
+			getFlag('-a,--age', () => {
+				throw cause;
+			}, ['-a', 'bad']);
+		} catch (error) {
+			thrown = error;
+		}
+		expect(thrown).toBeInstanceOf(FlagParseError);
+		expect((thrown as FlagParseError).cause).toBe(cause);
+		expect((thrown as FlagParseError).flagName).toBe('age');
+		expect((thrown as FlagParseError).message).toBe('Flag "--age": Unknown error');
+	});
+
 	describe('alias', () => {
 		test('gets the last number and consumes every occurrence', () => {
 			const argv = ['-n', '1111', '2222', '-n', '3333'];

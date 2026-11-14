@@ -97,8 +97,14 @@ export class FlagParseError extends TypeError {
 		cause: unknown,
 		spelling = flagName.length === 1 ? `-${flagName}` : `--${flagNameToKebab(flagName)}`,
 	) {
+		let message: string;
+		try {
+			message = String(cause instanceof Error ? cause.message : cause);
+		} catch {
+			message = 'Unknown error';
+		}
 		super(
-			`Flag "${spelling}": ${cause instanceof Error ? cause.message : String(cause)}`,
+			`Flag "${spelling}": ${message}`,
 			{ cause },
 		);
 		this.name = 'FlagParseError';
