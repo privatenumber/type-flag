@@ -3,6 +3,15 @@ import { describe, test, expect } from 'manten';
 import { getFlag, typeFlag, FlagParseError } from '#type-flag';
 
 describe('Parsing', () => {
+	test('extracts a known flag from an unknown attached value', () => {
+		const argv = ['-nvalue'];
+		expect(typeFlag({ n: String }, [...argv]).flags.n).toBe('value');
+		expect(getFlag('-v', Boolean, argv)).toBe(true);
+		expect(argv).toStrictEqual(['-nalue']);
+		expect(typeFlag({ n: String }, argv).flags.n).toBe('alue');
+		expect(getFlag('-v', Boolean, ['-xv'])).toBe(true);
+	});
+
 	test('attached short values match typeFlag and remove the value', () => {
 		for (const [token, value] of [['-nfoo', 'foo'], ['-n=foo', 'foo'], ['-n:foo', 'foo'], ['-n.foo', 'foo'], ['-n==foo', '=foo'], ['-n😀x', '😀x']] as const) {
 			const argv = [token];

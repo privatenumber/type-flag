@@ -41,7 +41,7 @@ The previous behavior loses data silently. `-c5` reads as "count 5" to a user bu
 In a short-flag group, scan left to right. When a defined flag takes a value:
 
 1. If characters remain, the rest of the token is the value. Strip exactly one leading `=`, `:`, or `.`, preserving the existing delimiter forms.
-2. If it is the last character, the next argv element is the value, as today.
+2. If it is the last character, it takes the next argument, if present, unless it is `--` or a flag-shaped token. A token starting with a dash and a number, such as `-5`, is taken as a value unless every character after the dash is a defined flag. With `n: String`, `['-n', '--verbose']` gives `n: ''`.
 
 Flags that do not take a value, and unknown flags, keep today's behavior. The scan is still one pass with no backtracking.
 
@@ -49,7 +49,8 @@ Flags that do not take a value, and unknown flags, keep today's behavior. The sc
 
 - **Digit aliases.** With `c` value-taking and `5` a defined alias, `-c5` gives `count: 5`. getopt makes the same choice: the value-taking flag wins over later characters.
 - **Value delimiters `:` and `.`.** Stripping these as well as `=` preserves the previous `-n:foo` and `-n.foo` behavior. Only one delimiter is stripped, so `-n==foo` gives `=foo`.
-- **`spliceFromArgv`.** Removing a group like `-vnfoo` from argv must remove the whole value, not one character. When `ignore` skips part of a group, the kept remainder must keep its meaning; see the [forwarding hazard](./flag-names.md#forwarding-hazard-partially-consumed-groups) that exists today.
+- **`spliceFromArgv`.** Removing a group like `-vnfoo` from argv must remove the whole value, not one character. Partial extraction can change the meaning of the kept remainder; see the [forwarding hazard](./flag-names.md#forwarding-hazard-partially-consumed-groups).
+- **Unknown flags when forwarding.** Keep scanning unknown characters: the wrapper only knows its own schema and cannot tell that another parser treats `-nvalue` as `n: 'value'`. Extracting Boolean `v`, including via `ignore` for unknown flags, leaves `-nalue` ([getFlag test](../../tests/specs/get-flag/parsing.ts), [typeFlag test](../../tests/specs/type-flag/parsing.ts)). Use `-n=value` or `-n value` when forwarding, preserving the separate value argument if using `ignore`.
 - **Single-dash long names.** A user who types `-output` meaning `--output` gets `-o` with the value `utput` when `o` takes a value. Previously the same input parsed as the aliases `o`, `u`, `t`, `p`, `u`, `t`. Long flags require `--`. pflag users reported this surprise in [spf13/pflag#314](https://github.com/spf13/pflag/issues/314). That issue shows the hazard exists, not how often it happens.
 
 ## Rejected alternatives
@@ -58,6 +59,7 @@ Flags that do not take a value, and unknown flags, keep today's behavior. The sc
 - Accept only a numeric suffix, as yargs-parser does: this leaves string values such as `-nfoo` unsupported.
 - Reject grouped value-taking flags, as arg does: this prevents the POSIX-style forms rather than supporting them.
 - Strip only `=`: this would change the existing `:` and `.` delimiter forms.
+- Stop scanning at the first unknown character when forwarding: this silently misses the wrapper's own `v` in `-xv`. Continuing can silently remove a character from another parser's attached value instead; neither choice knows the other parser's schema.
 
 ## Compatibility
 

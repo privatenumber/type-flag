@@ -267,7 +267,9 @@ const parsed = typeFlag({
 parsed.flags.verbose.length // 3
 ```
 
-Short aliases can be grouped. Boolean and unknown flags are read one character at a time. When a defined flag takes a value, the rest of the token is its value and ends the group: `-vnfoo` reads `-v` followed by `-n` with value `foo`. One leading `=`, `:`, or `.` is stripped, so `-n=foo`, `-n:foo`, and `-n.foo` also give `foo`, while `-n==foo` gives `=foo`. If no characters follow the flag, it takes the next argument.
+Short aliases can be grouped. Boolean and unknown flags are read one character at a time. When a defined flag takes a value, the rest of the token is its value and ends the group: `-vnfoo` reads `-v` followed by `-n` with value `foo`. One leading `=`, `:`, or `.` is stripped, so `-n=foo`, `-n:foo`, and `-n.foo` also give `foo`, while `-n==foo` gives `=foo`.
+
+If no characters follow a value-taking flag, it takes the next argument, if present, unless it is `--` or a flag-shaped token. A token starting with a dash and a number, such as `-5`, is taken as a value unless every character after the dash is a defined flag. For example, with `n: String`, `['-n', '--verbose']` gives `n: ''`.
 
 Long flags need two dashes: if `o` is a string alias, `-output` gives `o` the value `utput`, not the long flag `--output`.
 
@@ -336,7 +338,7 @@ argv // ['--target-flag=value']
 
 Use the `--target-flag=value` form for forwarded unknown flags with values. Since _type-flag_ does not know whether an unknown flag takes a value, it parses a separate following token on its own, usually as an argument.
 
-Do not group an extracted short flag with flags another parser will handle. Extracting a value-taking flag also removes its attached value; ignored flags keep theirs. A remainder of exactly `--` is removed; all others are kept in order. The next parser may interpret them differently:
+Do not group an extracted short flag with flags another parser will handle. The wrapper cannot know whether an unknown flag takes a value: extracting `-v` from `-nvalue` leaves `-nalue`, even if the next parser treats `-nvalue` as `n: 'value'`. Pass the other parser's value-taking flag as `-n=value` or `-n value` instead. With `ignore`, also preserve the separate value argument, since unknown flags do not claim it. Extracting a known value-taking flag also removes its attached value; ignored flags keep theirs. A remainder of exactly `--` is removed; all others are kept in order. The next parser may interpret them differently:
 
 - Extracting `-q` from `-q-abc` leaves the long flag `--abc`; `-q?` leaves the positional `-?`.
 - Extracting `-q` from `['--name', '-q5x']` leaves `-5x`. A later _type-flag_ parser consumes it as the value of `name: String` unless both `5` and `x` are defined flags.
@@ -582,6 +584,8 @@ A single-character flag cannot have an `alias`.
 ### getFlag()
 
 Use `getFlag()` when you only need one typed flag and want to leave the rest of argv available for another parser or command.
+
+For short flags, avoid grouping an extracted flag with flags for another parser; see [Unknown Flags And Forwarding](#unknown-flags-and-forwarding).
 
 ```ts
 const argv = process.argv.slice(2)

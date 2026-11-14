@@ -9,6 +9,15 @@ const nullPrototypeObject = <T extends object>(object: T): T => (
 );
 
 describe('Parsing', () => {
+	test('extracts a known flag from an ignored unknown attached value', () => {
+		const argv = ['-nvalue'];
+		expect(typeFlag({ n: String }, [...argv]).flags.n).toBe('value');
+		const result = typeFlag({ v: Boolean }, argv, { ignore: type => type === 'unknown-flag' });
+		expect(result.flags.v).toBe(true);
+		expect(argv).toStrictEqual(['-nalue']);
+		expect(typeFlag({ n: String }, argv).flags.n).toBe('alue');
+	});
+
 	describe('attached short values', () => {
 		for (const [token, value] of [['-nfoo', 'foo'], ['-n=foo', 'foo'], ['-n:foo', 'foo'], ['-n.foo', 'foo'], ['-n==foo', '=foo'], ['-n😀x', '😀x']] as const) {
 			test(`parses ${token}`, () => {
