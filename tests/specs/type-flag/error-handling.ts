@@ -114,6 +114,34 @@ describe('Error handling', () => {
 	});
 
 	describe('Custom type errors', () => {
+		for (const [key, token, expected] of [
+			['size', '-s', '--size'],
+			['x', '-x', '-x'],
+			['orgId', '--org-id', '--org-id'],
+			['orgId', '--orgId', '--org-id'],
+		] as const) {
+			test(`canonical error name for ${token}`, () => {
+				const parser = () => {
+					throw new Error('bad value');
+				};
+				const schema = key === 'size'
+					? {
+						type: parser,
+						alias: 's',
+					}
+					: parser;
+				let thrown: unknown;
+				try {
+					typeFlag({ [key]: schema }, [token, 'bad']);
+				} catch (error) {
+					thrown = error;
+				}
+				expect(thrown).toBeInstanceOf(FlagParseError);
+				expect((thrown as FlagParseError).flagName).toBe(key);
+				expect((thrown as FlagParseError).message).toBe(`Flag "${expected}": bad value`);
+			});
+		}
+
 		test('Custom parser throws error', () => {
 			const ThrowingParser = (_value: string) => {
 				throw new Error('Custom parse error');

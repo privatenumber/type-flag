@@ -69,7 +69,7 @@ typeFlag({
 - Multiple values: wrap in `[schema]`, NOT `z.array(...)` (it validates a single token and throws).
 - Numbers: CLI values are strings, so coerce (`z.coerce.number()`).
 - Booleans: keep native `Boolean` (a schema loses `--no-` negation and short grouping).
-- Sync only: async schemas throw. A failed schema throws `FlagParseError` as `Flag "--<name>": <message>` (original on `.cause`).
+- Sync only: async schemas throw. A failed schema throws `FlagParseError` as `Flag "<flag>": <message>` (original on `.cause`).
 
 ## Return shape
 
@@ -188,7 +188,7 @@ Scalar parsers return the last match; array parsers return all matches. Every ma
 | Reserved chars in names | `\s`, `.`, `:`, `=` forbidden in flag names (they're delimiters). |
 | kebab schema key | If schema key is `'some-flag'`, only `--some-flag` / `--someFlag` both map to it, but output key stays kebab. |
 | Default functions throw | A throwing `default: () => ...` propagates raw (NOT a `FlagParseError`). |
-| Parser/schema errors wrap | A throwing parser (or failed schema) throws `FlagParseError` (extends `TypeError`) as `Flag "--<name>": <message>`, with `.flagName` and the original on `.cause`. Exported from `type-flag`. |
+| Parser/schema errors wrap | `FlagParseError` extends `TypeError` and preserves the original on `.cause`. For `typeFlag`, `.flagName` is the schema key and the message uses its kebab-case long spelling, or the short spelling for a single-character key. For `getFlag`, `.flagName` is the first long search name, or the first short name if no long name exists; the message uses that search name with dashes. |
 
 ## Related
 

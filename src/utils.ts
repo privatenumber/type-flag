@@ -86,15 +86,19 @@ export const normalizeBoolean = <T>(
  * precise handle. The original error is preserved on `cause`.
  */
 export class FlagParseError extends TypeError {
-	/** The flag whose value failed to parse, without the `--` prefix (e.g. `sort`). */
+	/**
+	 * The schema key for `typeFlag`, or the first long search name (otherwise
+	 * first short name) without dashes for `getFlag`.
+	 */
 	flagName: string;
 
 	constructor(
 		flagName: string,
 		cause: unknown,
+		spelling = flagName.length === 1 ? `-${flagName}` : `--${flagNameToKebab(flagName)}`,
 	) {
 		super(
-			`Flag "--${flagName}": ${cause instanceof Error ? cause.message : cause}`,
+			`Flag "${spelling}": ${cause instanceof Error ? cause.message : cause}`,
 			{ cause },
 		);
 		this.name = 'FlagParseError';
@@ -106,6 +110,7 @@ export const applyParser = (
 	typeFunction: TypeFunction,
 	value: unknown,
 	flagName: string,
+	spelling?: string,
 ) => {
 	if (typeof value === 'boolean') {
 		return value;
@@ -118,7 +123,7 @@ export const applyParser = (
 	try {
 		return typeFunction(value);
 	} catch (error) {
-		throw new FlagParseError(flagName, error);
+		throw new FlagParseError(flagName, error, spelling);
 	}
 };
 

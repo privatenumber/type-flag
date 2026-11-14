@@ -445,6 +445,8 @@ These are the supported delimiters; arbitrary delimiter characters are not treat
 
 When a custom type parser (or [Standard Schema](#standard-schema-zod-valibot-arktype)) throws, the error is wrapped in a `FlagParseError` whose message identifies the flag by name. The original error is preserved on `.cause`, and the flag name on `.flagName`.
 
+For `typeFlag`, `.flagName` is the schema key, regardless of the spelling used. The message uses the kebab-case long flag (for example, `--org-id` for `orgId`), or the short flag for a single-character key. For `getFlag`, `.flagName` is the first long search name without dashes, or the first short name if there is no long name. The message uses that search name with its dashes.
+
 `FlagParseError extends TypeError`, so existing `instanceof TypeError` checks keep working while `instanceof FlagParseError` lets you handle a bad flag value precisely.
 
 ```ts

@@ -1,7 +1,27 @@
 import { describe, test, expect } from 'manten';
-import { getFlag } from '#type-flag';
+import { getFlag, FlagParseError } from '#type-flag';
 
 describe('Parsing', () => {
+	for (const [search, token, name, spelling] of [
+		['-a,--age', '-a', 'age', '--age'],
+		['-a', '-a', 'a', '-a'],
+		['-a,--orgId,--other', '--other', 'orgId', '--orgId'],
+	] as const) {
+		test(`canonical error name for ${search} matched by ${token}`, () => {
+			let thrown: unknown;
+			try {
+				getFlag(search, () => {
+					throw new Error('bad value');
+				}, [token, 'bad']);
+			} catch (error) {
+				thrown = error;
+			}
+			expect(thrown).toBeInstanceOf(FlagParseError);
+			expect((thrown as FlagParseError).flagName).toBe(name);
+			expect((thrown as FlagParseError).message).toBe(`Flag "${spelling}": bad value`);
+		});
+	}
+
 	describe('alias', () => {
 		test('gets the last number and consumes every occurrence', () => {
 			const argv = ['-n', '1111', '2222', '-n', '3333'];

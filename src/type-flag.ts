@@ -63,7 +63,6 @@ export const typeFlag = <Schemas extends Flags>(
 	let pendingName: string;
 	let pendingParser: Parameters<typeof applyParser>[0];
 	let pendingFlagIndex: Index;
-	let pendingRawName: string;
 	let ignoringValue = false;
 
 	const flushFlagValue = (
@@ -79,7 +78,7 @@ export const typeFlag = <Schemas extends Flags>(
 		entries.push({
 			type: FLAG,
 			name: pendingName,
-			value: applyParser(pendingParser, value || '', pendingRawName),
+			value: applyParser(pendingParser, value || '', pendingName),
 		});
 	};
 
@@ -124,7 +123,6 @@ export const typeFlag = <Schemas extends Flags>(
 				pendingName = canonicalName;
 				pendingParser = parser;
 				pendingFlagIndex = flagIndex;
-				pendingRawName = name;
 
 				const flagValue = normalizeBoolean(parser, explicitValue);
 				if (flagValue === undefined) {

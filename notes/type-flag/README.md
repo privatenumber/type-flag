@@ -8,7 +8,7 @@ Parsing policy for type-flag and the evidence behind it. Cross-parser observatio
 | [Short flag values](./short-flag-values.md) | Proposed: `-nfoo` and `-c5` give the value to the flag, as POSIX and getopt do. |
 | [Boolean flag values](./boolean-values.md) | Proposed: a fixed set of true and false literals instead of "anything but `false` is true". `--no-x=value` becomes an unknown flag when `no-x` is not defined. |
 | [Flag names and aliases](./flag-names.md) | Fix: `--über` and `-é` cannot start a token. Throw for `=`, `.`, and `:` aliases, which never match (breaking for definitions used through their long name). Decide: names starting with `-` and alias `-`. Records a forwarding hazard for partially consumed groups. |
-| [Error messages](./error-messages.md) | Fix: `FlagParseError` prints `--s` for alias `-s`. Name the flag by its definition. |
+| [Error messages](./error-messages.md) | Fixed: `FlagParseError` names the flag by its definition. |
 | [`ignore` and flag values](./ignore.md) | Fixed: an ignored defined flag keeps its value in argv. |
 | [`getFlag` consistency](./get-flag.md) | Fixed: last occurrence wins, dash forms match exactly, and invalid search names throw. |
 | [Missing flag values](./missing-values.md) | Kept: a missing value gives `""` to the type function. |
