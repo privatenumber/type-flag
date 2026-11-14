@@ -255,7 +255,7 @@ export const spliceFromArgv = (
 			continue;
 		}
 		const match = letterOrUnderscorePattern.exec(group);
-		if (match && match.index > 0 && !(suffix && match.index + match[0].length === group.length)) {
+		if (match && match.index > 0 && match.index + match[0].length < group.length) {
 			argv[writeIndex] = `-${match[0]}${group.slice(0, match.index)}${group.slice(match.index + match[0].length)}${suffix}`;
 		} else {
 			argv[writeIndex] = `-${group}${suffix}`;

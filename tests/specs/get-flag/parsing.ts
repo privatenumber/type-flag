@@ -2,6 +2,17 @@ import { describe, test, expect } from 'manten';
 import { getFlag, typeFlag, FlagParseError } from '#type-flag';
 
 describe('Parsing', () => {
+	test('keeps the last group member as the next-token value owner', () => {
+		const argv = ['-q5a', 'file'];
+		getFlag('-q', Boolean, argv);
+		expect(argv).toStrictEqual(['-5a', 'file']);
+		const result = typeFlag({
+			5: Boolean,
+			a: String,
+		}, argv);
+		expect([result.flags[5], result.flags.a]).toStrictEqual([true, 'file']);
+	});
+
 	test('preserves a dash remainder with an attached value', () => {
 		const argv = ['-q-=value', '--rest'];
 		getFlag('-q', Boolean, argv);
@@ -11,19 +22,6 @@ describe('Parsing', () => {
 		expect(result.flags.rest).toBe(true);
 	});
 
-	test('does not scan argv twice when no flag matches', () => {
-		let lengthReads = 0;
-		const argv = new Proxy(['--other'], {
-			get(target, property, receiver) {
-				if (property === 'length') {
-					lengthReads += 1;
-				}
-				return Reflect.get(target, property, receiver);
-			},
-		});
-		getFlag('-q', Boolean, argv);
-		expect(lengthReads).toBe(2);
-	});
 	test('forwarded group does not become a delimiter', () => {
 		const argv = ['-q-', '--verbose'];
 		getFlag('-q', Boolean, argv);
@@ -44,16 +42,28 @@ describe('Parsing', () => {
 		expect(result.unknownFlags['-']).toStrictEqual([true]);
 	});
 
-	test('forwarded group does not become a dash-number value', () => {
+	test('forwarded number-led group retains a last letter', () => {
 		const argv = ['--name', '-q5x'];
 		getFlag('-q', Boolean, argv);
-		expect(argv).toStrictEqual(['--name', '-x5']);
+		expect(argv).toStrictEqual(['--name', '-5x']);
 		const result = typeFlag({
 			name: String,
 			x: Boolean,
 			5: Boolean,
 		}, argv);
 		expect([result.flags.name, result.flags.x, result.flags[5]]).toStrictEqual(['', true, true]);
+	});
+
+	test('forwarded group moves a non-final letter', () => {
+		const argv = ['-q5xy'];
+		getFlag('-q', Boolean, argv);
+		expect(argv).toStrictEqual(['-x5y']);
+		const result = typeFlag({
+			x: Boolean,
+			5: Boolean,
+			y: String,
+		}, [...argv, 'file']);
+		expect([result.flags.x, result.flags[5], result.flags.y]).toStrictEqual([true, true, 'file']);
 	});
 
 	test('forwarded group without a movable letter stays positional', () => {

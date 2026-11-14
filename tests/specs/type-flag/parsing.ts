@@ -9,6 +9,17 @@ const nullPrototypeObject = <T extends object>(object: T): T => (
 );
 
 describe('Parsing', () => {
+	test('keeps the last ignored group member as the next-token value owner', () => {
+		const argv = ['-q5a', 'file'];
+		typeFlag({ q: Boolean }, argv, { ignore: type => type === 'unknown-flag' || type === 'argument' });
+		expect(argv).toStrictEqual(['-5a', 'file']);
+		const result = typeFlag({
+			5: Boolean,
+			a: String,
+		}, argv);
+		expect([result.flags[5], result.flags.a]).toStrictEqual([true, 'file']);
+	});
+
 	test('preserves an ignored dash with an attached value', () => {
 		const argv = ['-q-=value', '--rest'];
 		typeFlag({ q: Boolean }, argv, { ignore: (type, name) => type === 'unknown-flag' && (name === '-' || name === 'rest') });
@@ -17,10 +28,10 @@ describe('Parsing', () => {
 		expect(result._).toStrictEqual(Object.assign(['--=value'], { '--': [] }));
 		expect(result.flags.rest).toBe(true);
 	});
-	test('forwarded ignored group keeps a flag start', () => {
+	test('forwarded ignored group keeps its last member', () => {
 		const argv = ['-q5x'];
 		typeFlag({ q: Boolean }, argv, { ignore: type => type === 'unknown-flag' });
-		expect(argv).toStrictEqual(['-x5']);
+		expect(argv).toStrictEqual(['-5x']);
 		const result = typeFlag({
 			x: Boolean,
 			5: Boolean,
