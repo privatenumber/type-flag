@@ -1,12 +1,12 @@
 # Naming the flag in parse errors
 
-Researched 2026-11-05 against type-flag `v5.0.0-beta.20`. Not shipped.
+Researched 2026-11-05 against type-flag `v5.0.0-beta.20`. Fixed in v5 beta development; the [typeFlag tests](../../tests/specs/type-flag/error-handling.ts) and [getFlag tests](../../tests/specs/get-flag/parsing.ts) specify the behavior.
 
 ## Summary
 
-Recommendation: fix. `FlagParseError` always prefixes the name with `--`, so an alias error reads `Flag "--s"` and a single-character flag reads `Flag "--x"`. type-flag does not match `--x` to a single-character flag `x`; it parses `--x` as an unknown flag. `flagName` holds whatever name was typed, so the same flag reports `s` or `size` depending on input. `FlagParseError` is new in v5, so this has no stable-release compatibility cost.
+`FlagParseError` names flags by their definition. In `v5.0.0-beta.20`, it instead prefixes the typed name with `--`, producing `--s` for an alias and `--x` for a single-character flag. Neither is a valid spelling for those definitions. `FlagParseError` is new in v5, so this has no stable-release compatibility cost.
 
-## Current behavior
+## Previous behavior
 
 Observed ([results](./argv-survey/results.md#type-flag-probes)):
 
@@ -31,7 +31,7 @@ Of the surveyed parsers whose adapter runs the `size` validator, commander, argp
 
 node `parseArgs` has no type functions, but its own option errors use the same definition form, such as `Option '-v, --verbose' does not take an argument` ([results](./argv-survey/results.md#boolean-values)).
 
-## Proposed fix
+## Decision
 
-- `flagName` is always the schema key (`size`, `x`).
-- The message names the flag by its definition: `--size` for a long flag, and `-x` for a single-character flag. Showing the alias too (`-s, --size`, like commander) is optional.
+- For `typeFlag`, `flagName` is the schema key (`size`, `x`, `orgId`). The message uses the kebab-case long spelling (`--org-id`) or the short spelling for a single-character key (`-x`), regardless of input. See the [typeFlag tests](../../tests/specs/type-flag/error-handling.ts).
+- For `getFlag`, `flagName` is the first long search name, or the first short search name if no long name exists, without dashes. The message uses that exact search spelling with dashes. See the [getFlag tests](../../tests/specs/get-flag/parsing.ts).

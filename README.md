@@ -194,7 +194,7 @@ const parsed = typeFlag({
 parsed.flags.mode // 'dev' | 'prod' | undefined
 ```
 
-Schemas work everywhere a flag type is accepted, including arrays (`[z.string()]`), `{ type, default }` objects, and [`getFlag`](#getflag). On validation failure, the schema's message is surfaced through type-flag's [error wrapping](#error-wrapping) as `Flag "--<name>": <message>`. This adds no runtime dependency: the Standard Schema spec is types-only and vendored in.
+Schemas work everywhere a flag type is accepted, including arrays (`[z.string()]`), `{ type, default }` objects, and [`getFlag`](#getflag). On validation failure, the schema's message is surfaced through type-flag's [error wrapping](#error-wrapping) as `Flag "<flag>": <message>`, where `<flag>` is the flag's canonical spelling, such as `--size` or `-x`. This adds no runtime dependency: the Standard Schema spec is types-only and vendored in.
 
 A few things to keep in mind:
 
@@ -444,6 +444,8 @@ These are the supported delimiters; arbitrary delimiter characters are not treat
 #### Error Wrapping
 
 When a custom type parser (or [Standard Schema](#standard-schema-zod-valibot-arktype)) throws, the error is wrapped in a `FlagParseError` whose message identifies the flag by name. The original error is preserved on `.cause`, and the flag name on `.flagName`.
+
+For `typeFlag`, `.flagName` is the schema key, regardless of the spelling used. The message uses the kebab-case long flag (for example, `--org-id` for `orgId`), or the short flag for a single-character key. For `getFlag`, `.flagName` is the first long search name without dashes, or the first short name if there is no long name. The message uses that search name with its dashes.
 
 `FlagParseError extends TypeError`, so existing `instanceof TypeError` checks keep working while `instanceof FlagParseError` lets you handle a bad flag value precisely.
 

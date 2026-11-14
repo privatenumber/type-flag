@@ -20,11 +20,21 @@ export const getFlag = <Type extends FlagType>(
 ) => {
 	const shortFlags = new Set<string>();
 	const longFlags = new Set<string>();
+	let errorName = '';
+	let errorSpelling = '';
 	for (const part of flagNames.split(',')) {
 		const name = part.trim();
 		if (/^-\w$/.test(name)) {
+			if (!errorSpelling) {
+				errorName = name.slice(1);
+				errorSpelling = name;
+			}
 			shortFlags.add(name.slice(1));
 		} else if (/^--\w[^\s=:.]+$/.test(name)) {
+			if (longFlags.size === 0) {
+				errorName = name.slice(2);
+				errorSpelling = name;
+			}
 			longFlags.add(name.slice(2));
 		} else {
 			throw new Error(`Invalid flag name: ${JSON.stringify(name)}`);
@@ -38,10 +48,8 @@ export const getFlag = <Type extends FlagType>(
 	// Pending value-expecting flag, read by `onValue`. Hoisted so no callback
 	// closure is allocated per value-taking flag occurrence.
 	let pendingFlagIndex: Index;
-	let pendingName: string;
 	const pushValue = (
 		flagIndex: Index,
-		rawName: string,
 		value: string | boolean | undefined,
 		valueIndex?: Index,
 	) => {
@@ -51,7 +59,7 @@ export const getFlag = <Type extends FlagType>(
 			removeArgvs.push(valueIndex);
 		}
 
-		const result = applyParser(parser, value || '', rawName);
+		const result = applyParser(parser, value || '', errorName, errorSpelling);
 		if (gatherAll) {
 			results.push(result);
 		} else {
@@ -70,14 +78,13 @@ export const getFlag = <Type extends FlagType>(
 			const flagValue = normalizeBoolean(parser, explicitValue);
 			if (flagValue === undefined) {
 				pendingFlagIndex = flagIndex;
-				pendingName = name;
 				return true;
 			}
 
-			pushValue(flagIndex, name, flagValue);
+			pushValue(flagIndex, flagValue);
 		},
 		onValue: (value, valueIndex) => {
-			pushValue(pendingFlagIndex, pendingName, value, valueIndex);
+			pushValue(pendingFlagIndex, value, valueIndex);
 		},
 	});
 
