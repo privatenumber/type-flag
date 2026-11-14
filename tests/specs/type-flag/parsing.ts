@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'manten';
-import { typeFlag } from '#type-flag';
+import { typeFlag, FlagParseError } from '#type-flag';
 import { createPositionalArguments } from '#type-flag/internal';
 
 // `flags` and `unknownFlags` are returned as null-prototype objects, so
@@ -9,6 +9,69 @@ const nullPrototypeObject = <T extends object>(object: T): T => (
 );
 
 describe('Parsing', () => {
+	test('Boolean literals across delimiters and aliases', () => {
+		for (const separator of ['=', ':', '.']) {
+			for (const [value, expected] of [['true', true], ['false', false]] as const) {
+				for (const token of [`--verbose${separator}${value}`, `-av${separator}${value}`]) {
+					const schema = {
+						verbose: {
+							type: [Boolean] as [BooleanConstructor],
+							alias: 'v',
+						},
+					};
+					expect(typeFlag(schema, [token]).flags.verbose).toStrictEqual([expected]);
+				}
+				expect(() => typeFlag({ verbose: Boolean }, [`--verbose${separator}bad`])).toThrow(FlagParseError);
+			}
+		}
+	});
+
+	test('defined no-prefixed flag receives its explicit value', () => {
+		const parsed = typeFlag({
+			verbose: Boolean,
+			'no-verbose': String,
+		}, ['--no-verbose=false'], { booleanNegation: true });
+		expect(parsed.flags['no-verbose']).toBe('false');
+		expect(parsed.flags.verbose).toBe(undefined);
+	});
+
+	test('rejects invalid Boolean array values', () => {
+		expect(() => typeFlag({ verbose: [Boolean] }, ['--verbose=flase'])).toThrow(FlagParseError);
+	});
+	for (const value of ['0', 'FALSE', 'flase', '']) {
+		for (const token of [`--verbose-mode=${value}`, `-av=${value}`]) {
+			test(`rejects Boolean ${JSON.stringify(token)}`, () => {
+				let thrown: unknown;
+				try {
+					typeFlag({
+						verboseMode: {
+							type: Boolean,
+							alias: 'v',
+						},
+					}, [token]);
+				} catch (error) {
+					thrown = error;
+				}
+				const message = `invalid boolean value ${JSON.stringify(value)}; expected "true" or "false"`;
+				expect(thrown).toBeInstanceOf(FlagParseError);
+				expect((thrown as FlagParseError).flagName).toBe('verboseMode');
+				expect((thrown as FlagParseError).message).toBe(`Flag "--verbose-mode": ${message}`);
+				expect((thrown as FlagParseError).cause).toBeInstanceOf(Error);
+				expect(((thrown as FlagParseError).cause as Error).message).toBe(message);
+			});
+		}
+	}
+
+	test('explicit negation is unknown', () => {
+		const calls: string[] = [];
+		const parsed = typeFlag({ verbose: Boolean }, ['--no-verbose=false'], {
+			booleanNegation: true,
+			ignore: (type) => { calls.push(type); },
+		});
+		expect(parsed.flags.verbose).toBe(undefined);
+		expect(parsed.unknownFlags['no-verbose']).toStrictEqual(['false']);
+		expect(calls).toStrictEqual(['unknown-flag']);
+	});
 	describe('edge-cases', () => {
 		test('Object prototype property', () => {
 			const parsed = typeFlag({}, ['--to-string']);
@@ -81,7 +144,7 @@ describe('Parsing', () => {
 		test('string to boolean', () => {
 			const parsed = typeFlag({
 				boolean: Boolean,
-			}, ['--boolean=value']);
+			}, ['--boolean=true']);
 
 			expect<{ boolean?: boolean }>(parsed.flags).toStrictEqual(nullPrototypeObject({
 				boolean: true,
@@ -830,7 +893,7 @@ describe('Parsing', () => {
 	});
 
 	test('flag=', () => {
-		const argv = ['--string=hello', '-s=bye', '--string=', '--boolean=true', '--boolean=false', '--boolean=', 'world', '--number=3.14', '--number='];
+		const argv = ['--string=hello', '-s=bye', '--string=', '--boolean=true', '--boolean=false', 'world', '--number=3.14', '--number='];
 		const parsed = typeFlag(
 			{
 				string: {
@@ -844,7 +907,7 @@ describe('Parsing', () => {
 		);
 
 		expect<string | undefined>(parsed.flags.string).toBe('');
-		expect<boolean | undefined>(parsed.flags.boolean).toBe(true);
+		expect<boolean | undefined>(parsed.flags.boolean).toBe(false);
 		expect<number | undefined>(parsed.flags.number).toBe(Number.NaN);
 		expect<string[] & { '--': string[] }>(parsed._).toStrictEqual(
 			Object.assign(
@@ -856,29 +919,9 @@ describe('Parsing', () => {
 	});
 
 	test('boolean case sensitivity', () => {
-		const argv = ['--flagA=true', '--flagB=True', '--flagC=TRUE', '--flagD=false', '--flagE=False', '--flagF=FALSE', '--flagG=TrUe', '--flagH=FaLsE'];
-		const parsed = typeFlag(
-			{
-				flagA: Boolean,
-				flagB: Boolean,
-				flagC: Boolean,
-				flagD: Boolean,
-				flagE: Boolean,
-				flagF: Boolean,
-				flagG: Boolean,
-				flagH: Boolean,
-			},
-			argv,
-		);
-
-		expect<boolean | undefined>(parsed.flags.flagA).toBe(true);
-		expect<boolean | undefined>(parsed.flags.flagB).toBe(true);
-		expect<boolean | undefined>(parsed.flags.flagC).toBe(true);
-		expect<boolean | undefined>(parsed.flags.flagD).toBe(false);
-		expect<boolean | undefined>(parsed.flags.flagE).toBe(true);
-		expect<boolean | undefined>(parsed.flags.flagF).toBe(true);
-		expect<boolean | undefined>(parsed.flags.flagG).toBe(true);
-		expect<boolean | undefined>(parsed.flags.flagH).toBe(true);
+		for (const value of ['True', 'TRUE', 'False', 'FALSE', 'TrUe', 'FaLsE']) {
+			expect(() => typeFlag({ flag: Boolean }, [`--flag=${value}`])).toThrow(FlagParseError);
+		}
 	});
 
 	test('flag: - to allow the use of = in values (or vice versa)', () => {
@@ -1724,12 +1767,10 @@ describe('Parsing', () => {
 			expect<string[]>(argv).toStrictEqual([]);
 		});
 
-		test('explicit value is ignored for negation', () => {
-			const parsed = typeFlag({
-				verbose: Boolean,
-			}, ['--no-verbose=true'], negation);
-
-			expect<boolean | undefined>(parsed.flags.verbose).toBe(false);
+		test('explicit value on negation is unknown', () => {
+			const parsed = typeFlag({ verbose: Boolean }, ['--no-verbose=true'], negation);
+			expect(parsed.flags.verbose).toBe(undefined);
+			expect(parsed.unknownFlags['no-verbose']).toStrictEqual(['true']);
 		});
 
 		test('schema with alias and default', () => {

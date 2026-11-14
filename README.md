@@ -489,7 +489,11 @@ parsed.flags.verbose // true
 
 The `--no-` prefix only applies to flags defined as `Boolean`. For non-boolean or unregistered flags, `--no-<name>` is treated as an unknown flag.
 
+A negated flag with an explicit value, such as `--no-verbose=false`, is also unknown unless `no-verbose` is itself defined. Defined flags take precedence over negation.
+
 You can also pass `false` explicitly with a value delimiter:
+
+Explicit Boolean values must be exactly `true` or `false`, including for `[Boolean]`. Values are case-sensitive; any other value, including an empty value, throws `FlagParseError`. This applies to `=`, `:`, and `.` delimiters and short aliases in both `typeFlag` and `getFlag`.
 
 ```ts
 // $ my-script --verbose=false

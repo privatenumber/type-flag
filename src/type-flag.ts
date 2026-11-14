@@ -94,6 +94,7 @@ export const typeFlag = <Schemas extends Flags>(
 			if (
 				!flagData
 				&& booleanNegation
+				&& explicitValue === undefined
 				&& !isAlias
 				&& name.length > 3
 				&& name.startsWith('no-')
@@ -124,7 +125,7 @@ export const typeFlag = <Schemas extends Flags>(
 				pendingParser = parser;
 				pendingFlagIndex = flagIndex;
 
-				const flagValue = normalizeBoolean(parser, explicitValue);
+				const flagValue = normalizeBoolean(parser, explicitValue, canonicalName);
 				if (flagValue === undefined) {
 					// No inline value: expect the next token as this flag's value.
 					return true;
