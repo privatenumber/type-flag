@@ -69,7 +69,7 @@ Built with `pnpm build`, then ran `node bench.js` in [`benchmarks/`](../../bench
 
 Do not group extracted flags with flags another parser will read. Removing characters can change how the next parser interprets the token, even when the remaining characters stay in order.
 
-The decision is to delete consumed characters as whole code points, in place. Keep an attached `=`, `:`, or `.` value only if the original last group character remains. Remove an empty remainder and a remainder of exactly `--`: the latter would hide the rest of argv. Keep every other remainder unchanged.
+The decision is to delete consumed characters as whole code points, in place. Keep an attached `=`, `:`, or `.` value only if the original last group character remains. Remove an empty remainder and a remainder of exactly `--`: most parsers, including type-flag, read the latter as the end-of-flags delimiter and stop parsing the rest of argv. (A parser can also take it as a preceding option's value; for example, Node `util.parseArgs` with `strict: false` gives `name: '--'` for `--name --`.) Keep every other remainder unchanged. In-place deletion avoids the misreadings that reordering adds, but it does not preserve every reading: `-q-abc` still leaves the long flag `--abc`.
 
 Extracting `-q` from `-q-abc` leaves the long flag `--abc`; `-q5xy` leaves `-5xy`; `-q--` leaves `---`; and `-q?` leaves the positional `-?`. Extracting `-q` from `-q-` removes the token, including when `ignore` keeps its unknown `-`. `-q-=value` leaves `--=value`, which type-flag treats as a positional, but Node's `util.parseArgs` reads as an unknown long option named `=value`.
 
