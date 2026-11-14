@@ -78,7 +78,7 @@ export const parseFlagArgv = (
 	flagValue: string | undefined,
 	isAlias: boolean,
 ] | undefined => {
-	if (!isFlagPattern.test(flagArgv)) {
+	if (flagArgv[0] !== '-' || !isFlagPattern.test(flagArgv)) {
 		return;
 	}
 
@@ -164,7 +164,7 @@ export const argvIterator = (
 			continue;
 		}
 
-		if (!argvElement.startsWith(DOUBLE_DASH) && isFlagPattern.test(argvElement)) {
+		if (argvElement[0] === '-' && !argvElement.startsWith(DOUBLE_DASH) && isFlagPattern.test(argvElement)) {
 			triggerValueCallback();
 			if (!onFlag) {
 				continue;

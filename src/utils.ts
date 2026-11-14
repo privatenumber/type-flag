@@ -352,7 +352,7 @@ export const finalizeParsed = (
 		flags,
 		unknownFlags,
 		_: createPositionalArgumentsFromParts(
-			[...positionals, ...doubleDashArguments],
+			doubleDashArguments.length ? [...positionals, ...doubleDashArguments] : positionals,
 			doubleDashArguments,
 		),
 	};
