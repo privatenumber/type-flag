@@ -13,11 +13,11 @@ import { flagStartClass } from './argv-iterator.ts';
 
 /**
  * Regex uses zero-width assertions to find positions for hyphen insertion:
- * - (?<=[a-z0-9])(?=[A-Z])  →  after lowercase or digit, before uppercase
- * - (?<=[A-Z])(?=[A-Z][a-z])  →  after uppercase, before uppercase+lowercase
+ * - after a lowercase letter or number, before an uppercase letter
+ * - after an uppercase letter, before uppercase + lowercase letters
  */
-const kebabPattern = /(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])/g;
-const hasUpperCasePattern = /[A-Z]/;
+const kebabPattern = /(?<=[\p{Ll}\p{N}])(?=\p{Lu})|(?<=\p{Lu})(?=\p{Lu}\p{Ll})/gu;
+const hasUpperCasePattern = /\p{Lu}/u;
 
 /**
  * Normalize a schema-declared flag name (e.g. `orgID`, `apiURL`, `fooBar`,
@@ -35,9 +35,7 @@ const hasUpperCasePattern = /[A-Z]/;
  * ```
  */
 export const flagNameToKebab = (name: string): string => (
-	// Perf: skip the costly look-around regex when there's no ASCII uppercase
-	// to split on (the common case). `toLowerCase()` is still needed for
-	// non-ASCII uppercase (e.g. `İ`) that `/[A-Z]/` doesn't detect.
+	// Perf: skip the look-around regex when there is no uppercase letter to split on.
 	hasUpperCasePattern.test(name)
 		? name.replaceAll(kebabPattern, '-').toLowerCase()
 		: name.toLowerCase()

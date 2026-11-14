@@ -86,8 +86,8 @@ export const typeFlag = <Schemas extends Flags>(
 		knownFlags: flagRegistry,
 		onFlag(name, explicitValue, flagIndex) {
 			const isAlias = flagIndex.length === ALIAS_INDEX_LENGTH;
-			// Long-form requires length > 1; single-char names are exclusive to short-form (-h vs --help)
-			const isValid = isAlias || name.length > 1;
+			// Short names are one UTF-16 unit; long names are longer.
+			const isValid = isAlias ? name.length === 1 : name.length > 1;
 			const flagData = isValid ? flagRegistry.get(name) : undefined;
 
 			let negatedBaseName: string | undefined;

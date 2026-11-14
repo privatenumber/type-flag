@@ -39,7 +39,7 @@ POSIX Guideline 3 limits option names to "a single alphanumeric character ... fr
 
 ## Decision and implementation
 
-The tokenizer uses `/^-{1,2}[\p{L}\p{N}_]/u`. One shared character class also drives schema, alias, and `getFlag` search-name validation. Schema keys must start with that class and cannot contain whitespace or `=:.`. Aliases must be exactly one UTF-16 code unit in the class. Digits remain valid. `getFlag` requires a short name to be one UTF-16 code unit in that class, or a long name to start with the class and have at least one more non-reserved character. Short groups are indexed by UTF-16 code unit, so supplementary-plane characters cannot be short names or aliases.
+The tokenizer uses `/^-{1,2}[\p{L}\p{N}_]/u`. One shared character class also drives schema, alias, and `getFlag` search-name validation. Schema keys must start with that class and cannot contain whitespace or `=:.`. Aliases must be exactly one UTF-16 code unit in the class. Digits remain valid. `getFlag` requires a short name to be one UTF-16 code unit in that class, or a long name to start with the class, contain no reserved characters, and span at least two UTF-16 code units. Short groups are read as code points and their positions are UTF-16 offsets.
 
 This intentionally rejects `-foo`, `-`, and punctuation starts and aliases, even where they previously worked through a different alias or within a group. The v5 beta permits this break to avoid definitions that cannot start a token. See the [definition and error-spelling tests](../../tests/specs/type-flag/error-handling.ts), [typeFlag parsing tests](../../tests/specs/type-flag/parsing.ts), and [getFlag tests](../../tests/specs/get-flag/parsing.ts).
 

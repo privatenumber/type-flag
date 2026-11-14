@@ -1,10 +1,10 @@
 export const DOUBLE_DASH = '--';
 
-export const ALIAS_INDEX_LENGTH = 3;
+export const ALIAS_INDEX_LENGTH = 4;
 
 export type Index =
 	| [index: number]
-	| [index: number, aliasIndex: number, isLast: boolean];
+	| [index: number, aliasIndex: number, isLast: boolean, characterLength: number];
 
 type onValueCallback = (
 	value: string | undefined,
@@ -25,13 +25,14 @@ type onArgument = (
 	isEoF?: boolean,
 ) => void;
 
-export const flagStartClass = String.raw`[\p{L}\p{N}_]`;
+const numberClass = String.raw`\p{N}`;
+export const flagStartClass = String.raw`[\p{L}${numberClass}_]`;
 const isFlagPattern = new RegExp(`^-{1,2}${flagStartClass}`, 'u');
 
 // A dash followed by a digit, such as `-5`, `-5..10`, or `-5%`. A dash followed
 // by a letter stays a flag, so `--range --verbose` still reports the missing value.
 // `-.5` needs no rule here: it never matches `isFlagPattern`.
-const dashDigitPattern = /^-\d/;
+const dashDigitPattern = new RegExp(`^-${numberClass}`, 'u');
 
 /**
  * A membership-checkable collection of defined flag/alias names. Both the
@@ -174,15 +175,20 @@ export const argvIterator = (
 
 			if (isAlias) {
 				// Alias group
-				for (let j = 0; j < flagName.length; j += 1) {
+				for (let j = 0; j < flagName.length;) {
 					triggerValueCallback();
 
-					const isLastAlias = j === flagName.length - 1;
+					// A supplementary character spans two UTF-16 units; index directly otherwise
+					const character = flagName.codePointAt(j)! > 0xFF_FF
+						? flagName.slice(j, j + 2)
+						: flagName[j];
+					const isLastAlias = j + character.length === flagName.length;
 					expectingValue = onFlag(
-						flagName[j],
+						character,
 						isLastAlias ? flagValue : undefined,
-						[i, j + 1, isLastAlias],
+						[i, j + 1, isLastAlias, character.length],
 					) === true;
+					j += character.length;
 				}
 			} else {
 				expectingValue = onFlag(
@@ -204,12 +210,12 @@ export const spliceFromArgv = (
 	removeArgvs: Index[],
 ) => {
 	for (let i = removeArgvs.length - 1; i >= 0; i -= 1) {
-		const [index, aliasIndex, isLast] = removeArgvs[i];
+		const [index, aliasIndex, isLast, characterLength] = removeArgvs[i];
 		if (aliasIndex) {
 			const element = argv[index];
 			let newValue = element.slice(0, aliasIndex);
 			if (!isLast) {
-				newValue += element.slice(aliasIndex + 1);
+				newValue += element.slice(aliasIndex + characterLength!);
 			}
 
 			if (newValue !== '-') {

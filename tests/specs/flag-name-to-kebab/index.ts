@@ -2,6 +2,14 @@ import { test, expect } from 'manten';
 import { typeFlag } from '#type-flag';
 import { flagNameToKebab } from '#type-flag/internal';
 
+test('Unicode case and number boundaries', () => {
+	expect(flagNameToKebab('üFlag')).toBe('ü-flag');
+	expect(flagNameToKebab('aÉclair')).toBe('a-éclair');
+	expect(flagNameToKebab('a٥Flag')).toBe('a٥-flag');
+	expect(flagNameToKebab('aÉÖKey')).toBe('a-éö-key');
+	expect(typeFlag({ üFlag: Boolean }, ['--ü-flag']).flags.üFlag).toBe(true);
+});
+
 test('standard camelCase', () => {
 	expect(flagNameToKebab('fooBar')).toBe('foo-bar');
 });

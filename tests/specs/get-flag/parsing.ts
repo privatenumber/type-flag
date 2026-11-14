@@ -2,6 +2,17 @@ import { describe, test, expect } from 'manten';
 import { getFlag, FlagParseError } from '#type-flag';
 
 describe('Parsing', () => {
+	test('Unicode numbers are values unless all aliases are searched', () => {
+		for (const value of ['-٥', '-Ⅳ', '-𝟝']) {
+			expect(getFlag('-x', String, ['-x', value])).toBe(value);
+		}
+		expect(getFlag('-x,-٥', String, ['-x', '-٥'])).toBe('');
+	});
+
+	test('supplementary character is a long search name', () => {
+		expect(getFlag('--𐐀', String, ['--𐐀', 'x'])).toBe('x');
+		expect(() => getFlag('--é', Boolean, [])).toThrow('Invalid flag name: "--é"');
+	});
 	test('Unicode long search name matches a Unicode token', () => {
 		expect(getFlag('--über', String, ['--über', 'x'])).toBe('x');
 	});
