@@ -1,10 +1,10 @@
 # Flag names and aliases that cannot start a token
 
-Researched 2026-11-05 against type-flag `v5.0.0-beta.20` and `4.5.2`. Not shipped.
+Researched 2026-11-05 against type-flag `v5.0.0-beta.20` and `4.5.2`. Fixed in the v5 beta.
 
 ## Summary
 
-Recommendation: fix. type-flag accepts some flag names and aliases that its tokenizer cannot recognize at the start of a token. The tokens become positionals with no error. Every other surveyed parser matches `--über` and `-é`. Some of these aliases do match inside a short-flag group, so the fix must keep those cases working.
+The old registry accepted definitions that could not start a token. The fix recognizes Unicode letters and numbers and rejects definitions that cannot start a token. Every other surveyed parser matches `--über` and `-é`. The grouped Unicode alias case remains supported.
 
 ## Problem
 
@@ -37,24 +37,37 @@ Every other surveyed parser (parseArgs, commander, yargs-parser, minimist, mri, 
 
 POSIX Guideline 3 limits option names to "a single alphanumeric character ... from the portable character set" ([XBD 12.2](https://pubs.opengroup.org/onlinepubs/9799919799/basedefs/V1_chap12.html#tag_12_02)). Long options are a GNU extension that POSIX does not cover. glibc's `getopt_long` scans the name up to `=` or the end of the argument and compares bytes with `strncmp` ([getopt.c#L205-L215](https://github.com/bminor/glibc/blob/glibc-2.42/posix/getopt.c#L205-L215)), so a UTF-8 name such as `über` works there. POSIX does not forbid `--über`, and implementations accept it.
 
-## Proposed fix
+## Decision and implementation
 
-1. **Tokenizer:** recognize a flag when a Unicode letter, digit, or `_` follows the dashes, for example `/^-{1,2}[\p{L}\p{N}_]/u`. This makes `--über` and `-é` work at the start of a token.
-2. **Definition:** throw for an alias of `=`, `.`, or `:`. The alias never matches, but the rest of the definition does: `{ name: { type: String, alias: '=' } }` with `--name x` gives `name: 'x'` in beta.20. Throwing surfaces the dead alias at startup, and it breaks callers that only use the long name. Recommendation: throw, because the v5 beta accepts breaking changes and a silently dead alias is a configuration error.
-3. **Decision needed: names that start with `-`.** Two cases work today in beta.20, so rejecting either is breaking:
-   - A multi-character name such as `-foo` cannot be typed as a long flag (`---foo` is not a flag), but works through an alias: `{ '-foo': { type: String, alias: 'f' } }` with `-f x` gives `'-foo': 'x'`, because [`createRegistry`](https://github.com/privatenumber/type-flag/blob/v5.0.0-beta.20/src/utils.ts#L172-L210) registers the key and the alias separately.
-   - The single-character key `-` works inside a group, like alias `-` below: `{ '-': Boolean }` with `-a-` sets `'-': true` (and reports `a` as unknown).
-4. **Decision needed: alias `-`.** It works today only inside a group (`-a-`), because `--` alone ends flag parsing. Rejecting it is a breaking change for that grouped use. Keeping it means the alias can never be used on its own.
+The tokenizer uses `/^-{1,2}[\p{L}\p{N}_]/u`. One shared character class also drives schema, alias, and `getFlag` search-name validation. Schema keys must start with that class and cannot contain whitespace or `=:.`. Aliases must be exactly one UTF-16 code unit in the class. Digits remain valid. `getFlag` requires a short name to be one UTF-16 code unit in that class, or a long name to start with the class, contain no reserved characters, and span at least two UTF-16 code units. Short groups are read as code points and their positions are UTF-16 offsets.
 
-Open evidence gap: the cost of a `u`-flag regex on the hot tokenizer path is unmeasured. Measure it with [`benchmarks/`](../../benchmarks) before choosing the pattern.
+This intentionally rejects `-foo`, `-`, and punctuation starts and aliases, even where they previously worked through a different alias or within a group. The v5 beta permits this break to avoid definitions that cannot start a token. See the [definition and error-spelling tests](../../tests/specs/type-flag/error-handling.ts), [typeFlag parsing tests](../../tests/specs/type-flag/parsing.ts), and [getFlag tests](../../tests/specs/get-flag/parsing.ts).
+
+| Case | Old | New |
+| --- | --- | --- |
+| `--über x`, `-é` | positional | flags |
+| `--name --über` | `name` receives `--über` | `name` receives `""`; `--über` is a flag |
+| key `-foo`, alias `-` or `=` | accepted, but not usable at token start | rejected at definition time |
+| alias `5` | valid | valid |
+| key `aÉclair` | matches `--aéclair` | matches `--a-éclair` |
+| keys `aÉ` and `a-é` | accepted | duplicate-flag error |
+
+camelCase splitting uses the Unicode `Lowercase` and `Uppercase` properties plus titlecase (`Lt`), and keeps combining marks with the preceding letter. The mark lookbehinds rescan a run of combining marks, so a schema key with thousands of consecutive marks takes seconds to register (about 2 s for 8,000 marks on Node 22). This runs once per definition on developer-supplied schema keys, not on argv, so it was accepted instead of adding a length limit.
+
+### Benchmark
+
+Built with `pnpm build`, then ran `node bench.js` in [`benchmarks/`](../../benchmarks) once before and once after. On Apple M2 Max, Node 24.13.1 arm64-darwin, average `type-flag` was 2.32 µs before and 2.27 µs after; `get-flag` was 1.45 µs before and 1.41 µs after. This ASCII-only full-API benchmark includes registry and search validation, and single runs do not isolate regex cost or establish statistical equivalence.
 
 ## Compatibility
 
 - Tokens such as `--über` or `-é` change from positionals to flags.
-- They also stop being values. Today a preceding value-taking flag consumes them: `typeFlag({ name: String, über: Boolean }, ['--name', '--über'])` gives `name: '--über'` in beta.20. With the new pattern, `--name` gets `""` and `--über` is parsed as a flag, defined or unknown.
+- They also stop being values. In beta.20 a preceding value-taking flag consumes them: `typeFlag({ name: String, über: Boolean }, ['--name', '--über'])` gives `name: '--über'`. With the new pattern, `--name` gets `""` and `--über` is parsed as a flag, defined or unknown.
 - The `=`, `.`, and `:` aliases never match, but their definitions work through the long name, so throwing for them breaks those definitions. Rejecting names that start with `-`, or alias `-`, also breaks definitions that work today.
+- CamelCase keys with non-ASCII case boundaries now use the same kebab-case splitting as ASCII keys: `aÉclair` matched `--aéclair` before and now matches `--a-éclair`, like `aEclair`. Schemas such as `{ aÉ: Boolean, 'a-é': Boolean }` now throw a duplicate-flag error because both keys map to `a-é`.
 
 ## Forwarding hazard: partially consumed groups
+
+This hazard is not fixed by the name validation change.
 
 When type-flag consumes only part of a short-flag group, `spliceFromArgv` removes the consumed characters and keeps the rest ([argv-iterator.ts#L201-L220](https://github.com/privatenumber/type-flag/blob/v5.0.0-beta.20/src/argv-iterator.ts#L201-L220)). The kept token can mean something different on the next parse (observed with beta.20, `a` a defined boolean):
 

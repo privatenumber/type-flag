@@ -9,6 +9,92 @@ const nullPrototypeObject = <T extends object>(object: T): T => (
 );
 
 describe('Parsing', () => {
+	test('Unicode numbers are values unless all aliases are defined', () => {
+		for (const value of ['-٥', '-Ⅳ', '-𝟝']) {
+			const result = typeFlag({ x: String }, ['-x', value]);
+			expect(result.flags.x).toBe(value);
+			expect(result.unknownFlags).toStrictEqual(nullPrototypeObject({}));
+		}
+		const result = typeFlag({
+			x: String,
+			'٥': Boolean,
+		}, ['-x', '-٥']);
+		expect(result.flags.x).toBe('');
+		expect(result.flags['٥']).toBe(true);
+	});
+
+	test('a supplementary number long name cannot resolve as a digit alias', () => {
+		const result = typeFlag({
+			x: String,
+			'𝟝': Boolean,
+		}, ['-x', '-𝟝']);
+		expect(result.flags.x).toBe('-𝟝');
+		expect(result.flags['𝟝']).toBe(undefined);
+	});
+
+	test('supplementary unknown group members are consumed as whole characters', () => {
+		const argv = ['-a𐐀b'];
+		const result = typeFlag({
+			a: Boolean,
+			b: Boolean,
+		}, argv);
+		expect(result.unknownFlags).toStrictEqual(nullPrototypeObject({ 𐐀: [true] }));
+		expect(argv).toStrictEqual([]);
+	});
+
+	test('a supplementary long name is not a short alias', () => {
+		const result = typeFlag({ '𐐀': Boolean }, ['-𐐀']);
+		expect(result.flags['𐐀']).toBe(undefined);
+		expect(result.unknownFlags).toStrictEqual(nullPrototypeObject({ 𐐀: [true] }));
+	});
+
+	test('ignored supplementary group members remain whole in argv', () => {
+		const argv = ['-𐐀a'];
+		const result = typeFlag({ a: Boolean }, argv, {
+			ignore: (type, name) => type === 'unknown-flag' && name === '𐐀',
+		});
+		expect(result.unknownFlags).toStrictEqual(nullPrototypeObject({}));
+		expect(argv).toStrictEqual(['-𐐀']);
+	});
+
+	test('removes a non-final supplementary unknown without removing its neighbor', () => {
+		const argv = ['-𐐀a'];
+		typeFlag({ a: Boolean }, argv, { ignore: (type, name) => type === 'flag' && name === 'a' });
+		expect(argv).toStrictEqual(['-a']);
+	});
+	test('Unicode name starts a token', () => {
+		expect(typeFlag({ über: String }, ['--über', 'x']).flags.über).toBe('x');
+	});
+
+	test('Unicode alias starts a token and works in a group', () => {
+		const schema = {
+			enabled: {
+				type: Boolean,
+				alias: 'é',
+			},
+			a: Boolean,
+		};
+		expect(typeFlag(schema, ['-é']).flags.enabled).toBe(true);
+		expect(typeFlag(schema, ['-aé']).flags.enabled).toBe(true);
+	});
+
+	test('Unicode flag is not consumed as a preceding value', () => {
+		const result = typeFlag({
+			name: String,
+			über: Boolean,
+		}, ['--name', '--über']);
+		expect(result.flags.name).toBe('');
+		expect(result.flags.über).toBe(true);
+	});
+
+	test('digit alias starts a token', () => {
+		expect(typeFlag({
+			enabled: {
+				type: Boolean,
+				alias: '5',
+			},
+		}, ['-5']).flags.enabled).toBe(true);
+	});
 	test('Boolean literals across delimiters and aliases', () => {
 		for (const separator of ['=', ':', '.']) {
 			for (const [value, expected] of [['true', true], ['false', false]] as const) {

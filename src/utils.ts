@@ -9,14 +9,18 @@ import {
 } from './types.ts';
 import { isStandardSchema, schemaToParser } from './standard-schema.ts';
 import { createPositionalArgumentsFromParts } from './positional-arguments.ts';
+import { flagStartClass } from './argv-iterator.ts';
 
 /**
  * Regex uses zero-width assertions to find positions for hyphen insertion:
- * - (?<=[a-z0-9])(?=[A-Z])  →  after lowercase or digit, before uppercase
- * - (?<=[A-Z])(?=[A-Z][a-z])  →  after uppercase, before uppercase+lowercase
+ * - after a lowercase letter or number, before an uppercase or titlecase letter
+ * - after an uppercase or titlecase letter, before uppercase or titlecase + lowercase
+ * Case uses the Unicode `Lowercase` and `Uppercase` properties, not general
+ * categories, so modifier letters such as `ᵃ` count as lowercase.
+ * Combining marks stay with the preceding character.
  */
-const kebabPattern = /(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])/g;
-const hasUpperCasePattern = /[A-Z]/;
+const kebabPattern = /(?<=[\p{Lowercase}\p{N}]\p{M}*)(?=[\p{Uppercase}\p{Lt}])|(?<=[\p{Uppercase}\p{Lt}]\p{M}*)(?=[\p{Uppercase}\p{Lt}]\p{M}*\p{Lowercase})/gu;
+const hasUpperCasePattern = /[\p{Uppercase}\p{Lt}]/u;
 
 /**
  * Normalize a schema-declared flag name (e.g. `orgID`, `apiURL`, `fooBar`,
@@ -34,9 +38,7 @@ const hasUpperCasePattern = /[A-Z]/;
  * ```
  */
 export const flagNameToKebab = (name: string): string => (
-	// Perf: skip the costly look-around regex when there's no ASCII uppercase
-	// to split on (the common case). `toLowerCase()` is still needed for
-	// non-ASCII uppercase (e.g. `İ`) that `/[A-Z]/` doesn't detect.
+	// Perf: skip the look-around regex when there is no uppercase or titlecase letter to split on.
 	hasUpperCasePattern.test(name)
 		? name.replaceAll(kebabPattern, '-').toLowerCase()
 		: name.toLowerCase()
@@ -142,6 +144,7 @@ export const applyParser = (
 };
 
 const reservedCharactersPattern = /[\s.:=]/;
+const flagStartPattern = new RegExp(`^${flagStartClass}`, 'u');
 
 const validateFlagName = (
 	flagName: string,
@@ -150,6 +153,9 @@ const validateFlagName = (
 
 	if (flagName.length === 0) {
 		throw new Error(`${errorPrefix} cannot be empty`);
+	}
+	if (!flagStartPattern.test(flagName)) {
+		throw new Error(`${errorPrefix} must start with a letter, digit, or underscore`);
 	}
 
 	const hasReservedCharacter = flagName.match(reservedCharactersPattern);
@@ -224,6 +230,9 @@ export const createRegistry = (
 
 			if (alias.length > 1) {
 				throw new Error(`${errorPrefix} must be a single character`);
+			}
+			if (!flagStartPattern.test(alias)) {
+				throw new Error(`${errorPrefix} must be a letter, digit, or underscore`);
 			}
 
 			setFlag(registry, alias, flagData);

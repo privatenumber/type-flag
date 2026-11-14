@@ -2,6 +2,45 @@ import { test, expect } from 'manten';
 import { typeFlag } from '#type-flag';
 import { flagNameToKebab } from '#type-flag/internal';
 
+test('combining marks stay attached at lowercase boundaries', () => {
+	for (const [name, expected] of [['éFlag', 'é-flag'], ['aÉclair', 'a-éclair']]) {
+		for (const form of ['NFC', 'NFD'] as const) {
+			expect(flagNameToKebab(name.normalize(form)).normalize('NFC')).toBe(expected);
+		}
+	}
+});
+
+test('combining marks stay attached at acronym boundaries', () => {
+	for (const name of ['ÉCOLEName', 'ABÉclair']) {
+		const expected = name === 'ÉCOLEName' ? 'école-name' : 'ab-éclair';
+		for (const form of ['NFC', 'NFD'] as const) {
+			expect(flagNameToKebab(name.normalize(form)).normalize('NFC')).toBe(expected);
+		}
+	}
+});
+
+test('titlecase letters form uppercase boundaries', () => {
+	expect(flagNameToKebab('aǅuro')).toBe('a-ǆuro');
+	expect(flagNameToKebab('Aǅuro')).toBe('a-ǆuro');
+});
+
+test('Unicode kebab spelling collides with an equivalent schema key', () => {
+	expect(() => typeFlag({
+		aÉ: Boolean,
+		'a-é': Boolean,
+	}, [])).toThrow('Duplicate flags named "a-é"');
+});
+
+test('Unicode case and number boundaries', () => {
+	expect(flagNameToKebab('üFlag')).toBe('ü-flag');
+	expect(flagNameToKebab('aÉclair')).toBe('a-éclair');
+	expect(flagNameToKebab('a٥Flag')).toBe('a٥-flag');
+	// Lowercase property letters outside the Ll category, such as modifier letters
+	expect(flagNameToKebab('aᵃFlag')).toBe('aᵃ-flag');
+	expect(flagNameToKebab('aÉÖKey')).toBe('a-éö-key');
+	expect(typeFlag({ üFlag: Boolean }, ['--ü-flag']).flags.üFlag).toBe(true);
+});
+
 test('standard camelCase', () => {
 	expect(flagNameToKebab('fooBar')).toBe('foo-bar');
 });

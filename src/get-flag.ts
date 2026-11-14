@@ -10,8 +10,12 @@ import {
 import {
 	argvIterator,
 	spliceFromArgv,
+	flagStartClass,
 	type Index,
 } from './argv-iterator.ts';
+
+const shortFlagPattern = new RegExp(`^-${flagStartClass}$`, 'u');
+const longFlagPattern = new RegExp(String.raw`^--${flagStartClass}[^\s=:.]*$`, 'u');
 
 export const getFlag = <Type extends FlagType>(
 	flagNames: string,
@@ -24,13 +28,13 @@ export const getFlag = <Type extends FlagType>(
 	let errorSpelling = '';
 	for (const part of flagNames.split(',')) {
 		const name = part.trim();
-		if (/^-\w$/.test(name)) {
+		if (name.length === 2 && shortFlagPattern.test(name)) {
 			if (!errorSpelling) {
 				errorName = name.slice(1);
 				errorSpelling = name;
 			}
 			shortFlags.add(name.slice(1));
-		} else if (/^--\w[^\s=:.]+$/.test(name)) {
+		} else if (name.length >= 4 && longFlagPattern.test(name)) {
 			if (longFlags.size === 0) {
 				errorName = name.slice(2);
 				errorSpelling = name;

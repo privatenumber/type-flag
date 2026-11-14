@@ -33,6 +33,8 @@ parsed._            // []  (positional args, with _['--'] for post-`--`)
 | Standard Schema | `flag: z.enum([...])` / `[z.string()]` | Validate via a Zod/Valibot/ArkType schema (see below) |
 | Single-char name | `x: Number` | Matches `-x`, NOT `--x` |
 
+Names start with a Unicode letter, Unicode number, or `_` and cannot contain whitespace, `=`, `:`, or `.`. Aliases are one UTF-16 code unit from the same starting class, such as `é` or `5`.
+
 Type options:
 
 | Option | Type | Notes |
@@ -179,7 +181,7 @@ const age  = getFlag('-a,--age', Number)        // comma-separated names
 const tags = getFlag('-t,--tag', [String])      // array form collects all
 ```
 
-Scalar parsers return the last match; array parsers return all matches. Every match is removed from argv. Names are comma-separated and whitespace-trimmed: use one dash for a single-character short name and two dashes for a long name of at least two characters. Short and long forms match only their respective argv forms. Invalid names throw an `Error`.
+Scalar parsers return the last match; array parsers return all matches. Every match is removed from argv. Names are comma-separated and whitespace-trimmed: a short name is one dash followed by one UTF-16 code unit that is a Unicode letter, Unicode number, or `_`; a long name is two dashes followed by a name that starts with that class and spans at least two UTF-16 code units, without whitespace, `=`, `:`, or `.`. One supplementary character, such as `𐐀`, qualifies as a long name. Short and long forms match only their respective argv forms. Invalid names throw an `Error`.
 
 ## Gotchas
 

@@ -2,6 +2,34 @@ import { describe, test, expect } from 'manten';
 import { getFlag, FlagParseError } from '#type-flag';
 
 describe('Parsing', () => {
+	test('Unicode numbers are values unless all aliases are searched', () => {
+		for (const value of ['-٥', '-Ⅳ', '-𝟝']) {
+			expect(getFlag('-x', String, ['-x', value])).toBe(value);
+		}
+		expect(getFlag('-x,-٥', String, ['-x', '-٥'])).toBe('');
+	});
+
+	test('supplementary character is a long search name', () => {
+		expect(getFlag('--𐐀', String, ['--𐐀', 'x'])).toBe('x');
+		expect(() => getFlag('--é', Boolean, [])).toThrow('Invalid flag name: "--é"');
+	});
+	test('Unicode long search name matches a Unicode token', () => {
+		expect(getFlag('--über', String, ['--über', 'x'])).toBe('x');
+	});
+
+	test('Unicode short search name matches a Unicode token', () => {
+		expect(getFlag('-é', Boolean, ['-é'])).toBe(true);
+	});
+
+	test('supplementary characters cannot be short search names', () => {
+		expect(() => getFlag('-𐐀', Boolean, [])).toThrow('Invalid flag name: "-𐐀"');
+	});
+
+	test('Unicode flag is not consumed as a preceding value', () => {
+		const argv = ['--name', '--über'];
+		expect(getFlag('--name', String, argv)).toBe('');
+		expect(argv).toStrictEqual(['--über']);
+	});
 	test('Boolean literals across delimiters and aliases', () => {
 		for (const separator of ['=', ':', '.']) {
 			for (const [value, expected] of [['true', true], ['false', false]] as const) {
